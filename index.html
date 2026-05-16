@@ -1331,6 +1331,29 @@ body {
 .meal-macro-toggle { text-align: center; }
 .meal-macro-toggle-btn { background: none; border: 1px dashed var(--border2); border-radius: 20px; padding: 4px 14px; font-size: 0.75rem; color: var(--ink3); cursor: pointer; display:inline-flex;align-items:center;gap:5px; }
 .meal-macro-toggle-btn:hover { color: var(--green-dk); border-color: var(--green); }
+.meal-suggestions {
+  margin-top: 5px; border-radius: var(--r); overflow: hidden;
+  border: 1.5px solid var(--border); box-shadow: var(--shadow-md);
+  background: var(--surface);
+}
+.meal-suggestions.hidden { display: none; }
+.meal-suggestion-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 9px 12px; cursor: pointer; gap: 10px;
+  border-bottom: 1px solid var(--border); transition: background 0.12s;
+}
+.meal-suggestion-item:last-child { border-bottom: none; }
+.meal-suggestion-item:hover { background: var(--green-l); }
+.meal-suggestion-name { font-size: 0.82rem; color: var(--ink); font-weight: 500; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.meal-suggestion-kcal { font-size: 0.78rem; font-weight: 700; color: var(--green-dk); white-space: nowrap; flex-shrink: 0; }
+.meal-suggestion-src { font-size: 0.62rem; color: var(--ink3); margin-left: 4px; }
+.meal-suggestions-loading { padding: 10px 12px; font-size: 0.78rem; color: var(--ink3); text-align: center; }
+.meal-kcal-hint { font-size: 0.68rem; color: var(--ink3); margin-top: 4px; }
+.meal-kcal-source {
+  font-size: 0.60rem; font-weight: 600; padding: 1px 6px; border-radius: 8px;
+  background: var(--green-l); color: var(--green-dk);
+}
+.meal-kcal-source.hidden { display: none; }
 .weight-withings-toggle { text-align: center; }
 .withings-section-label { font-size: 0.72rem; font-weight: 700; color: var(--ink3); text-transform: uppercase; letter-spacing: 0.06em; padding-top: 2px; }
 
@@ -2196,12 +2219,17 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
     <div class="meal-modal-body">
       <div class="rf-field">
         <label class="rf-label">Nom du repas *</label>
-        <input id="meal-inp-name" class="inp" type="text" placeholder="Ex: Pâtes carbonara">
+        <input id="meal-inp-name" class="inp" type="text" placeholder="Ex: Pâtes carbonara" autocomplete="off">
+        <div id="meal-kcal-suggestions" class="meal-suggestions hidden"></div>
       </div>
       <div style="display:flex;gap:10px">
         <div class="rf-field" style="flex:1">
-          <label class="rf-label">Calories (kcal) *</label>
+          <label class="rf-label" style="display:flex;align-items:center;gap:4px">
+            Calories (kcal) *
+            <span id="meal-kcal-source" class="meal-kcal-source hidden"></span>
+          </label>
           <input id="meal-inp-kcal" class="inp" type="number" placeholder="650" min="0" max="5000">
+          <div class="meal-kcal-hint" id="meal-kcal-hint">Cherchez sur le packaging, Yuka ou MyFitnessPal</div>
         </div>
         <div class="rf-field" style="flex:1">
           <label class="rf-label">Repas</label>
@@ -4200,7 +4228,108 @@ function renderSante() {
     tips.map(t => `<div class="tip-item"><div class="tip-icon">${t.icon}</div><div class="tip-text">${t.text}</div></div>`).join('');
 }
 
-/* ── Add meal modal ── */
+/* ── Add meal modal — calorie suggestions ── */
+let mealSuggestTimer = null;
+
+function applyMealSuggestion(name, kcal, protein, carbs, fat, source) {
+  document.getElementById('meal-inp-name').value = name;
+  document.getElementById('meal-inp-kcal').value = kcal;
+  if (protein || carbs || fat) {
+    document.getElementById('meal-inp-prot').value = protein || '';
+    document.getElementById('meal-inp-carb').value = carbs || '';
+    document.getElementById('meal-inp-fat').value  = fat || '';
+    document.getElementById('meal-macros-section').style.display = 'block';
+    document.getElementById('btn-toggle-macros').textContent = '− Masquer les macros';
+  }
+  const src = document.getElementById('meal-kcal-source');
+  src.textContent = source; src.classList.remove('hidden');
+  document.getElementById('meal-kcal-hint').style.display = 'none';
+  hideMealSuggestions();
+  haptic(10);
+}
+
+function hideMealSuggestions() {
+  document.getElementById('meal-kcal-suggestions').classList.add('hidden');
+}
+
+async function fetchMealSuggestions(query) {
+  const box = document.getElementById('meal-kcal-suggestions');
+  if (!query || query.length < 2) { box.classList.add('hidden'); return; }
+
+  // 1. Check local recipes first
+  const allRecipes = [...(userRecipes || []), ...(recipes || [])];
+  const local = allRecipes.filter(r => r.name?.toLowerCase().includes(query.toLowerCase())).slice(0, 3);
+  const suggestions = local.map(r => ({
+    name: r.name, kcal: r.calories || 0,
+    protein: r.protein, carbs: r.carbs, fat: r.fat,
+    source: '📖 Mes recettes', portion: ''
+  }));
+
+  // Show local results immediately if any
+  if (suggestions.length) {
+    renderMealSuggestions(suggestions, true);
+  } else {
+    box.classList.remove('hidden');
+    box.innerHTML = '<div class="meal-suggestions-loading">🔍 Recherche…</div>';
+  }
+
+  // 2. Open Food Facts text search
+  try {
+    const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=4&fields=product_name,product_name_fr,nutriments,serving_size,serving_quantity`;
+    const resp = await fetch(url);
+    const data = await resp.json();
+    const off = (data.products || [])
+      .filter(p => p.nutriments?.['energy-kcal_100g'] > 0 && (p.product_name_fr || p.product_name))
+      .slice(0, 4)
+      .map(p => {
+        const name = p.product_name_fr || p.product_name;
+        const kcalPer100 = Math.round(p.nutriments['energy-kcal_100g'] || 0);
+        const serving = parseFloat(p.serving_quantity) || 100;
+        const kcal = Math.round(kcalPer100 * serving / 100);
+        const protPer100 = p.nutriments['proteins_100g'] || 0;
+        const carbPer100 = p.nutriments['carbohydrates_100g'] || 0;
+        const fatPer100  = p.nutriments['fat_100g'] || 0;
+        return {
+          name, kcal,
+          protein: Math.round(protPer100 * serving / 100),
+          carbs:   Math.round(carbPer100 * serving / 100),
+          fat:     Math.round(fatPer100  * serving / 100),
+          source: '🌍 Open Food Facts',
+          portion: serving !== 100 ? `${serving}g` : '100g'
+        };
+      });
+    renderMealSuggestions([...suggestions, ...off]);
+  } catch(e) {
+    if (!suggestions.length) box.classList.add('hidden');
+  }
+}
+
+function renderMealSuggestions(list, partial = false) {
+  const box = document.getElementById('meal-kcal-suggestions');
+  if (!list.length && !partial) { box.classList.add('hidden'); return; }
+  box.classList.remove('hidden');
+  box.innerHTML = list.map(s =>
+    `<div class="meal-suggestion-item"
+      data-name="${esc(s.name)}" data-kcal="${s.kcal}"
+      data-prot="${s.protein||0}" data-carb="${s.carbs||0}" data-fat="${s.fat||0}"
+      data-src="${esc(s.source)}">
+      <div class="meal-suggestion-name">${esc(s.name)}</div>
+      <div>
+        <span class="meal-suggestion-kcal">${s.kcal} kcal${s.portion ? `<span class="meal-suggestion-src">/${s.portion}</span>` : ''}</span>
+        <span class="meal-suggestion-src">${s.source}</span>
+      </div>
+    </div>`
+  ).join('') + (partial ? '<div class="meal-suggestions-loading">🔍 Recherche en ligne…</div>' : '');
+
+  box.querySelectorAll('.meal-suggestion-item').forEach(el => {
+    el.addEventListener('click', () => applyMealSuggestion(
+      el.dataset.name, parseInt(el.dataset.kcal),
+      parseInt(el.dataset.prot), parseInt(el.dataset.carb), parseInt(el.dataset.fat),
+      el.dataset.src
+    ));
+  });
+}
+
 let mealModalFromRecipe = false;
 
 function openAddMealModal(prefill = {}) {
@@ -4211,6 +4340,14 @@ function openAddMealModal(prefill = {}) {
   document.getElementById('meal-inp-carb').value = prefill.carbs || '';
   document.getElementById('meal-inp-fat').value  = prefill.fat || '';
   document.getElementById('meal-macros-section').style.display = (prefill.protein || prefill.carbs || prefill.fat) ? 'block' : 'none';
+  // Reset suggestion UI
+  hideMealSuggestions();
+  const src = document.getElementById('meal-kcal-source');
+  src.classList.add('hidden'); src.textContent = '';
+  document.getElementById('meal-kcal-hint').style.display = prefill.kcal ? 'none' : '';
+  if (prefill.name && prefill.kcal) {
+    src.textContent = '📖 Recette'; src.classList.remove('hidden');
+  }
   document.getElementById('meal-modal-overlay').classList.remove('hidden');
   setTimeout(() => document.getElementById('meal-inp-name').focus(), 60);
 }
@@ -5300,6 +5437,13 @@ window.addEventListener('fc-ready', () => {
   document.getElementById('meal-modal-cancel').addEventListener('click', closeAddMealModal);
   document.getElementById('meal-modal-save').addEventListener('click', saveAddMealModal);
   document.getElementById('meal-inp-name').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('meal-inp-kcal').focus(); });
+  document.getElementById('meal-inp-name').addEventListener('input', e => {
+    clearTimeout(mealSuggestTimer);
+    const q = e.target.value.trim();
+    if (!q || q.length < 2) { hideMealSuggestions(); return; }
+    mealSuggestTimer = setTimeout(() => fetchMealSuggestions(q), 350);
+  });
+  document.getElementById('meal-inp-kcal').addEventListener('focus', hideMealSuggestions);
   document.getElementById('btn-toggle-macros').addEventListener('click', () => {
     const sec = document.getElementById('meal-macros-section');
     const btn = document.getElementById('btn-toggle-macros');
