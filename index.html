@@ -110,7 +110,19 @@
     },
     loadCategories: (uid, cb) => onSnapshot(doc(db, 'userCategories', uid),
       snap => cb(snap.exists() ? snap.data().cats || [] : [])
-    )
+    ),
+    saveDailyLog: async (uid, date, entries) => {
+      await setDoc(doc(db, 'dailyLog', `${uid}_${date}`), { entries, updatedAt: Date.now() });
+    },
+    loadDailyLog: (uid, date, cb) => onSnapshot(doc(db, 'dailyLog', `${uid}_${date}`),
+      snap => cb(snap.exists() ? snap.data().entries || [] : [])
+    ),
+    saveWeightLog: async (uid, entries) => {
+      await setDoc(doc(db, 'weightLog', uid), { entries, updatedAt: Date.now() });
+    },
+    loadWeightLog: (uid, cb) => onSnapshot(doc(db, 'weightLog', uid),
+      snap => cb(snap.exists() ? snap.data().entries || [] : [])
+    ),
   };
 
   window.dispatchEvent(new Event('fc-ready'));
@@ -1709,6 +1721,91 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
     </div>
   </div>
 
+<!-- ── TAB: SANTÉ ── -->
+<div class="tab-page" id="tab-sante">
+  <div class="tab-header">
+    <div class="tab-header-row">
+      <div class="tab-large-title">📊 Santé</div>
+      <button class="icon-btn" id="btn-add-meal" title="Ajouter un repas">＋</button>
+    </div>
+    <div class="tab-sub" id="sante-sub">Suivez vos calories et votre progression.</div>
+  </div>
+  <div class="tab-body" id="sante-body">
+    <!-- Calories ring -->
+    <div class="cal-ring-card" id="cal-ring-card">
+      <div class="cal-ring-wrap">
+        <svg class="cal-ring-svg" viewBox="0 0 120 120">
+          <circle class="cal-ring-bg" cx="60" cy="60" r="50"/>
+          <circle class="cal-ring-fill" id="cal-ring-fill" cx="60" cy="60" r="50" stroke-dasharray="314" stroke-dashoffset="314"/>
+        </svg>
+        <div class="cal-ring-center">
+          <div class="cal-ring-val" id="cal-ring-val">0</div>
+          <div class="cal-ring-lbl">kcal</div>
+        </div>
+      </div>
+      <div class="cal-ring-info">
+        <div class="cal-ring-goal" id="cal-ring-goal">— kcal objectif</div>
+        <div class="cal-ring-remain" id="cal-ring-remain">— kcal restants</div>
+        <div class="cal-ring-meals" id="cal-ring-meals">0 repas aujourd'hui</div>
+      </div>
+    </div>
+
+    <!-- Macros -->
+    <div class="macro-card" id="macro-card" style="display:none">
+      <div class="macro-title">Macronutriments</div>
+      <div class="macro-bars">
+        <div class="macro-row">
+          <div class="macro-label">🥩 Protéines</div>
+          <div class="macro-bar-wrap"><div class="macro-bar-fill protein" id="macro-prot-fill"></div></div>
+          <div class="macro-nums"><span id="macro-prot-val">0</span>/<span id="macro-prot-goal">—</span>g</div>
+        </div>
+        <div class="macro-row">
+          <div class="macro-label">🌾 Glucides</div>
+          <div class="macro-bar-wrap"><div class="macro-bar-fill carbs" id="macro-carb-fill"></div></div>
+          <div class="macro-nums"><span id="macro-carb-val">0</span>/<span id="macro-carb-goal">—</span>g</div>
+        </div>
+        <div class="macro-row">
+          <div class="macro-label">🫒 Lipides</div>
+          <div class="macro-bar-wrap"><div class="macro-bar-fill fat" id="macro-fat-fill"></div></div>
+          <div class="macro-nums"><span id="macro-fat-val">0</span>/<span id="macro-fat-goal">—</span>g</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Weight tracking -->
+    <div class="weight-card" id="weight-card">
+      <div class="weight-card-header">
+        <div class="weight-card-title">⚖️ Suivi du poids</div>
+        <button class="weight-log-btn" id="btn-log-weight">+ Peser</button>
+      </div>
+      <div class="weight-progress-wrap" id="weight-progress-wrap" style="display:none">
+        <div class="weight-progress-labels">
+          <span id="weight-start-lbl">— kg</span>
+          <span id="weight-target-lbl" style="color:var(--green-dk);font-weight:700">→ — kg</span>
+        </div>
+        <div class="weight-progress-bar-bg">
+          <div class="weight-progress-bar-fill" id="weight-progress-fill"></div>
+        </div>
+        <div class="weight-progress-sub" id="weight-progress-sub"></div>
+      </div>
+      <div class="weight-chart" id="weight-chart" style="display:none"></div>
+      <div class="weight-empty" id="weight-empty">Pesez-vous pour commencer le suivi</div>
+    </div>
+
+    <!-- Today's journal -->
+    <div class="journal-section">
+      <div class="journal-header">
+        <div class="journal-title">🍽️ Journal du jour</div>
+        <button class="journal-add-btn" id="btn-add-meal-2">＋ Ajouter</button>
+      </div>
+      <div id="journal-list"></div>
+    </div>
+
+    <!-- Tips -->
+    <div class="tips-card" id="tips-card" style="display:none"></div>
+  </div>
+</div>
+
   <!-- FAB -->
   <button class="fab" id="btn-add">＋</button>
 
@@ -1725,6 +1822,10 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
     <button class="tab-item" data-tab="courses">
       <span class="tab-item-icon">🛒</span>
       <span class="tab-item-label">Courses</span>
+    </button>
+    <button class="tab-item" data-tab="sante">
+      <span class="tab-item-icon">📊</span>
+      <span class="tab-item-label">Santé</span>
     </button>
     <button class="tab-item" data-tab="profil">
       <span class="tab-item-icon">👤</span>
@@ -1761,6 +1862,74 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
       </div>
       <button class="cat-modal-save" id="cat-modal-save">Enregistrer la catégorie</button>
       <button class="cat-modal-cancel" id="cat-modal-cancel">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ ADD MEAL MODAL ═══════════════ -->
+<div id="meal-modal-overlay" class="meal-modal-overlay hidden">
+  <div class="meal-modal-card">
+    <div class="meal-modal-title">Ajouter un repas</div>
+    <div class="meal-modal-body">
+      <div class="rf-field">
+        <label class="rf-label">Nom du repas *</label>
+        <input id="meal-inp-name" class="inp" type="text" placeholder="Ex: Pâtes carbonara">
+      </div>
+      <div style="display:flex;gap:10px">
+        <div class="rf-field" style="flex:1">
+          <label class="rf-label">Calories (kcal) *</label>
+          <input id="meal-inp-kcal" class="inp" type="number" placeholder="650" min="0" max="5000">
+        </div>
+        <div class="rf-field" style="flex:1">
+          <label class="rf-label">Repas</label>
+          <select id="meal-inp-type" class="inp">
+            <option value="petit-déjeuner">🌅 Petit-déj</option>
+            <option value="déjeuner" selected>☀️ Déjeuner</option>
+            <option value="dîner">🌙 Dîner</option>
+            <option value="collation">🍎 Collation</option>
+          </select>
+        </div>
+      </div>
+      <div class="meal-macro-toggle" id="meal-macro-toggle">
+        <button class="meal-macro-toggle-btn" id="btn-toggle-macros">+ Ajouter les macros</button>
+      </div>
+      <div id="meal-macros-section" style="display:none">
+        <div style="display:flex;gap:10px">
+          <div class="rf-field" style="flex:1">
+            <label class="rf-label">Protéines (g)</label>
+            <input id="meal-inp-prot" class="inp" type="number" placeholder="30" min="0">
+          </div>
+          <div class="rf-field" style="flex:1">
+            <label class="rf-label">Glucides (g)</label>
+            <input id="meal-inp-carb" class="inp" type="number" placeholder="80" min="0">
+          </div>
+          <div class="rf-field" style="flex:1">
+            <label class="rf-label">Lipides (g)</label>
+            <input id="meal-inp-fat" class="inp" type="number" placeholder="20" min="0">
+          </div>
+        </div>
+      </div>
+      <button class="cat-modal-save" id="meal-modal-save">Ajouter au journal</button>
+      <button class="cat-modal-cancel" id="meal-modal-cancel">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ WEIGHT LOG MODAL ═══════════════ -->
+<div id="weight-modal-overlay" class="meal-modal-overlay hidden">
+  <div class="meal-modal-card">
+    <div class="meal-modal-title">⚖️ Enregistrer mon poids</div>
+    <div class="meal-modal-body">
+      <div class="rf-field">
+        <label class="rf-label">Poids actuel (kg)</label>
+        <input id="weight-inp" class="inp" type="number" placeholder="70.5" min="30" max="300" step="0.1">
+      </div>
+      <div class="rf-field" id="target-weight-field">
+        <label class="rf-label">Poids cible (kg) — optionnel</label>
+        <input id="target-weight-inp" class="inp" type="number" placeholder="65" min="30" max="300" step="0.1">
+      </div>
+      <button class="cat-modal-save" id="weight-modal-save">Enregistrer</button>
+      <button class="cat-modal-cancel" id="weight-modal-cancel">Annuler</button>
     </div>
   </div>
 </div>
