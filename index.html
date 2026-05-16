@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FrigoChef</title>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
 <!-- ═══════════════════════════════════════════════════════════
      FRIGOCHEF — Configuration Firebase
@@ -316,6 +317,40 @@ body {
   font-family: 'Jost', sans-serif; cursor: pointer; transition: background 0.15s;
 }
 .add-modal-confirm:hover { background: var(--green-m); }
+
+/* ── Barcode scanner ── */
+.btn-scan {
+  width: 100%; padding: 9px 13px; margin-bottom: 0.9rem;
+  background: var(--bg); color: var(--ink); border: 1px dashed var(--border2,var(--border));
+  border-radius: 8px; font-size: 0.88rem; font-family: 'Jost', sans-serif;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: background 0.15s;
+}
+.btn-scan:hover { background: var(--green-l); border-color: var(--green); }
+.scanner-view { display: none; margin-bottom: 0.9rem; }
+.scanner-view.active { display: block; }
+.scanner-box {
+  width: 100%; border-radius: 10px; overflow: hidden;
+  background: #000; position: relative;
+}
+#scanner-reader { width: 100%; }
+#scanner-reader video { width: 100% !important; border-radius: 10px; }
+.scanner-hint {
+  text-align: center; font-size: 0.78rem; color: var(--ink3); margin-top: 6px;
+}
+.btn-scan-cancel {
+  width: 100%; padding: 7px; margin-top: 6px;
+  background: transparent; border: 1px solid var(--border); border-radius: 8px;
+  font-size: 0.82rem; font-family: 'Jost', sans-serif; color: var(--ink3);
+  cursor: pointer;
+}
+.scan-result-banner {
+  background: var(--green-l); border: 1px solid var(--green);
+  border-radius: 8px; padding: 10px 12px; margin-bottom: 0.9rem;
+  font-size: 0.82rem; color: var(--green); display: none;
+}
+.scan-result-banner.visible { display: flex; align-items: center; gap: 8px; }
+.scan-kcal { font-size: 0.75rem; color: var(--ink3); margin-top: 2px; }
 
 .fridge-scroll { flex: 1; overflow-y: auto; padding: 0.7rem; }
 .fridge-scroll::-webkit-scrollbar { width: 3px; }
@@ -867,6 +902,27 @@ body {
 <div id="add-food-overlay" class="add-modal-overlay hidden">
   <div class="add-modal-card">
     <div class="add-modal-title">Ajouter un aliment</div>
+
+    <!-- Bouton scan -->
+    <button class="btn-scan" id="btn-scan-barcode">📷 Scanner un code-barres</button>
+
+    <!-- Vue caméra -->
+    <div class="scanner-view" id="scanner-view">
+      <div class="scanner-box">
+        <div id="scanner-reader"></div>
+      </div>
+      <div class="scanner-hint">Pointez la caméra vers le code-barres du produit</div>
+      <button class="btn-scan-cancel" id="btn-scan-stop">✕ Annuler le scan</button>
+    </div>
+
+    <!-- Bannière produit trouvé -->
+    <div class="scan-result-banner" id="scan-banner">
+      <span>✅</span>
+      <div>
+        <div id="scan-banner-name"></div>
+        <div class="scan-kcal" id="scan-banner-kcal"></div>
+      </div>
+    </div>
 
     <div class="add-modal-field">
       <label class="add-modal-label" for="inp-name">Nom de l'aliment *</label>
@@ -1707,6 +1763,7 @@ window.addEventListener('fc-ready', () => {
 
   // Add food modal
   const addOverlay = document.getElementById('add-food-overlay');
+  let scanner = null;
 
   function openAddModal() {
     document.getElementById('inp-name').value = '';
@@ -1714,13 +1771,76 @@ window.addEventListener('fc-ready', () => {
     document.getElementById('inp-unit').value = '';
     document.getElementById('inp-dlc').value  = '';
     document.getElementById('inp-note').value = '';
+    document.getElementById('scan-banner').classList.remove('visible');
+    document.getElementById('scanner-view').classList.remove('active');
     addOverlay.classList.remove('hidden');
     setTimeout(() => document.getElementById('inp-name').focus(), 80);
   }
 
   function closeAddModal() {
+    stopScanner();
     addOverlay.classList.add('hidden');
   }
+
+  // ── Barcode scanner ──
+  async function startScanner() {
+    document.getElementById('scanner-view').classList.add('active');
+    document.getElementById('btn-scan-barcode').style.display = 'none';
+    try {
+      scanner = new Html5Qrcode('scanner-reader');
+      await scanner.start(
+        { facingMode: 'environment' },
+        { fps: 10, qrbox: { width: 260, height: 120 } },
+        onBarcodeDetected,
+        () => {}
+      );
+    } catch (err) {
+      toast('Impossible d\'accéder à la caméra', 'error');
+      stopScanner();
+    }
+  }
+
+  async function stopScanner() {
+    document.getElementById('scanner-view').classList.remove('active');
+    document.getElementById('btn-scan-barcode').style.display = '';
+    if (scanner) {
+      try { await scanner.stop(); } catch (_) {}
+      try { scanner.clear(); } catch (_) {}
+      scanner = null;
+    }
+  }
+
+  async function onBarcodeDetected(barcode) {
+    await stopScanner();
+    toast('Code-barres détecté, recherche du produit…');
+    try {
+      const res  = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
+      const data = await res.json();
+      if (data.status !== 1) { toast('Produit non trouvé dans la base Open Food Facts', 'error'); return; }
+      const p    = data.product;
+      const name = p.product_name_fr || p.product_name || p.generic_name_fr || p.generic_name || '';
+      const qty  = p.quantity || '';
+      const kcal = p.nutriments?.['energy-kcal_100g'];
+      const prot = p.nutriments?.proteins_100g;
+      const fat  = p.nutriments?.fat_100g;
+      const carb = p.nutriments?.carbohydrates_100g;
+
+      if (name) document.getElementById('inp-name').value = name;
+      if (qty)  document.getElementById('inp-note').value = qty;
+
+      const banner = document.getElementById('scan-banner');
+      document.getElementById('scan-banner-name').textContent = name || '(nom inconnu)';
+      document.getElementById('scan-banner-kcal').textContent = kcal
+        ? `${Math.round(kcal)} kcal · ${Math.round(prot||0)}g prot · ${Math.round(fat||0)}g lip · ${Math.round(carb||0)}g glu (pour 100g)`
+        : '';
+      banner.classList.add('visible');
+    } catch (err) {
+      toast('Erreur lors de la recherche du produit', 'error');
+    }
+  }
+
+  document.getElementById('btn-scan-barcode').addEventListener('click', startScanner);
+  document.getElementById('btn-scan-stop').addEventListener('click', stopScanner);
 
   function confirmAddFood() {
     const nameEl = document.getElementById('inp-name');
