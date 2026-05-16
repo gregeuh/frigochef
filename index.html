@@ -104,6 +104,12 @@
     },
     loadShoppingList: (uid, cb) => onSnapshot(doc(db, 'shoppingList', uid),
       snap => cb(snap.exists() ? snap.data().items || [] : [])
+    ),
+    saveCategories: async (uid, cats) => {
+      await setDoc(doc(db, 'userCategories', uid), { cats, updatedAt: Date.now() });
+    },
+    loadCategories: (uid, cb) => onSnapshot(doc(db, 'userCategories', uid),
+      snap => cb(snap.exists() ? snap.data().cats || [] : [])
     )
   };
 
@@ -962,6 +968,128 @@ body {
 .settings-row-icon { font-size: 1.1rem; }
 .settings-chevron { color: var(--ink3); font-size: 1rem; opacity: 0.5; }
 
+/* ─── PROFILE: FRIGO SHARING CARD ─── */
+.share-status-card {
+  margin: 0 14px 10px;
+  background: var(--surface); border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm); overflow: hidden;
+}
+.share-status-inner {
+  padding: 14px 16px; display: flex; align-items: center; gap: 12px;
+}
+.share-status-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+  background: var(--border2);
+}
+.share-status-dot.active { background: var(--green); box-shadow: 0 0 0 3px var(--green-l); }
+.share-status-info { flex: 1; min-width: 0; }
+.share-status-title { font-size: 0.86rem; font-weight: 700; color: var(--ink); }
+.share-status-sub { font-size: 0.72rem; color: var(--ink3); margin-top: 1px; }
+.share-status-actions { display: flex; gap: 6px; padding: 0 16px 14px; }
+.share-status-btn {
+  flex: 1; padding: 8px 10px; border-radius: 10px; border: none;
+  font-size: 0.76rem; font-weight: 600; cursor: pointer;
+  background: var(--green-l); color: var(--green-dk);
+  transition: all 0.18s cubic-bezier(0.34,1.56,0.64,1);
+}
+.share-status-btn:hover { opacity: 0.85; }
+.share-status-btn:active { transform: scale(0.96); }
+.share-status-btn.secondary { background: var(--surface2); color: var(--ink3); }
+.share-status-btn.danger { background: var(--red-l); color: var(--red); }
+
+/* ─── PROFILE: CATEGORIES SECTION ─── */
+.profile-section-title {
+  font-size: 0.72rem; font-weight: 600; color: var(--ink3);
+  text-transform: uppercase; letter-spacing: 0.06em;
+  margin: 16px 14px 8px;
+}
+.cat-grid {
+  margin: 0 14px; display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px;
+}
+.cat-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 10px 5px 8px; border-radius: 20px;
+  font-size: 0.76rem; font-weight: 600;
+  background: var(--surface); border: 1.5px solid transparent;
+  box-shadow: var(--shadow-sm); cursor: default;
+  transition: transform 0.15s cubic-bezier(0.34,1.56,0.64,1);
+}
+.cat-chip.user-cat { cursor: pointer; }
+.cat-chip.user-cat:hover { transform: scale(1.05); }
+.cat-chip-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.cat-chip-del {
+  width: 14px; height: 14px; border-radius: 50%; border: none;
+  background: rgba(0,0,0,0.12); color: var(--ink3);
+  font-size: 0.6rem; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; margin-left: 2px; line-height: 1;
+  transition: background 0.15s;
+}
+.cat-chip-del:hover { background: var(--red); color: #fff; }
+.cat-add-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 12px; border-radius: 20px;
+  font-size: 0.76rem; font-weight: 700;
+  background: var(--green-l); color: var(--green-dk);
+  border: 1.5px dashed var(--green); cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.34,1.56,0.64,1);
+  box-shadow: none;
+}
+.cat-add-btn:hover { background: var(--green); color: #fff; border-style: solid; }
+.cat-add-btn:active { transform: scale(0.96); }
+
+/* ─── CATEGORY MODAL ─── */
+.cat-modal-overlay {
+  position: fixed; inset: 0; background: rgba(10,10,14,0.60);
+  display: flex; align-items: flex-end; justify-content: center;
+  z-index: 400; animation: fadeIn 0.18s ease;
+}
+@media (min-width: 520px) {
+  .cat-modal-overlay { align-items: center; }
+}
+.cat-modal-card {
+  background: var(--surface); border-radius: var(--r-xl) var(--r-xl) 0 0;
+  width: 100%; max-width: 430px; padding: 0 0 calc(16px + env(safe-area-inset-bottom));
+  box-shadow: var(--shadow-lg);
+  animation: springIn 0.36s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+@media (min-width: 520px) {
+  .cat-modal-card { border-radius: var(--r-xl); padding-bottom: 16px; max-width: 400px; }
+}
+.cat-modal-card::before {
+  content: ''; display: block; width: 36px; height: 4px;
+  background: var(--border2); border-radius: 2px; margin: 12px auto 16px;
+}
+.cat-modal-title { font-size: 1.1rem; font-weight: 800; color: var(--ink); text-align: center; margin-bottom: 18px; }
+.cat-modal-body { padding: 0 20px; display: flex; flex-direction: column; gap: 14px; }
+.cat-emoji-row { display: flex; align-items: center; gap: 10px; }
+.cat-emoji-preview {
+  width: 52px; height: 52px; border-radius: 14px; font-size: 1.8rem;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface2); border: 1.5px solid var(--border); flex-shrink: 0;
+  transition: background 0.2s;
+}
+.cat-color-palette { display: flex; gap: 8px; flex-wrap: wrap; }
+.cat-color-swatch {
+  width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
+  border: 2.5px solid transparent; transition: transform 0.15s, border-color 0.15s;
+}
+.cat-color-swatch.selected { border-color: var(--ink); transform: scale(1.2); }
+.cat-modal-save {
+  width: 100%; padding: 13px; border: none; border-radius: var(--r-lg);
+  background: linear-gradient(135deg, #2ECC5A 0%, #1A8035 100%);
+  color: #fff; font-size: 0.92rem; font-weight: 700; cursor: pointer;
+  box-shadow: 0 3px 12px rgba(26,128,53,0.30);
+  transition: opacity 0.15s, transform 0.15s;
+}
+.cat-modal-save:hover { opacity: 0.9; }
+.cat-modal-save:active { transform: scale(0.97); }
+.cat-modal-cancel {
+  width: 100%; padding: 9px; background: none; border: none;
+  color: var(--ink3); font-size: 0.85rem; cursor: pointer; margin-top: 2px;
+  transition: color 0.15s;
+}
+.cat-modal-cancel:hover { color: var(--ink); }
+
 /* ─── DARK MODE TOGGLE ─── */
 .theme-toggle-switch {
   width: 44px; height: 26px; border-radius: 13px;
@@ -1476,13 +1604,25 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
           </div>
         </div>
       </div>
+      <!-- Frigo partagé card -->
+      <div class="share-status-card" id="profile-share-card">
+        <div class="share-status-inner">
+          <div class="share-status-dot" id="profile-share-dot"></div>
+          <div class="share-status-info">
+            <div class="share-status-title" id="profile-share-title">Frigo partagé</div>
+            <div class="share-status-sub" id="profile-share-sub">Partagez votre frigo avec vos proches</div>
+          </div>
+          <button class="settings-row" id="btn-share-profil" style="width:auto;padding:6px 12px;border-radius:10px;border:1.5px solid var(--border2);font-size:0.76rem;font-weight:600;background:var(--surface2)">Gérer</button>
+        </div>
+        <div class="share-status-actions hidden" id="profile-share-actions">
+          <button class="share-status-btn" id="profile-share-copy">📋 Copier le code</button>
+          <button class="share-status-btn danger" id="profile-share-quit">Quitter</button>
+        </div>
+      </div>
+
       <div class="settings-group">
         <button class="settings-row" id="btn-profile">
           <span class="settings-label"><span class="settings-row-icon">⚙️</span>Modifier mon profil</span>
-          <span class="settings-chevron">›</span>
-        </button>
-        <button class="settings-row" id="btn-share-profil">
-          <span class="settings-label"><span class="settings-row-icon">👥</span><span id="share-label">Frigo partagé</span></span>
           <span class="settings-chevron">›</span>
         </button>
         <button class="settings-row" id="btn-toggle-theme">
@@ -1490,6 +1630,11 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
           <div class="theme-toggle-switch" id="theme-switch"><div class="theme-toggle-thumb"></div></div>
         </button>
       </div>
+
+      <!-- Catégories -->
+      <div class="profile-section-title">Catégories alimentaires</div>
+      <div class="cat-grid" id="profile-cat-grid"></div>
+
       <div class="settings-group">
         <button class="settings-row danger" id="btn-logout">
           <span class="settings-label"><span class="settings-row-icon">🚪</span>Déconnexion</span>
@@ -1524,6 +1669,36 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
 </div>
 
 <!-- ═══════════════ URL IMPORT MODAL ═══════════════ -->
+<!-- ═══════════════ CATEGORY MODAL ═══════════════ -->
+<div id="cat-modal-overlay" class="cat-modal-overlay hidden">
+  <div class="cat-modal-card">
+    <div class="cat-modal-title">Nouvelle catégorie</div>
+    <div class="cat-modal-body">
+      <div class="cat-emoji-row">
+        <div class="cat-emoji-preview" id="cat-emoji-preview">🏷️</div>
+        <div class="rf-field" style="flex:1">
+          <label class="rf-label">Emoji</label>
+          <input id="cat-inp-emoji" class="inp" type="text" placeholder="🏷️" maxlength="2" style="text-align:center;font-size:1.3rem">
+        </div>
+        <div class="rf-field" style="flex:2">
+          <label class="rf-label">Nom *</label>
+          <input id="cat-inp-name" class="inp" type="text" placeholder="Ex: Épices">
+        </div>
+      </div>
+      <div class="rf-field">
+        <label class="rf-label">Couleur</label>
+        <div class="cat-color-palette" id="cat-color-palette"></div>
+      </div>
+      <div class="rf-field">
+        <label class="rf-label">Mots-clés (séparés par des virgules)</label>
+        <input id="cat-inp-words" class="inp" type="text" placeholder="Ex: poivre, cumin, thym, basilic">
+      </div>
+      <button class="cat-modal-save" id="cat-modal-save">Enregistrer la catégorie</button>
+      <button class="cat-modal-cancel" id="cat-modal-cancel">Annuler</button>
+    </div>
+  </div>
+</div>
+
 <div id="import-overlay" class="import-overlay hidden">
   <div class="import-card">
     <div class="import-title">🔗 Importer une recette</div>
@@ -1936,10 +2111,13 @@ const FOOD_CATEGORIES = [
   { key: 'boissons', label: '🧃 Boissons',            color: '#9775FA', bg: 'rgba(151,117,250,0.10)',
     words: ['eau','jus','soda','bière','vin','café','thé','smoothie','limonade','sirop','kombucha','lait','boisson'] },
 ];
+function allCategories() {
+  return [...userCategories, ...FOOD_CATEGORIES];
+}
 function foodCategory(name) {
   const n = name.toLowerCase();
-  for (const cat of FOOD_CATEGORIES) {
-    if (cat.words.some(w => n.includes(w))) return cat;
+  for (const cat of allCategories()) {
+    if (cat.words?.some(w => n.includes(w))) return cat;
   }
   return { key: 'autres', label: '📦 Autres', color: '#868E96', bg: 'rgba(134,142,150,0.10)' };
 }
@@ -1974,6 +2152,8 @@ const RESTRICTION_KEYWORDS = {
 };
 let shoppingList = []; // { id, name, recipe, bought }
 let unsubShopping = null;
+let userCategories = []; // { key, label, color, bg, words }
+let unsubCategories = null;
 
 const GOAL_LABELS = {
   lose_weight:  'Perte de poids',
@@ -2398,7 +2578,7 @@ function renderCourses() {
     </div>`;
 
   // Group by food category (use stored catKey if available, else auto-detect)
-  const allCatDefs = [...FOOD_CATEGORIES, { key: 'autres', label: '📦 Autres', color: '#868E96', bg: 'rgba(134,142,150,0.10)' }];
+  const allCatDefs = [...allCategories(), { key: 'autres', label: '📦 Autres', color: '#868E96', bg: 'rgba(134,142,150,0.10)' }];
   const catDefMap = Object.fromEntries(allCatDefs.map(c => [c.key, c]));
   const byCat = {};
   shoppingList.forEach(item => {
@@ -2829,20 +3009,19 @@ function hideOnboarding() {
 
 function updateShareBtn() {
   const btn = document.getElementById('btn-share');
-  const lbl = document.getElementById('share-label');
-  if (!btn || !lbl) return;
+  if (!btn) return;
   if (sharedFridgeCode) {
     btn.classList.add('active');
-    lbl.textContent = `Frigo partagé · ${sharedFridgeCode}`;
   } else {
     btn.classList.remove('active');
-    lbl.textContent = 'Partager mon frigo';
   }
+  renderProfileShareCard();
 }
 
 function applyProfileToUI() {
   if (!profile) return;
   updateShareBtn();
+  renderProfileShareCard();
   const GOAL_LABELS = { lose_weight:'Perte de poids', maintain:'Maintien du poids', eat_healthy:'Alimentation saine', build_muscle:'Prise de muscle' };
   const badge = document.getElementById('profile-goal-badge');
   if (badge && profile.goal) badge.textContent = GOAL_LABELS[profile.goal] || 'MaCuisine';
@@ -2853,6 +3032,131 @@ function applyProfileToUI() {
     document.getElementById('profile-kcal-val').textContent = profile.dailyCalories;
     document.getElementById('profile-meal-val').textContent = profile.caloriesPerMeal || '—';
   }
+}
+
+/* ═══════════════════════════════════════════════════
+   PROFILE: CATEGORIES GRID
+   ═══════════════════════════════════════════════════ */
+const CAT_COLOR_PALETTE = [
+  '#FF6B6B','#FF8C42','#FFD43B','#51CF66','#28A745',
+  '#74C0FC','#4DABF7','#9775FA','#E64980','#868E96',
+  '#FFA94D','#63E6BE','#F06595','#66D9E8','#A9E34B'
+];
+
+function renderProfileCats() {
+  const grid = document.getElementById('profile-cat-grid');
+  if (!grid) return;
+  const all = [...userCategories, ...FOOD_CATEGORIES];
+  grid.innerHTML = all.map(cat => {
+    const isUser = userCategories.some(u => u.key === cat.key);
+    return `<div class="cat-chip${isUser ? ' user-cat' : ''}" style="border-color:${cat.color}20;color:${cat.color}">
+      <div class="cat-chip-dot" style="background:${cat.color}"></div>
+      <span>${cat.label}</span>
+      ${isUser ? `<button class="cat-chip-del" data-cat-key="${cat.key}" title="Supprimer">✕</button>` : ''}
+    </div>`;
+  }).join('') + `<button class="cat-add-btn" id="btn-add-cat">＋ Nouvelle</button>`;
+
+  // Delete listener
+  grid.querySelectorAll('.cat-chip-del').forEach(btn => {
+    btn.addEventListener('click', async e => {
+      e.stopPropagation();
+      const key = btn.dataset.catKey;
+      userCategories = userCategories.filter(c => c.key !== key);
+      await window.__FC.saveCategories(user.uid, userCategories);
+      renderProfileCats();
+    });
+  });
+
+  // Add button
+  const addBtn = document.getElementById('btn-add-cat');
+  if (addBtn) addBtn.addEventListener('click', openCatModal);
+}
+
+function renderProfileShareCard() {
+  const dot = document.getElementById('profile-share-dot');
+  const title = document.getElementById('profile-share-title');
+  const sub = document.getElementById('profile-share-sub');
+  const actions = document.getElementById('profile-share-actions');
+  if (!dot) return;
+  if (sharedFridgeCode) {
+    dot.classList.add('active');
+    title.textContent = 'Frigo partagé actif';
+    sub.textContent = `Code : ${sharedFridgeCode}`;
+    actions.classList.remove('hidden');
+  } else {
+    dot.classList.remove('active');
+    title.textContent = 'Frigo partagé';
+    sub.textContent = 'Partagez votre frigo avec vos proches';
+    actions.classList.add('hidden');
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   CATEGORY MODAL
+   ═══════════════════════════════════════════════════ */
+let catModalColor = CAT_COLOR_PALETTE[4];
+
+function openCatModal() {
+  catModalColor = CAT_COLOR_PALETTE[4];
+  const inp = document.getElementById('cat-inp-emoji');
+  const nameInp = document.getElementById('cat-inp-name');
+  const wordsInp = document.getElementById('cat-inp-words');
+  if (inp) inp.value = '';
+  if (nameInp) nameInp.value = '';
+  if (wordsInp) wordsInp.value = '';
+  updateCatEmojiPreview('🏷️', catModalColor);
+  renderCatColorPalette();
+  document.getElementById('cat-modal-overlay').classList.remove('hidden');
+  if (nameInp) nameInp.focus();
+}
+
+function closeCatModal() {
+  document.getElementById('cat-modal-overlay').classList.add('hidden');
+}
+
+function renderCatColorPalette() {
+  const palette = document.getElementById('cat-color-palette');
+  if (!palette) return;
+  palette.innerHTML = CAT_COLOR_PALETTE.map(c =>
+    `<div class="cat-color-swatch${c === catModalColor ? ' selected' : ''}"
+      style="background:${c}" data-color="${c}"></div>`
+  ).join('');
+  palette.querySelectorAll('.cat-color-swatch').forEach(sw => {
+    sw.addEventListener('click', () => {
+      catModalColor = sw.dataset.color;
+      renderCatColorPalette();
+      updateCatEmojiPreview(
+        document.getElementById('cat-inp-emoji').value || '🏷️', catModalColor
+      );
+    });
+  });
+}
+
+function updateCatEmojiPreview(emoji, color) {
+  const prev = document.getElementById('cat-emoji-preview');
+  if (prev) {
+    prev.textContent = emoji || '🏷️';
+    prev.style.background = color + '22';
+    prev.style.borderColor = color + '55';
+  }
+}
+
+async function saveCatModal() {
+  const emoji = (document.getElementById('cat-inp-emoji').value.trim() || '🏷️');
+  const name = document.getElementById('cat-inp-name').value.trim();
+  const wordsRaw = document.getElementById('cat-inp-words').value;
+  if (!name) { toast('Donnez un nom à la catégorie', 'error'); return; }
+  const words = wordsRaw.split(',').map(w => w.trim().toLowerCase()).filter(Boolean);
+  const key = 'user_' + name.toLowerCase().replace(/\s+/g,'_') + '_' + Date.now();
+  const label = `${emoji} ${name}`;
+  const bg = catModalColor + '1A';
+  const newCat = { key, label, color: catModalColor, bg, words };
+  userCategories = [...userCategories, newCat];
+  await window.__FC.saveCategories(user.uid, userCategories);
+  renderProfileCats();
+  closeCatModal();
+  toast(`✓ Catégorie "${label}" créée`, 'success');
+  haptic(15);
 }
 
 /* ═══════════════════════════════════════════════════
@@ -2907,6 +3211,11 @@ window.addEventListener('fc-ready', () => {
         shoppingList = items; renderCourses();
       });
 
+      if (unsubCategories) unsubCategories();
+      unsubCategories = window.__FC.loadCategories(fbUser.uid, cats => {
+        userCategories = cats; renderProfileCats();
+      });
+
       if (!profile) {
         showOnboarding();
       } else {
@@ -2921,6 +3230,7 @@ window.addEventListener('fc-ready', () => {
       if (unsubRecipes) { unsubRecipes(); unsubRecipes = null; }
       pantry = []; if (unsubPantry) { unsubPantry(); unsubPantry = null; }
       shoppingList = []; if (unsubShopping) { unsubShopping(); unsubShopping = null; }
+      userCategories = []; if (unsubCategories) { unsubCategories(); unsubCategories = null; }
     }
   });
 
@@ -3344,7 +3654,7 @@ window.addEventListener('fc-ready', () => {
     const detected = foodCategory(name);
     // Si pas encore de sélection, utiliser la catégorie détectée
     if (!manualShopCatKey) manualShopCatKey = detected.key;
-    const cats = [...FOOD_CATEGORIES, { key: 'autres', label: '📦 Autres', color: '#868E96' }];
+    const cats = [...allCategories(), { key: 'autres', label: '📦 Autres', color: '#868E96' }];
     row.style.display = 'flex';
     row.innerHTML = cats.map(cat => {
       const sel = cat.key === manualShopCatKey;
@@ -3450,6 +3760,40 @@ window.addEventListener('fc-ready', () => {
     if (dx > 0 && idx > 0) switchTab(TAB_ORDER[idx - 1]);
   }, { passive: true });
   document.getElementById('btn-share-profil').addEventListener('click', openShareModal);
+
+  // ── CATEGORY MODAL ──
+  document.getElementById('cat-modal-overlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('cat-modal-overlay')) closeCatModal();
+  });
+  document.getElementById('cat-modal-cancel').addEventListener('click', closeCatModal);
+  document.getElementById('cat-modal-save').addEventListener('click', saveCatModal);
+  document.getElementById('cat-inp-emoji').addEventListener('input', e => {
+    updateCatEmojiPreview(e.target.value || '🏷️', catModalColor);
+  });
+
+  // ── PROFILE SHARE CARD ──
+  document.getElementById('profile-share-copy').addEventListener('click', () => {
+    if (sharedFridgeCode) {
+      navigator.clipboard.writeText(sharedFridgeCode)
+        .then(() => toast(`📋 Code "${sharedFridgeCode}" copié !`, 'success'))
+        .catch(() => toast(sharedFridgeCode, 'success'));
+    }
+  });
+  document.getElementById('profile-share-quit').addEventListener('click', async () => {
+    if (!confirm('Quitter le frigo partagé ? Vous reviendrez à votre frigo personnel.')) return;
+    sharedFridgeCode = null;
+    profile = { ...profile, sharedFridgeCode: null };
+    await window.__FC.saveProfile(user.uid, profile);
+    if (unsub) unsub();
+    unsub = window.__FC.loadFridge(user.uid, items => {
+      fridge = items; renderFridge(); renderAlerts();
+    });
+    updateShareBtn();
+    toast('Frigo personnel restauré', 'success');
+  });
+
+  // Initialize profile tab
+  renderProfileCats();
 
   // Filters
   document.getElementById('filters').addEventListener('click', e => {
