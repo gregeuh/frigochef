@@ -1154,6 +1154,139 @@ body {
 }
 .cat-modal-cancel:hover { color: var(--ink); }
 
+/* ─── SANTÉ TAB ─── */
+.cal-ring-card {
+  display: flex; align-items: center; gap: 18px;
+  background: linear-gradient(145deg, #0f2318 0%, #0d1d30 100%);
+  border-radius: var(--r-xl); margin: 0 14px 10px;
+  padding: 18px 20px; position: relative; overflow: hidden;
+  box-shadow: var(--shadow-lg);
+}
+.cal-ring-card::before {
+  content: ''; position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 70% 70% at 10% 50%, rgba(40,167,69,0.30) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 60% at 90% 20%, rgba(45,107,228,0.20) 0%, transparent 50%);
+  pointer-events: none;
+}
+.cal-ring-wrap { position: relative; width: 110px; height: 110px; flex-shrink: 0; }
+.cal-ring-svg { width: 110px; height: 110px; transform: rotate(-90deg); }
+.cal-ring-bg { fill: none; stroke: rgba(255,255,255,0.10); stroke-width: 10; }
+.cal-ring-fill { fill: none; stroke: #2ECC5A; stroke-width: 10; stroke-linecap: round; transition: stroke-dashoffset 0.8s cubic-bezier(0.34,1.56,0.64,1), stroke 0.3s; }
+.cal-ring-fill.over { stroke: #E53935; }
+.cal-ring-center {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+.cal-ring-val { font-size: 1.5rem; font-weight: 900; color: #fff; letter-spacing: -0.04em; line-height: 1; }
+.cal-ring-lbl { font-size: 0.62rem; color: rgba(255,255,255,0.55); font-weight: 500; margin-top: 1px; }
+.cal-ring-info { flex: 1; position: relative; }
+.cal-ring-goal { font-size: 0.76rem; color: rgba(255,255,255,0.55); margin-bottom: 4px; }
+.cal-ring-remain { font-size: 1.1rem; font-weight: 800; color: #2ECC5A; letter-spacing: -0.03em; }
+.cal-ring-remain.over { color: #EF5350; }
+.cal-ring-meals { font-size: 0.72rem; color: rgba(255,255,255,0.40); margin-top: 6px; }
+
+/* Macros card */
+.macro-card {
+  background: var(--surface); border-radius: var(--r-lg);
+  margin: 0 14px 10px; padding: 14px 16px;
+  box-shadow: var(--shadow-sm);
+}
+.macro-title { font-size: 0.80rem; font-weight: 700; color: var(--ink); margin-bottom: 12px; }
+.macro-bars { display: flex; flex-direction: column; gap: 10px; }
+.macro-row { display: flex; align-items: center; gap: 8px; }
+.macro-label { font-size: 0.73rem; color: var(--ink2); width: 80px; flex-shrink: 0; }
+.macro-bar-wrap { flex: 1; height: 8px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+.macro-bar-fill { height: 100%; border-radius: 4px; transition: width 0.6s cubic-bezier(0.34,1.56,0.64,1); width: 0%; }
+.macro-bar-fill.protein { background: linear-gradient(90deg, #FF8C42, #FF6B6B); }
+.macro-bar-fill.carbs   { background: linear-gradient(90deg, #74C0FC, #4DABF7); }
+.macro-bar-fill.fat     { background: linear-gradient(90deg, #FFD43B, #FFA94D); }
+.macro-nums { font-size: 0.70rem; color: var(--ink3); width: 68px; text-align: right; flex-shrink: 0; }
+
+/* Weight card */
+.weight-card {
+  background: var(--surface); border-radius: var(--r-lg);
+  margin: 0 14px 10px; padding: 14px 16px;
+  box-shadow: var(--shadow-sm);
+}
+.weight-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.weight-card-title { font-size: 0.80rem; font-weight: 700; color: var(--ink); }
+.weight-log-btn {
+  padding: 5px 12px; border-radius: 20px; border: none;
+  background: var(--green-l); color: var(--green-dk);
+  font-size: 0.73rem; font-weight: 600; cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.34,1.56,0.64,1);
+}
+.weight-log-btn:hover { background: var(--green); color: #fff; }
+.weight-progress-labels { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--ink3); margin-bottom: 5px; }
+.weight-progress-bar-bg { height: 8px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+.weight-progress-bar-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, #2ECC5A, #1A8035); transition: width 0.6s cubic-bezier(0.34,1.56,0.64,1); }
+.weight-progress-sub { font-size: 0.72rem; color: var(--ink3); margin-top: 5px; text-align: center; }
+.weight-chart { display: flex; align-items: flex-end; gap: 6px; height: 60px; margin-top: 12px; padding-top: 4px; }
+.weight-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; height: 100%; justify-content: flex-end; }
+.weight-bar { width: 100%; border-radius: 4px 4px 0 0; background: linear-gradient(180deg, #51CF66, #1A8035); min-height: 4px; transition: height 0.5s cubic-bezier(0.34,1.56,0.64,1); }
+.weight-bar-lbl { font-size: 0.55rem; color: var(--ink3); white-space: nowrap; }
+.weight-bar-val { font-size: 0.62rem; font-weight: 600; color: var(--ink2); }
+.weight-empty { font-size: 0.80rem; color: var(--ink3); text-align: center; padding: 8px 0; }
+
+/* Journal section */
+.journal-section { margin: 0 14px 10px; }
+.journal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.journal-title { font-size: 0.72rem; font-weight: 600; color: var(--ink3); text-transform: uppercase; letter-spacing: 0.06em; }
+.journal-add-btn {
+  padding: 4px 10px; border-radius: 20px; border: none;
+  background: var(--green-l); color: var(--green-dk);
+  font-size: 0.72rem; font-weight: 600; cursor: pointer;
+}
+.journal-entry {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: var(--r); background: var(--surface);
+  margin-bottom: 4px; box-shadow: var(--shadow-sm);
+}
+.journal-entry-icon { font-size: 1.1rem; flex-shrink: 0; }
+.journal-entry-info { flex: 1; min-width: 0; }
+.journal-entry-name { font-size: 0.84rem; font-weight: 600; color: var(--ink); }
+.journal-entry-meta { font-size: 0.70rem; color: var(--ink3); margin-top: 1px; }
+.journal-entry-kcal { font-size: 0.90rem; font-weight: 800; color: var(--green-dk); letter-spacing: -0.02em; }
+.journal-entry-del { background: none; border: none; color: var(--ink3); font-size: 0.8rem; cursor: pointer; padding: 4px; border-radius: 6px; transition: color 0.15s, background 0.15s; }
+.journal-entry-del:hover { color: var(--red); background: var(--red-l); }
+.journal-empty { text-align: center; padding: 20px; color: var(--ink3); font-size: 0.84rem; background: var(--surface); border-radius: var(--r); box-shadow: var(--shadow-sm); }
+
+/* Tips card */
+.tips-card {
+  margin: 0 14px 20px; display: flex; flex-direction: column; gap: 6px;
+}
+.tip-item {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 10px 13px; border-radius: var(--r);
+  background: var(--surface); box-shadow: var(--shadow-sm);
+}
+.tip-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+.tip-text { font-size: 0.80rem; color: var(--ink2); line-height: 1.45; }
+
+/* Meal / weight modal */
+.meal-modal-overlay {
+  position: fixed; inset: 0; background: rgba(10,10,14,0.60);
+  display: flex; align-items: flex-end; justify-content: center;
+  z-index: 400; animation: fadeIn 0.18s ease;
+}
+@media (min-width: 520px) { .meal-modal-overlay { align-items: center; } }
+.meal-modal-card {
+  background: var(--surface); border-radius: var(--r-xl) var(--r-xl) 0 0;
+  width: 100%; max-width: 430px; padding: 0 0 calc(16px + env(safe-area-inset-bottom));
+  box-shadow: var(--shadow-lg); animation: springIn 0.36s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+@media (min-width: 520px) { .meal-modal-card { border-radius: var(--r-xl); padding-bottom: 16px; max-width: 400px; } }
+.meal-modal-card::before {
+  content: ''; display: block; width: 36px; height: 4px;
+  background: var(--border2); border-radius: 2px; margin: 12px auto 16px;
+}
+.meal-modal-title { font-size: 1.05rem; font-weight: 800; color: var(--ink); text-align: center; margin-bottom: 18px; }
+.meal-modal-body { padding: 0 20px; display: flex; flex-direction: column; gap: 12px; }
+.meal-macro-toggle { text-align: center; }
+.meal-macro-toggle-btn { background: none; border: 1px dashed var(--border2); border-radius: 20px; padding: 4px 14px; font-size: 0.75rem; color: var(--ink3); cursor: pointer; }
+.meal-macro-toggle-btn:hover { color: var(--green-dk); border-color: var(--green); }
+
 /* ─── DARK MODE TOGGLE ─── */
 .theme-toggle-switch {
   width: 44px; height: 26px; border-radius: 13px;
@@ -2389,6 +2522,11 @@ let shoppingList = []; // { id, name, recipe, bought }
 let unsubShopping = null;
 let userCategories = []; // { key, label, color, bg, words }
 let unsubCategories = null;
+let dailyLog = [];
+let weightLog = [];
+let unsubDailyLog = null;
+let unsubWeightLog = null;
+const todayDate = () => new Date().toISOString().slice(0, 10);
 
 const GOAL_LABELS = {
   lose_weight:  'Perte de poids',
@@ -2966,6 +3104,7 @@ function openModal(r) {
       <div class="modal-actions">
         <button class="btn-modal-action btn-fav-modal" id="modal-fav">${isFav ? '⭐ Favori' : '☆ Favori'}</button>
         <button class="btn-modal-action btn-pdf" id="modal-pdf">⬇ PDF</button>
+        <button class="btn-modal-action" id="modal-add-journal" style="background:var(--green-l);color:var(--green-dk)">📊 Journal</button>
         ${customActions}
       </div>
       <button class="btn-close" id="modal-close" style="margin-top:8px">Fermer</button>
@@ -2982,6 +3121,11 @@ function openModal(r) {
     if (btn) btn.textContent = favorites.includes(String(r.id)) ? '⭐ Favori' : '☆ Favori';
   });
   document.getElementById('modal-pdf').addEventListener('click', () => exportPDF(r));
+  document.getElementById('modal-add-journal').addEventListener('click', () => {
+    closeModal();
+    openAddMealModal({ name: r.name, kcal: r.calories, protein: r.protein, carbs: r.carbs, fat: r.fat });
+    if (window.switchTabPublic) window.switchTabPublic('sante');
+  });
   if (r.isCustom) {
     document.getElementById('modal-edit').addEventListener('click', () => { closeModal(); openRecipeForm(r); });
     document.getElementById('modal-del').addEventListener('click', () => {
@@ -3257,6 +3401,7 @@ function applyProfileToUI() {
   if (!profile) return;
   updateShareBtn();
   renderProfileShareCard();
+  renderSante();
 
   const GOAL_LABELS = {
     lose_weight: '🎯 Perte de poids',
@@ -3424,6 +3569,262 @@ async function saveCatModal() {
 }
 
 /* ═══════════════════════════════════════════════════
+   SANTÉ TAB
+   ═══════════════════════════════════════════════════ */
+const MEAL_ICONS = { 'petit-déjeuner':'🌅', 'déjeuner':'☀️', 'dîner':'🌙', 'collation':'🍎' };
+const GOAL_TIPS = {
+  lose_weight: [
+    { icon:'💧', text:'Boire 2L d\'eau par jour réduit la sensation de faim et booste le métabolisme.' },
+    { icon:'🥗', text:'Commencez le repas par des crudités : vous mangerez naturellement moins.' },
+    { icon:'⏰', text:'La satiété prend 20 min à apparaître — mangez lentement.' },
+    { icon:'🥩', text:'Privilégier les protéines préserve la masse musculaire pendant la perte de poids.' },
+  ],
+  build_muscle: [
+    { icon:'🥩', text:'Visez 1.8–2.2g de protéines par kg de poids pour une prise de masse efficace.' },
+    { icon:'⚡', text:'Un repas riche en glucides avant l\'entraînement maximise les performances.' },
+    { icon:'🍳', text:'Une collation protéinée dans les 30 min post-effort accélère la récupération.' },
+    { icon:'😴', text:'La croissance musculaire se fait la nuit — 7–9h de sommeil sont essentiels.' },
+  ],
+  eat_healthy: [
+    { icon:'🌈', text:'Variez les couleurs dans l\'assiette pour couvrir tous les micronutriments.' },
+    { icon:'🌾', text:'Préférez les céréales complètes : plus de fibres, meilleure satiété.' },
+    { icon:'🫒', text:'Les bonnes graisses (olive, avocat, noix) sont essentielles au cerveau.' },
+    { icon:'🥦', text:'La cuisson vapeur préserve jusqu\'à 90% des vitamines des légumes.' },
+  ],
+  maintain: [
+    { icon:'⚖️', text:'Écoutez vos signaux de faim et de satiété plutôt que de vous fier aux horaires.' },
+    { icon:'📅', text:'La régularité des repas stabilise la glycémie et évite les grignotages.' },
+    { icon:'🍎', text:'2 fruits et 3 légumes par jour couvrent les besoins en fibres.' },
+    { icon:'🏃', text:'30 min de marche par jour suffit pour maintenir un poids stable.' },
+  ],
+};
+
+function getMacroTargets() {
+  if (!profile?.dailyCalories) return null;
+  const kcal = profile.dailyCalories;
+  let protPct, fatPct, carbPct;
+  switch(profile.goal) {
+    case 'build_muscle': protPct=0.30; fatPct=0.25; carbPct=0.45; break;
+    case 'lose_weight':  protPct=0.35; fatPct=0.30; carbPct=0.35; break;
+    default:             protPct=0.25; fatPct=0.30; carbPct=0.45;
+  }
+  return {
+    protein: Math.round(kcal * protPct / 4),
+    fat:     Math.round(kcal * fatPct  / 9),
+    carbs:   Math.round(kcal * carbPct / 4),
+  };
+}
+
+function renderSante() {
+  if (!document.getElementById('tab-sante')) return;
+
+  // ── Calories ring ──
+  const totalKcal = dailyLog.reduce((s, e) => s + (e.kcal || 0), 0);
+  const goal = profile?.dailyCalories || 0;
+  document.getElementById('cal-ring-val').textContent = totalKcal;
+  if (goal) {
+    const pct = Math.min(totalKcal / goal, 1);
+    const circumference = 2 * Math.PI * 50; // r=50
+    const offset = circumference - pct * circumference;
+    const fill = document.getElementById('cal-ring-fill');
+    fill.style.strokeDashoffset = offset;
+    fill.classList.toggle('over', totalKcal > goal);
+    document.getElementById('cal-ring-goal').textContent = `${goal} kcal objectif`;
+    const remain = goal - totalKcal;
+    const remEl = document.getElementById('cal-ring-remain');
+    remEl.textContent = remain >= 0 ? `${remain} kcal restants` : `${Math.abs(remain)} kcal de trop`;
+    remEl.classList.toggle('over', remain < 0);
+  } else {
+    document.getElementById('cal-ring-goal').textContent = 'Configurez votre profil';
+    document.getElementById('cal-ring-remain').textContent = 'pour voir l\'objectif';
+  }
+  document.getElementById('cal-ring-meals').textContent = `${dailyLog.length} repas aujourd'hui`;
+
+  // ── Macros ──
+  const macroTargets = getMacroTargets();
+  const macroCard = document.getElementById('macro-card');
+  if (macroTargets) {
+    macroCard.style.display = 'block';
+    const totProt = dailyLog.reduce((s, e) => s + (e.protein || 0), 0);
+    const totCarb = dailyLog.reduce((s, e) => s + (e.carbs  || 0), 0);
+    const totFat  = dailyLog.reduce((s, e) => s + (e.fat    || 0), 0);
+    document.getElementById('macro-prot-val').textContent  = totProt;
+    document.getElementById('macro-prot-goal').textContent = macroTargets.protein;
+    document.getElementById('macro-carb-val').textContent  = totCarb;
+    document.getElementById('macro-carb-goal').textContent = macroTargets.carbs;
+    document.getElementById('macro-fat-val').textContent   = totFat;
+    document.getElementById('macro-fat-goal').textContent  = macroTargets.fat;
+    document.getElementById('macro-prot-fill').style.width = Math.min(totProt / macroTargets.protein * 100, 100) + '%';
+    document.getElementById('macro-carb-fill').style.width = Math.min(totCarb / macroTargets.carbs  * 100, 100) + '%';
+    document.getElementById('macro-fat-fill').style.width  = Math.min(totFat  / macroTargets.fat    * 100, 100) + '%';
+  } else {
+    macroCard.style.display = 'none';
+  }
+
+  // ── Weight tracking ──
+  const wChart = document.getElementById('weight-chart');
+  const wEmpty = document.getElementById('weight-empty');
+  const wProgress = document.getElementById('weight-progress-wrap');
+  if (weightLog.length > 0) {
+    wEmpty.style.display = 'none';
+    const sorted = [...weightLog].sort((a, b) => a.date.localeCompare(b.date));
+    const latest = sorted[sorted.length - 1];
+    const targetW = profile?.targetWeight;
+    const startW  = profile?.weight || sorted[0].weight;
+    if (targetW && startW) {
+      wProgress.style.display = 'block';
+      document.getElementById('weight-start-lbl').textContent = `${startW} kg`;
+      document.getElementById('weight-target-lbl').textContent = `→ ${targetW} kg`;
+      const total = Math.abs(targetW - startW);
+      const done  = Math.abs(latest.weight - startW);
+      const pct   = total > 0 ? Math.min(done / total * 100, 100) : 100;
+      document.getElementById('weight-progress-fill').style.width = pct + '%';
+      const diff = (latest.weight - startW).toFixed(1);
+      const sign = diff > 0 ? '+' : '';
+      document.getElementById('weight-progress-sub').textContent =
+        `${latest.weight} kg actuellement · ${sign}${diff} kg depuis le début`;
+    } else {
+      wProgress.style.display = 'none';
+    }
+    // Mini chart (last 6)
+    const last6 = sorted.slice(-6);
+    const minW = Math.min(...last6.map(e => e.weight));
+    const maxW = Math.max(...last6.map(e => e.weight));
+    const range = maxW - minW || 1;
+    wChart.style.display = 'flex';
+    wChart.innerHTML = last6.map(e => {
+      const h = Math.max(6, Math.round((e.weight - minW) / range * 50) + 6);
+      const d = e.date.slice(5); // MM-DD
+      return `<div class="weight-bar-wrap">
+        <div class="weight-bar-val">${e.weight}</div>
+        <div class="weight-bar" style="height:${h}px"></div>
+        <div class="weight-bar-lbl">${d}</div>
+      </div>`;
+    }).join('');
+  } else {
+    wEmpty.style.display = 'block';
+    wChart.style.display = 'none';
+    wProgress.style.display = 'none';
+  }
+
+  // ── Journal ──
+  const jList = document.getElementById('journal-list');
+  if (dailyLog.length === 0) {
+    jList.innerHTML = `<div class="journal-empty">Aucun repas enregistré — appuyez sur ＋ pour commencer</div>`;
+  } else {
+    jList.innerHTML = dailyLog.map((entry, i) => {
+      const icon = MEAL_ICONS[entry.type] || '🍽️';
+      const macroStr = (entry.protein || entry.carbs || entry.fat)
+        ? `P:${entry.protein||0}g G:${entry.carbs||0}g L:${entry.fat||0}g`
+        : entry.type || '';
+      return `<div class="journal-entry">
+        <div class="journal-entry-icon">${icon}</div>
+        <div class="journal-entry-info">
+          <div class="journal-entry-name">${esc(entry.name)}</div>
+          <div class="journal-entry-meta">${esc(macroStr)}</div>
+        </div>
+        <div class="journal-entry-kcal">${entry.kcal} kcal</div>
+        <button class="journal-entry-del" data-idx="${i}" title="Supprimer">🗑</button>
+      </div>`;
+    }).join('');
+    jList.querySelectorAll('.journal-entry-del').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const idx = parseInt(btn.dataset.idx);
+        dailyLog = dailyLog.filter((_, i) => i !== idx);
+        await window.__FC.saveDailyLog(user.uid, todayDate(), dailyLog);
+        renderSante();
+      });
+    });
+  }
+
+  // ── Tips ──
+  const tipsCard = document.getElementById('tips-card');
+  const tips = GOAL_TIPS[profile?.goal] || GOAL_TIPS.maintain;
+  tipsCard.style.display = 'flex';
+  tipsCard.innerHTML = `<div class="profile-section-title" style="margin:0 0 6px">💡 Conseils</div>` +
+    tips.map(t => `<div class="tip-item"><div class="tip-icon">${t.icon}</div><div class="tip-text">${t.text}</div></div>`).join('');
+}
+
+/* ── Add meal modal ── */
+let mealModalFromRecipe = false;
+
+function openAddMealModal(prefill = {}) {
+  mealModalFromRecipe = !!prefill.fromRecipe;
+  document.getElementById('meal-inp-name').value = prefill.name || '';
+  document.getElementById('meal-inp-kcal').value = prefill.kcal || '';
+  document.getElementById('meal-inp-prot').value = prefill.protein || '';
+  document.getElementById('meal-inp-carb').value = prefill.carbs || '';
+  document.getElementById('meal-inp-fat').value  = prefill.fat || '';
+  document.getElementById('meal-macros-section').style.display = (prefill.protein || prefill.carbs || prefill.fat) ? 'block' : 'none';
+  document.getElementById('meal-modal-overlay').classList.remove('hidden');
+  setTimeout(() => document.getElementById('meal-inp-name').focus(), 60);
+}
+
+function closeAddMealModal() {
+  document.getElementById('meal-modal-overlay').classList.add('hidden');
+}
+
+async function saveAddMealModal() {
+  const name = document.getElementById('meal-inp-name').value.trim();
+  const kcal = parseInt(document.getElementById('meal-inp-kcal').value);
+  if (!name) { toast('Donnez un nom au repas', 'error'); return; }
+  if (!kcal || kcal < 0) { toast('Entrez les calories', 'error'); return; }
+  const type   = document.getElementById('meal-inp-type').value;
+  const protein = parseInt(document.getElementById('meal-inp-prot').value) || 0;
+  const carbs   = parseInt(document.getElementById('meal-inp-carb').value) || 0;
+  const fat     = parseInt(document.getElementById('meal-inp-fat').value)  || 0;
+  const entry = { id: Date.now().toString(), name, kcal, type, protein, carbs, fat, addedAt: Date.now() };
+  dailyLog = [...dailyLog, entry];
+  await window.__FC.saveDailyLog(user.uid, todayDate(), dailyLog);
+  renderSante();
+  closeAddMealModal();
+  toast(`✓ ${name} ajouté au journal`, 'success');
+  haptic(15);
+}
+
+/* ── Weight modal ── */
+function openWeightModal() {
+  const latest = weightLog.length > 0
+    ? [...weightLog].sort((a,b) => a.date.localeCompare(b.date)).at(-1)
+    : null;
+  document.getElementById('weight-inp').value = latest?.weight || profile?.weight || '';
+  document.getElementById('target-weight-inp').value = profile?.targetWeight || '';
+  document.getElementById('weight-modal-overlay').classList.remove('hidden');
+  setTimeout(() => document.getElementById('weight-inp').focus(), 60);
+}
+
+function closeWeightModal() {
+  document.getElementById('weight-modal-overlay').classList.add('hidden');
+}
+
+async function saveWeightModal() {
+  const w = parseFloat(document.getElementById('weight-inp').value);
+  const t = parseFloat(document.getElementById('target-weight-inp').value);
+  if (!w || w < 30 || w > 300) { toast('Entrez un poids valide', 'error'); return; }
+  const entry = { date: todayDate(), weight: w };
+  // Remove existing entry for today if any, then add new
+  weightLog = [...weightLog.filter(e => e.date !== todayDate()), entry];
+  await window.__FC.saveWeightLog(user.uid, weightLog);
+  if (t && t >= 30 && t <= 300) {
+    profile = { ...profile, targetWeight: t };
+    await window.__FC.saveProfile(user.uid, profile);
+  }
+  // also update current weight in profile
+  profile = { ...profile, weight: w };
+  await window.__FC.saveProfile(user.uid, profile);
+  renderSante();
+  closeWeightModal();
+  toast(`⚖️ ${w} kg enregistré`, 'success');
+  haptic(15);
+}
+
+/* Public function to add a recipe to the journal from anywhere */
+function addRecipeToJournal(name, kcal, protein, carbs, fat) {
+  openAddMealModal({ name, kcal, protein, carbs, fat, fromRecipe: true });
+  if (window.switchTabPublic) window.switchTabPublic('sante');
+}
+
+/* ═══════════════════════════════════════════════════
    UTILS
    ═══════════════════════════════════════════════════ */
 function esc(str) {
@@ -3480,6 +3881,16 @@ window.addEventListener('fc-ready', () => {
         userCategories = cats; renderProfileCats();
       });
 
+      if (unsubDailyLog) unsubDailyLog();
+      unsubDailyLog = window.__FC.loadDailyLog(fbUser.uid, todayDate(), entries => {
+        dailyLog = entries; renderSante();
+      });
+
+      if (unsubWeightLog) unsubWeightLog();
+      unsubWeightLog = window.__FC.loadWeightLog(fbUser.uid, entries => {
+        weightLog = entries; renderSante();
+      });
+
       if (!profile) {
         showOnboarding();
       } else {
@@ -3495,6 +3906,8 @@ window.addEventListener('fc-ready', () => {
       pantry = []; if (unsubPantry) { unsubPantry(); unsubPantry = null; }
       shoppingList = []; if (unsubShopping) { unsubShopping(); unsubShopping = null; }
       userCategories = []; if (unsubCategories) { unsubCategories(); unsubCategories = null; }
+      dailyLog = []; if (unsubDailyLog) { unsubDailyLog(); unsubDailyLog = null; }
+      weightLog = []; if (unsubWeightLog) { unsubWeightLog(); unsubWeightLog = null; }
     }
   });
 
@@ -3995,7 +4408,7 @@ window.addEventListener('fc-ready', () => {
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAddModal(); });
 
   // Bottom nav tabs
-  const TAB_ORDER = ['frigo', 'recettes', 'courses', 'profil'];
+  const TAB_ORDER = ['frigo', 'recettes', 'courses', 'sante', 'profil'];
   function switchTab(tabName) {
     document.querySelectorAll('.tab-item').forEach(i => i.classList.remove('active'));
     document.querySelectorAll('.tab-page').forEach(p => p.classList.remove('active'));
@@ -4006,6 +4419,7 @@ window.addEventListener('fc-ready', () => {
     document.querySelector('.fab').style.display = tabName === 'frigo' ? '' : 'none';
     haptic(6);
   }
+  window.switchTabPublic = switchTab;
   document.querySelectorAll('.tab-item').forEach(item => {
     item.addEventListener('click', () => switchTab(item.dataset.tab));
   });
@@ -4035,6 +4449,31 @@ window.addEventListener('fc-ready', () => {
   document.getElementById('cat-inp-emoji').addEventListener('input', e => {
     updateCatEmojiPreview(e.target.value || '🏷️', catModalColor);
   });
+
+  // ── SANTÉ / MEAL JOURNAL ──
+  document.getElementById('btn-add-meal').addEventListener('click', () => openAddMealModal());
+  document.getElementById('btn-add-meal-2').addEventListener('click', () => openAddMealModal());
+  document.getElementById('meal-modal-overlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('meal-modal-overlay')) closeAddMealModal();
+  });
+  document.getElementById('meal-modal-cancel').addEventListener('click', closeAddMealModal);
+  document.getElementById('meal-modal-save').addEventListener('click', saveAddMealModal);
+  document.getElementById('meal-inp-name').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('meal-inp-kcal').focus(); });
+  document.getElementById('btn-toggle-macros').addEventListener('click', () => {
+    const sec = document.getElementById('meal-macros-section');
+    const btn = document.getElementById('btn-toggle-macros');
+    const visible = sec.style.display !== 'none';
+    sec.style.display = visible ? 'none' : 'block';
+    btn.textContent = visible ? '+ Ajouter les macros' : '− Masquer les macros';
+  });
+
+  // ── WEIGHT LOG ──
+  document.getElementById('btn-log-weight').addEventListener('click', openWeightModal);
+  document.getElementById('weight-modal-overlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('weight-modal-overlay')) closeWeightModal();
+  });
+  document.getElementById('weight-modal-cancel').addEventListener('click', closeWeightModal);
+  document.getElementById('weight-modal-save').addEventListener('click', saveWeightModal);
 
   // ── PROFILE SHARE CARD ──
   document.getElementById('profile-share-copy').addEventListener('click', () => {
