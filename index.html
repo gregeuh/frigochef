@@ -1630,8 +1630,18 @@ window.addEventListener('fc-ready', () => {
   document.getElementById('inp-name').addEventListener('keydown', e => { if (e.key === 'Enter') addFood(); });
 
   function addFood() {
-    const name = document.getElementById('inp-name').value.trim();
-    if (!name) return;
+    const nameEl = document.getElementById('inp-name');
+    const name = nameEl.value.trim();
+    if (!name) {
+      nameEl.style.borderColor = 'var(--red)';
+      nameEl.placeholder = 'Entrez un nom d\'aliment…';
+      nameEl.focus();
+      setTimeout(() => {
+        nameEl.style.borderColor = '';
+        nameEl.placeholder = 'Ajouter un aliment…';
+      }, 1800);
+      return;
+    }
     const item = {
       id:   Date.now().toString(),
       name,
