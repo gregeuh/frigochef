@@ -1683,18 +1683,6 @@ window.addEventListener('fc-ready', () => {
     document.getElementById('share-overlay').classList.add('hidden');
   }
 
-  function updateShareBtn() {
-    const btn = document.getElementById('btn-share');
-    const lbl = document.getElementById('share-label');
-    if (sharedFridgeCode) {
-      btn.classList.add('active');
-      lbl.textContent = `Frigo partagé · ${sharedFridgeCode}`;
-    } else {
-      btn.classList.remove('active');
-      lbl.textContent = 'Partager mon frigo';
-    }
-  }
-
   document.getElementById('btn-share').addEventListener('click', openShareModal);
 
   document.getElementById('btn-close-choose').addEventListener('click', closeShareModal);
