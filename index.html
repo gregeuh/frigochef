@@ -298,17 +298,6 @@ body {
 }
 .fridge-empty-icon { font-size: 2.5rem; margin-bottom: 0.5rem; opacity: 0.4; }
 
-.gen-btn {
-  margin: 0.7rem; padding: 12px;
-  background: linear-gradient(135deg, var(--green), var(--green-m));
-  color: #fff; border: none; border-radius: var(--r);
-  font-family: 'Jost', sans-serif; font-size: 0.9rem; font-weight: 500;
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  transition: opacity 0.15s, transform 0.15s;
-}
-.gen-btn:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
-.gen-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-
 /* ─── CONTENT ─── */
 .content { padding: 1.5rem; overflow-y: auto; }
 
@@ -380,19 +369,6 @@ body {
 .chip-has     { background: var(--green-l); color: var(--green); }
 .chip-missing { background: var(--red-l); color: var(--red); }
 .chip-urgent  { background: var(--orange-l); color: var(--orange); }
-
-/* ─── SKELETON LOADER ─── */
-.skeleton {
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--r-lg); overflow: hidden;
-  animation: pulse 1.5s ease-in-out infinite alternate;
-}
-@keyframes pulse { from { opacity: 1; } to { opacity: 0.55; } }
-.skel-thumb { height: 130px; background: var(--bg); }
-.skel-body { padding: 0.95rem 1rem; }
-.skel-line {
-  height: 14px; background: var(--bg); border-radius: 7px; margin-bottom: 8px;
-}
 
 /* ─── EMPTY STATE ─── */
 .empty {
@@ -671,7 +647,6 @@ body {
         </div>
       </div>
 
-      <button class="gen-btn" id="btn-gen">✨ Générer des recettes</button>
     </aside>
 
     <!-- ── CONTENT ── -->
@@ -955,7 +930,7 @@ function renderRecipes() {
     grid.innerHTML = `<div class="empty">
       <div class="empty-icon">🍽️</div>
       <div class="empty-title">${recipes.length ? 'Aucune recette pour ce filtre' : 'Pas encore de recettes'}</div>
-      <div class="empty-sub">${recipes.length ? 'Essayez un autre filtre.' : 'Remplissez votre frigo et cliquez sur<br>"Générer des recettes".'}</div>
+      <div class="empty-sub">${recipes.length ? 'Essayez un autre filtre.' : 'La génération de recettes arrive bientôt.'}</div>
     </div>`;
     return;
   }
@@ -1004,7 +979,7 @@ function renderCourses() {
   const el = document.getElementById('courses-content');
   const allMissing = recipes.flatMap(r => (r.missing||[]).map(m => ({ recipe: r.name, item: m })));
   if (!allMissing.length) {
-    el.innerHTML = `<div style="color:var(--ink3);font-size:0.88rem;text-align:center;padding:2rem 0">${recipes.length ? 'Aucun ingrédient manquant 🎉' : 'Générez des recettes pour voir ce qui manque.'}</div>`;
+    el.innerHTML = `<div style="color:var(--ink3);font-size:0.88rem;text-align:center;padding:2rem 0">${recipes.length ? 'Aucun ingrédient manquant 🎉' : 'La liste de courses apparaîtra avec vos recettes.'}</div>`;
     return;
   }
   const byRecipe = {};
@@ -1088,158 +1063,6 @@ function openModal(r) {
 
 function closeModal() { document.getElementById('modal-overlay').classList.add('hidden'); }
 
-/* ═══════════════════════════════════════════════════
-   AI — GÉNÉRER DES RECETTES
-   ═══════════════════════════════════════════════════ */
-async function generateRecipes() {
-  if (fridge.length === 0) return;
-
-  const btn = document.getElementById('btn-gen');
-  btn.disabled = true;
-  btn.textContent = '⏳ Le chef IA cuisine…';
-
-  // Skeleton
-  document.getElementById('recipe-grid').innerHTML = Array(4).fill(0).map(() => `
-    <div class="skeleton">
-      <div class="skel-thumb"></div>
-      <div class="skel-body">
-        <div class="skel-line" style="width:75%"></div>
-        <div class="skel-line" style="width:50%"></div>
-        <div class="skel-line" style="width:60%"></div>
-      </div>
-    </div>`).join('');
-
-  const validFridge = fridge.filter(f => !f.dlc || dlcStatus(f.dlc)?.days >= 0);
-  const ingredients = validFridge.map(f => f.name).join(', ');
-  const urgents = fridge.filter(f => f.dlc && dlcStatus(f.dlc)?.days >= 0 && dlcStatus(f.dlc)?.days <= 3).map(f => f.name);
-
-  const profileBlock = profile ? `
-⚙️ PROFIL UTILISATEUR — respecter impérativement ces contraintes :
-- Objectif santé : ${GOAL_LABELS[profile.goal] || profile.goal}
-- Régime alimentaire : ${profile.diet?.length ? profile.diet.join(', ') : 'aucune restriction'}
-- Budget calorique par repas : ~${profile.caloriesPerMeal} kcal (tolérance ±15 %)
-- Temps de cuisine maximum : ${profile.maxCookTime >= 120 ? 'sans limite' : profile.maxCookTime + ' minutes'}
-Toutes les recettes DOIVENT respecter le régime et ne pas dépasser le budget calorique.
-${profile.goal === 'lose_weight' ? 'Préférer les recettes faibles en matières grasses, riches en fibres et protéines maigres.' : ''}
-${profile.goal === 'build_muscle' ? 'Chaque recette doit contenir au minimum 30g de protéines par portion.' : ''}
-` : '';
-
-  const prompt = `Tu es un chef cuisinier français expert en cuisine française et européenne (brasserie, bistro, cuisine de terroir, recettes régionales françaises, cuisines italienne, espagnole, belge).
-
-Ingrédients disponibles dans le frigo : ${ingredients}.
-${urgents.length ? `\n⚠️ Aliments à utiliser EN PRIORITÉ (DLC proche dans 0-3 jours) : ${urgents.join(', ')}. Ces ingrédients doivent apparaître dans au moins 2 recettes.` : ''}
-${profileBlock}
-Propose exactement 4 recettes variées et savoureuses à dominante française/européenne. Varie les types : entrée, plat principal, repas rapide, soupe ou dessert. Maximise l'utilisation des ingrédients du frigo.
-
-Réponds UNIQUEMENT en JSON valide, sans aucun texte avant ou après, sans backticks markdown :
-[
-  {
-    "id": 1,
-    "name": "Nom de la recette en français",
-    "emoji": "🍳",
-    "time": 25,
-    "servings": 2,
-    "difficulty": "Facile",
-    "region": "Normandie",
-    "tags": ["Plat principal", "Hivernal", "Sans gluten"],
-    "matched": ["Ingrédient 1 du frigo", "Ingrédient 2 du frigo"],
-    "missing": ["Ingrédient manquant 1"],
-    "matchPct": 80,
-    "calories": 450,
-    "protein": 35,
-    "carbs": 40,
-    "fat": 12,
-    "steps": [
-      "Étape 1 claire et précise.",
-      "Étape 2.",
-      "Étape 3.",
-      "Étape 4."
-    ]
-  }
-]`;
-
-  try {
-    const res  = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
-    const data = await res.json();
-    const text = (data.content || []).find(c => c.type === 'text')?.text || '';
-    const clean = text.replace(/```json|```/g, '').trim();
-    recipes = JSON.parse(clean);
-  } catch (err) {
-    console.error('Génération échouée', err);
-    recipes = FALLBACK_RECIPES;
-  }
-
-  renderRecipes();
-  renderAlerts();
-  renderCourses();
-  document.getElementById('recipes-sub').textContent =
-    `${recipes.length} recettes basées sur votre frigo · cuisine française & européenne`;
-
-  btn.disabled = false;
-  btn.textContent = '🔄 Régénérer les recettes';
-}
-
-/* ═══════════════════════════════════════════════════
-   FALLBACK RECIPES (offline / error)
-   ═══════════════════════════════════════════════════ */
-const FALLBACK_RECIPES = [
-  {
-    id:1, name:'Omelette aux fines herbes', emoji:'🍳', time:10, servings:2,
-    difficulty:'Très facile', region:'France', tags:['Petit-déjeuner','Rapide','Sans gluten'],
-    matched:['Oeufs','Beurre'], missing:['Ciboulette','Persil plat'],
-    matchPct:85,
-    steps:[
-      'Battre les oeufs avec sel, poivre et une noix de beurre fondu.',
-      'Ciseler finement ciboulette et persil. Ajouter aux oeufs.',
-      'Faire fondre le beurre dans la poêle à feu moyen.',
-      'Verser les oeufs et cuire en remuant délicatement. Plier et servir.'
-    ]
-  },
-  {
-    id:2, name:'Gratin dauphinois', emoji:'🥔', time:75, servings:4,
-    difficulty:'Facile', region:'Dauphiné', tags:['Plat principal','Hivernal','Réconfortant'],
-    matched:['Pommes de terre','Crème','Ail'], missing:['Muscade','Gruyère râpé'],
-    matchPct:72,
-    steps:[
-      'Préchauffer le four à 180°C. Frotter le plat avec l\'ail coupé en deux.',
-      'Éplucher et trancher les pommes de terre très finement (2mm).',
-      'Disposer en couches dans le plat, sel, poivre, muscade entre chaque couche.',
-      'Verser la crème à hauteur. Enfourner 60 min jusqu\'à dorure.'
-    ]
-  },
-  {
-    id:3, name:'Soupe à l\'oignon gratinée', emoji:'🧅', time:45, servings:4,
-    difficulty:'Facile', region:'Paris', tags:['Soupe','Hivernal','Bistro'],
-    matched:['Oignons','Beurre','Fromage'], missing:['Bouillon de boeuf','Pain de campagne'],
-    matchPct:68,
-    steps:[
-      'Émincer les oignons finement, les faire fondre 25 min au beurre à feu doux.',
-      'Déglacer avec un filet de vin blanc, mouiller avec le bouillon chaud.',
-      'Laisser mijoter 15 min. Verser dans des bols allant au four.',
-      'Déposer des tranches de pain, parsemer de fromage râpé. Gratiner 5 min sous le gril.'
-    ]
-  },
-  {
-    id:4, name:'Salade niçoise revisitée', emoji:'🥗', time:15, servings:2,
-    difficulty:'Très facile', region:'Nice', tags:['Entrée','Estival','Équilibré'],
-    matched:['Oeufs','Tomates','Thon'], missing:['Olives niçoises','Anchois','Haricots verts'],
-    matchPct:62,
-    steps:[
-      'Cuire les oeufs durs 9 min, rafraîchir puis couper en quartiers.',
-      'Disposer les tomates coupées en quartiers, le thon émietté et les oeufs dans le plat.',
-      'Ajouter olives, anchois et haricots verts blanchis.',
-      'Assaisonner d\'huile d\'olive, vinaigre de vin et sel. Servir frais.'
-    ]
-  }
-];
 
 /* ═══════════════════════════════════════════════════
    ONBOARDING
@@ -1405,9 +1228,6 @@ window.addEventListener('fc-ready', () => {
     document.getElementById('inp-name').focus();
     document.getElementById('btn-gen').textContent = '✨ Générer des recettes';
   }
-
-  // Generate
-  document.getElementById('btn-gen').addEventListener('click', generateRecipes);
 
   // Tabs
   document.querySelectorAll('.tab').forEach(tab => {
