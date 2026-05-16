@@ -1,0 +1,12 @@
+{
+  "name": "NutriHome",
+  "short_name": "NutriHome",
+  "description": "Gestion frigo, nutrition & santé",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F4F6F8",
+  "theme_color": "#00875A",
+  "icons": [
+    { "src": "/favicon.ico", "sizes": "any", "type": "image/x-icon" }
+  ]
+}
