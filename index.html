@@ -265,23 +265,57 @@ body {
   letter-spacing: 0.1em; color: var(--ink3); font-weight: 500;
   margin-bottom: 0.75rem;
 }
-.add-form { display: flex; flex-direction: column; gap: 7px; }
-.row { display: flex; gap: 6px; }
-.inp {
-  padding: 8px 11px; border-radius: 8px;
-  border: 1px solid var(--border); background: var(--bg);
-  color: var(--ink); font-size: 0.85rem; outline: none;
-  transition: border-color 0.15s; width: 100%;
-}
-.inp:focus { border-color: var(--green-m); }
-.inp-qty { width: 58px; flex-shrink: 0; text-align: center; }
-.inp-date { width: 130px; flex-shrink: 0; font-size: 0.8rem; }
 .btn-add {
-  padding: 8px 13px; background: var(--green); color: #fff;
+  width: 100%; padding: 9px 13px; background: var(--green); color: #fff;
   border: none; border-radius: 8px; font-size: 0.85rem; font-weight: 500;
-  white-space: nowrap; transition: background 0.15s; flex-shrink: 0;
+  white-space: nowrap; transition: background 0.15s; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
 }
 .btn-add:hover { background: var(--green-m); }
+
+/* ── Add-food modal ── */
+.add-modal-overlay {
+  position: fixed; inset: 0; background: rgba(20,16,10,0.65);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 280; padding: 1rem; animation: fadeIn 0.15s ease;
+}
+.add-modal-card {
+  background: var(--surface); border-radius: var(--r-lg);
+  width: 100%; max-width: 380px; padding: 1.75rem 1.75rem 1.5rem;
+  box-shadow: 0 20px 60px rgba(20,16,10,0.22); animation: slideUp 0.2s ease;
+}
+.add-modal-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.4rem; font-weight: 700; color: var(--ink); margin-bottom: 1.25rem;
+}
+.add-modal-field { margin-bottom: 0.9rem; }
+.add-modal-label {
+  display: block; font-size: 0.75rem; font-weight: 500; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--ink3); margin-bottom: 5px;
+}
+.add-modal-row { display: flex; gap: 8px; }
+.inp {
+  padding: 9px 12px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--bg);
+  color: var(--ink); font-size: 0.88rem; outline: none;
+  transition: border-color 0.15s; width: 100%;
+  font-family: 'Jost', sans-serif;
+}
+.inp:focus { border-color: var(--green-m); }
+.inp-unit { width: 80px; flex-shrink: 0; }
+.add-modal-actions { display: flex; gap: 8px; margin-top: 1.25rem; }
+.add-modal-cancel {
+  flex: 1; padding: 10px; border: 1px solid var(--border); background: transparent;
+  color: var(--ink3); border-radius: 8px; font-size: 0.88rem; font-family: 'Jost', sans-serif;
+  cursor: pointer; transition: background 0.15s;
+}
+.add-modal-cancel:hover { background: var(--bg); }
+.add-modal-confirm {
+  flex: 2; padding: 10px; background: var(--green); color: #fff;
+  border: none; border-radius: 8px; font-size: 0.88rem; font-weight: 500;
+  font-family: 'Jost', sans-serif; cursor: pointer; transition: background 0.15s;
+}
+.add-modal-confirm:hover { background: var(--green-m); }
 
 .fridge-scroll { flex: 1; overflow-y: auto; padding: 0.7rem; }
 .fridge-scroll::-webkit-scrollbar { width: 3px; }
@@ -763,16 +797,7 @@ body {
     <aside class="sidebar">
       <div class="sidebar-top">
         <div class="section-label" id="fridge-count-label">🧊 Mon frigo</div>
-        <div class="add-form">
-          <div class="row">
-            <input id="inp-name" class="inp" type="text" placeholder="Ajouter un aliment…">
-            <input id="inp-qty"  class="inp inp-qty" type="text" placeholder="Qté">
-          </div>
-          <div class="row">
-            <input id="inp-dlc"  class="inp inp-date" type="date" title="Date limite de consommation">
-            <button class="btn-add" id="btn-add">+ Ajouter</button>
-          </div>
-        </div>
+        <button class="btn-add" id="btn-add">＋ Ajouter un aliment</button>
       </div>
 
       <div class="sidebar-share" id="sidebar-share-zone">
@@ -836,6 +861,48 @@ body {
 <!-- ═══════════════ MODAL RECETTE ═══════════════ -->
 <div id="modal-overlay" class="overlay hidden">
   <div class="modal" id="modal-body"></div>
+</div>
+
+<!-- ═══════════════ ADD FOOD MODAL ═══════════════ -->
+<div id="add-food-overlay" class="add-modal-overlay hidden">
+  <div class="add-modal-card">
+    <div class="add-modal-title">Ajouter un aliment</div>
+
+    <div class="add-modal-field">
+      <label class="add-modal-label" for="inp-name">Nom de l'aliment *</label>
+      <input id="inp-name" class="inp" type="text" placeholder="ex : Poulet, Tomates, Yaourt…" autocomplete="off">
+    </div>
+
+    <div class="add-modal-field">
+      <label class="add-modal-label">Quantité</label>
+      <div class="add-modal-row">
+        <input id="inp-qty" class="inp" type="text" placeholder="1" style="flex:1">
+        <select id="inp-unit" class="inp inp-unit">
+          <option value="">pcs</option>
+          <option value="g">g</option>
+          <option value="kg">kg</option>
+          <option value="mL">mL</option>
+          <option value="L">L</option>
+          <option value="tranches">tranches</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="add-modal-field">
+      <label class="add-modal-label" for="inp-dlc">Date limite de consommation</label>
+      <input id="inp-dlc" class="inp" type="date">
+    </div>
+
+    <div class="add-modal-field">
+      <label class="add-modal-label" for="inp-note">Note (optionnel)</label>
+      <input id="inp-note" class="inp" type="text" placeholder="ex : bio, ouvert, à finir…">
+    </div>
+
+    <div class="add-modal-actions">
+      <button class="add-modal-cancel" id="btn-add-cancel">Annuler</button>
+      <button class="add-modal-confirm" id="btn-add-confirm">✓ Ajouter au frigo</button>
+    </div>
+  </div>
 </div>
 
 <!-- ═══════════════ SHARE MODAL ═══════════════ -->
@@ -1176,7 +1243,7 @@ function group(title, items) {
       <span class="f-emoji">${item.emoji}</span>
       <div class="f-info">
         <div class="f-name">${esc(item.name)}</div>
-        <div class="f-qty">${esc(item.qty || '')}</div>
+        <div class="f-qty">${esc(item.qty || '')}${item.note ? ` · <em>${esc(item.note)}</em>` : ''}</div>
       </div>
       ${s ? `<span class="dlc-tag ${s.cls}">${s.label}</span>` : ''}
       <button class="f-del" data-del="${item.id}" title="Supprimer">✕</button>
@@ -1638,37 +1705,58 @@ window.addEventListener('fc-ready', () => {
     }
   });
 
-  // Add food
-  document.getElementById('btn-add').addEventListener('click', addFood);
-  document.getElementById('inp-name').addEventListener('keydown', e => { if (e.key === 'Enter') addFood(); });
+  // Add food modal
+  const addOverlay = document.getElementById('add-food-overlay');
 
-  function addFood() {
+  function openAddModal() {
+    document.getElementById('inp-name').value = '';
+    document.getElementById('inp-qty').value  = '';
+    document.getElementById('inp-unit').value = '';
+    document.getElementById('inp-dlc').value  = '';
+    document.getElementById('inp-note').value = '';
+    addOverlay.classList.remove('hidden');
+    setTimeout(() => document.getElementById('inp-name').focus(), 80);
+  }
+
+  function closeAddModal() {
+    addOverlay.classList.add('hidden');
+  }
+
+  function confirmAddFood() {
     const nameEl = document.getElementById('inp-name');
     const name = nameEl.value.trim();
     if (!name) {
       nameEl.style.borderColor = 'var(--red)';
-      nameEl.placeholder = 'Entrez un nom d\'aliment…';
       nameEl.focus();
-      setTimeout(() => {
-        nameEl.style.borderColor = '';
-        nameEl.placeholder = 'Ajouter un aliment…';
-      }, 1800);
+      setTimeout(() => { nameEl.style.borderColor = ''; }, 1800);
       return;
     }
+    const qty  = document.getElementById('inp-qty').value.trim();
+    const unit = document.getElementById('inp-unit').value;
+    const note = document.getElementById('inp-note').value.trim();
     const item = {
-      id:   Date.now().toString(),
+      id:    Date.now().toString(),
       name,
-      qty:  document.getElementById('inp-qty').value.trim() || '1',
-      dlc:  document.getElementById('inp-dlc').value || null,
+      qty:   qty ? (unit ? `${qty} ${unit}` : qty) : (unit || '1'),
+      dlc:   document.getElementById('inp-dlc').value || null,
+      note:  note || null,
       emoji: emoji(name)
     };
     fridge.push(item);
     saveFridge(); renderFridge(); renderAlerts();
-    document.getElementById('inp-name').value = '';
-    document.getElementById('inp-qty').value  = '';
-    document.getElementById('inp-dlc').value  = '';
-    document.getElementById('inp-name').focus();
+    closeAddModal();
+    toast(`${item.emoji} ${name} ajouté au frigo`);
   }
+
+  document.getElementById('btn-add').addEventListener('click', openAddModal);
+  document.getElementById('btn-add-cancel').addEventListener('click', closeAddModal);
+  document.getElementById('btn-add-confirm').addEventListener('click', confirmAddFood);
+  addOverlay.addEventListener('click', e => { if (e.target === addOverlay) closeAddModal(); });
+  document.getElementById('inp-name').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('inp-qty').focus(); });
+  document.getElementById('inp-qty').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('inp-dlc').focus(); });
+  document.getElementById('inp-dlc').addEventListener('keydown', e => { if (e.key === 'Enter') confirmAddFood(); });
+  document.getElementById('inp-note').addEventListener('keydown', e => { if (e.key === 'Enter') confirmAddFood(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAddModal(); });
 
   // Tabs
   document.querySelectorAll('.tab').forEach(tab => {
