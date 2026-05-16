@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FrigoChef</title>
+<title>MaCuisine</title>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <!-- ═══════════════════════════════════════════════════════════
-     FRIGOCHEF — Configuration Firebase
+     MACUISINE — Configuration Firebase
      ─────────────────────────────────────────────────────────
      1. Créez un projet sur https://console.firebase.google.com
      2. Activez Authentication > Google
@@ -88,6 +88,12 @@
     },
     loadUserRecipes: (uid, cb) => onSnapshot(doc(db, 'userRecipes', uid),
       snap => cb(snap.exists() ? snap.data().recipes || [] : [])
+    ),
+    savePantry: async (uid, items) => {
+      await setDoc(doc(db, 'pantry', uid), { items, updatedAt: Date.now() });
+    },
+    loadPantry: (uid, cb) => onSnapshot(doc(db, 'pantry', uid),
+      snap => cb(snap.exists() ? snap.data().items || [] : [])
     )
   };
 
@@ -901,6 +907,34 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
   color: var(--ink3); font-size: 0.85rem; cursor: pointer; margin-top: 4px;
 }
 .import-spinner { text-align: center; padding: 1rem; color: var(--ink3); font-size: 0.88rem; }
+
+/* ─── PANTRY / PLACARD ─── */
+.store-toggle {
+  display: flex; gap: 3px;
+  background: var(--surface2); border-radius: 12px; padding: 3px;
+  margin-bottom: 14px;
+}
+.store-btn {
+  flex: 1; padding: 7px 10px; border: none; border-radius: 9px;
+  font-size: 0.82rem; font-weight: 600; cursor: pointer;
+  background: transparent; color: var(--ink3); transition: all 0.18s;
+}
+.store-btn.active {
+  background: var(--surface); color: var(--ink);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+.pantry-row {
+  display: flex; align-items: center; gap: 7px;
+  padding: 10px 12px; border-radius: var(--r); margin-bottom: 4px;
+  background: var(--surface); transition: background 0.13s;
+  position: relative; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.pantry-row:hover { background: var(--surface2); }
+.pantry-empty {
+  text-align: center; padding: 2.5rem 1rem;
+  color: var(--ink3); font-size: 0.85rem;
+}
+.pantry-empty-icon { font-size: 2.5rem; margin-bottom: 0.5rem; opacity: 0.4; }
 </style>
 </head>
 <body>
@@ -908,7 +942,7 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
 <!-- ═══════════════ AUTH SCREEN ═══════════════ -->
 <div id="auth-screen" class="auth">
   <div class="auth-card">
-    <div class="auth-wordmark">Frigo<span>Chef</span></div>
+    <div class="auth-wordmark">Ma<span>Cuisine</span></div>
     <div class="auth-tagline">Votre cuisine française, intelligente</div>
     <div class="auth-divider">Connexion</div>
     <button class="btn-google" id="btn-login">
@@ -942,10 +976,20 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
       </div>
     </div>
     <div class="tab-body">
+      <div class="store-toggle">
+        <button class="store-btn active" id="btn-view-frigo">🧊 Frigo</button>
+        <button class="store-btn" id="btn-view-placard">🗄 Placard</button>
+      </div>
       <div id="fridge-list">
         <div class="fridge-empty">
           <div class="fridge-empty-icon">🧊</div>
           Votre frigo est vide.<br>Ajoutez des aliments !
+        </div>
+      </div>
+      <div id="pantry-list" class="hidden">
+        <div class="pantry-empty">
+          <div class="pantry-empty-icon">🗄</div>
+          Votre placard est vide.<br>Ajoutez vos basiques !
         </div>
       </div>
     </div>
@@ -1007,7 +1051,7 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
       <div class="profile-section">
         <div class="profile-avatar-lg" id="user-avatar">?</div>
         <div class="profile-name-lg" id="user-name"></div>
-        <div class="profile-goal-badge" id="profile-goal-badge">FrigoChef</div>
+        <div class="profile-goal-badge" id="profile-goal-badge">MaCuisine</div>
       </div>
       <div class="profile-calories hidden" id="profile-calories">
         <div class="cal-stat">
@@ -1202,7 +1246,11 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
 
     <div class="add-modal-actions">
       <button class="add-modal-cancel" id="btn-add-cancel">Annuler</button>
-      <button class="add-modal-confirm" id="btn-add-confirm">✓ Ajouter au frigo</button>
+      <button class="add-modal-confirm" id="btn-add-confirm">✓ Ajouter</button>
+    </div>
+    <div style="display:flex;gap:6px;margin-top:8px">
+      <button class="store-btn active" id="modal-dest-frigo" style="flex:1;border:1px solid var(--border);border-radius:8px;padding:8px">🧊 Frigo</button>
+      <button class="store-btn" id="modal-dest-placard" style="flex:1;border:1px solid var(--border);border-radius:8px;padding:8px">🗄 Placard</button>
     </div>
   </div>
 </div>
@@ -1444,6 +1492,9 @@ let favorites    = [];   // recipe IDs marked as favorites
 let userRecipes  = [];   // custom/imported recipes
 let unsubRecipes = null;
 let editingRecipeId = null; // ID being edited in the form modal
+let pantry = [];
+let unsubPantry = null;
+let pantryView = false; // false = frigo view, true = placard view
 
 const GOAL_LABELS = {
   lose_weight:  'Perte de poids',
@@ -1496,6 +1547,40 @@ function saveFridge() {
   });
 }
 
+function savePantry() {
+  if (!user) return;
+  window.__FC.savePantry(user.uid, pantry)
+    .catch(err => { console.error('Erreur sauvegarde placard:', err); toast('Erreur de sauvegarde', 'error'); });
+}
+
+function renderPantry() {
+  const el = document.getElementById('pantry-list');
+  const label = document.getElementById('fridge-count-label');
+  if (!pantryView) return;
+  label.textContent = `🗄 Placard · ${pantry.length} article${pantry.length > 1 ? 's' : ''}`;
+  if (pantry.length === 0) {
+    el.innerHTML = `<div class="pantry-empty"><div class="pantry-empty-icon">🗄</div>Votre placard est vide.<br>Ajoutez vos basiques !</div>`;
+    return;
+  }
+  el.innerHTML = pantry.map(item => `
+    <div class="pantry-row">
+      <span class="f-emoji">${item.emoji}</span>
+      <div class="f-info">
+        <div class="f-name">${esc(item.name)}</div>
+        <div class="f-qty">${esc(item.qty || '')}${item.note ? ` · <em>${esc(item.note)}</em>` : ''}</div>
+      </div>
+      <button class="f-del" data-pantry-del="${item.id}" title="Supprimer">✕</button>
+    </div>
+  `).join('');
+  el.querySelectorAll('[data-pantry-del]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      pantry = pantry.filter(f => f.id !== btn.dataset.pantryDel);
+      savePantry(); renderPantry(); renderAlerts();
+    });
+  });
+}
+
 function toast(msg, type = 'info') {
   const el = document.createElement('div');
   el.textContent = msg;
@@ -1513,9 +1598,11 @@ function toast(msg, type = 'info') {
 function renderFridge() {
   const el    = document.getElementById('fridge-list');
   const label = document.getElementById('fridge-count-label');
-  label.textContent = sharedFridgeCode
-    ? `👥 Frigo partagé · ${fridge.length} aliment${fridge.length > 1 ? 's' : ''}`
-    : `🧊 Mon frigo · ${fridge.length} aliment${fridge.length > 1 ? 's' : ''}`;
+  if (!pantryView) {
+    label.textContent = sharedFridgeCode
+      ? `👥 Frigo partagé · ${fridge.length} aliment${fridge.length > 1 ? 's' : ''}`
+      : `🧊 Mon frigo · ${fridge.length} aliment${fridge.length > 1 ? 's' : ''}`;
+  }
 
   if (fridge.length === 0) {
     el.innerHTML = `<div class="fridge-empty"><div class="fridge-empty-icon">🧊</div>Votre frigo est vide.<br>Ajoutez des aliments !</div>`;
@@ -1578,7 +1665,7 @@ function renderAlerts() {
    ═══════════════════════════════════════════════════ */
 function computeCustomMatchPct(r) {
   if (!r.isCustom || !r.allIngredients?.length) return { matchPct: 100, matched: r.allIngredients || [], missing: [] };
-  const fridgeNames = fridge.map(f => f.name.toLowerCase());
+  const fridgeNames = [...fridge, ...pantry].map(f => f.name.toLowerCase());
   const matched = [], missing = [];
   r.allIngredients.forEach(ing => {
     const ingLow = ing.toLowerCase();
@@ -1595,7 +1682,22 @@ function renderRecipes() {
 
   // Merge generated + custom recipes
   const customFull = userRecipes.map(r => { const m = computeCustomMatchPct(r); return { ...r, ...m }; });
-  const allRecipes = [...recipes, ...customFull];
+
+  // Boost match% for generated recipes using pantry items
+  const pantryNames = pantry.map(p => p.name.toLowerCase());
+  const recipesWithPantry = recipes.map(r => {
+    if (!pantryNames.length) return r;
+    const nowMatched = (r.missing || []).filter(m =>
+      pantryNames.some(p => m.toLowerCase().includes(p) || p.includes(m.toLowerCase()))
+    );
+    if (!nowMatched.length) return r;
+    const newMissing = (r.missing || []).filter(m => !nowMatched.includes(m));
+    const newMatched = [...(r.matched || []), ...nowMatched];
+    const total = newMatched.length + newMissing.length;
+    return { ...r, matched: newMatched, missing: newMissing, matchPct: total ? Math.round(newMatched.length / total * 100) : 0 };
+  });
+
+  const allRecipes = [...recipesWithPantry, ...customFull];
 
   let list = [...allRecipes];
   if (filter === 'fav')    list = list.filter(r => favorites.includes(String(r.id)));
@@ -1813,7 +1915,7 @@ function exportPDF(r) {
   doc.setFillColor(245, 245, 247);
   doc.rect(0, 0, W, 38, 'F');
   doc.setFontSize(9); doc.setTextColor(140);
-  doc.text('FrigoChef', M, 13);
+  doc.text('MaCuisine', M, 13);
   doc.setFontSize(20); doc.setFont('helvetica', 'bold'); doc.setTextColor(0);
   const titleLines = doc.splitTextToSize(r.name, CW);
   doc.text(titleLines, M, 26);
@@ -1865,7 +1967,7 @@ function exportPDF(r) {
 
   // Footer
   doc.setFontSize(8); doc.setTextColor(180);
-  doc.text('Généré par FrigoChef', M, 290);
+  doc.text('Généré par MaCuisine', M, 290);
 
   doc.save(`${r.name.replace(/[^a-z0-9]/gi, '_').substring(0, 40)}.pdf`);
   toast('PDF téléchargé !');
@@ -2046,7 +2148,7 @@ function applyProfileToUI() {
   updateShareBtn();
   const GOAL_LABELS = { lose_weight:'Perte de poids', maintain:'Maintien du poids', eat_healthy:'Alimentation saine', build_muscle:'Prise de muscle' };
   const badge = document.getElementById('profile-goal-badge');
-  if (badge && profile.goal) badge.textContent = GOAL_LABELS[profile.goal] || 'FrigoChef';
+  if (badge && profile.goal) badge.textContent = GOAL_LABELS[profile.goal] || 'MaCuisine';
   if (profile.dailyCalories) {
     document.getElementById('profile-calories').classList.remove('hidden');
     document.getElementById('profile-kcal-val').textContent = profile.dailyCalories;
@@ -2371,10 +2473,17 @@ window.addEventListener('fc-ready', () => {
       note:  note || null,
       emoji: emoji(name)
     };
-    fridge.push(item);
-    saveFridge(); renderFridge(); renderAlerts();
+    const toPantry = document.getElementById('modal-dest-placard').classList.contains('active');
+    if (toPantry) {
+      pantry.push(item);
+      savePantry(); renderPantry(); renderRecipes();
+      toast(`${item.emoji} ${name} ajouté au placard`);
+    } else {
+      fridge.push(item);
+      saveFridge(); renderFridge(); renderAlerts();
+      toast(`${item.emoji} ${name} ajouté au frigo`);
+    }
     closeAddModal();
-    toast(`${item.emoji} ${name} ajouté au frigo`);
   }
 
   document.getElementById('btn-add').addEventListener('click', openAddModal);
