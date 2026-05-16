@@ -2381,11 +2381,12 @@ function renderCourses() {
       <button class="shop-action-btn danger" id="btn-clear-all">🗑 Vider</button>
     </div>`;
 
-  // Group todo items by food category
+  // Group by food category
   const byCat = {};
   shoppingList.forEach(item => {
-    const cat = shopItemCategory(item.name);
-    (byCat[cat.key] = byCat[cat.key] || { cat, items: [] }).items.push(item);
+    const cat = shopItemCategory(item.name || '');
+    const key = cat.key || 'autres';
+    (byCat[key] = byCat[key] || { cat, items: [] }).items.push(item);
   });
 
   // Render each category group
@@ -3317,16 +3318,18 @@ window.addEventListener('fc-ready', () => {
   // ── Ajout manuel liste de courses ──
   function addManualShopItem() {
     const inp = document.getElementById('inp-manual-shop');
-    const name = inp.value.trim();
-    if (!name) return;
+    const name = (inp?.value || '').trim();
+    if (!name) { inp?.focus(); return; }
     shoppingList = [...shoppingList, { id: Date.now().toString(), name, recipe: 'Manuel', bought: false }];
-    saveShoppingListDB(); renderCourses();
     inp.value = '';
-    inp.focus();
+    try { renderCourses(); } catch(e) { console.error('renderCourses error:', e); }
+    saveShoppingListDB();
+    toast(`✓ ${name} ajouté`, 'success');
+    haptic(10);
   }
   document.getElementById('btn-manual-shop').addEventListener('click', addManualShopItem);
   document.getElementById('inp-manual-shop').addEventListener('keydown', e => {
-    if (e.key === 'Enter') addManualShopItem();
+    if (e.key === 'Enter') { e.preventDefault(); addManualShopItem(); }
   });
 
   // Store toggle (frigo / placard)
