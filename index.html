@@ -1870,6 +1870,17 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
       <div class="cat-grid" id="profile-cat-grid"></div>
 
       <div class="settings-group">
+        <button class="settings-row" id="btn-export-journal">
+          <span class="settings-label"><span class="settings-row-icon">📥</span>Exporter journal alimentaire (CSV)</span>
+          <span class="settings-chevron">›</span>
+        </button>
+        <button class="settings-row" id="btn-export-weight">
+          <span class="settings-label"><span class="settings-row-icon">📥</span>Exporter suivi poids (CSV)</span>
+          <span class="settings-chevron">›</span>
+        </button>
+      </div>
+
+      <div class="settings-group">
         <button class="settings-row danger" id="btn-logout">
           <span class="settings-label"><span class="settings-row-icon">🚪</span>Déconnexion</span>
         </button>
@@ -3955,6 +3966,49 @@ function addRecipeToJournal(name, kcal, protein, carbs, fat) {
 }
 
 /* ═══════════════════════════════════════════════════
+   CSV EXPORT
+   ═══════════════════════════════════════════════════ */
+function downloadCSV(filename, rows) {
+  const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+async function exportJournalCSV() {
+  if (!user) return;
+  const rows = [['Date','Repas','Nom','Calories (kcal)','Protéines (g)','Glucides (g)','Lipides (g)']];
+  const today = new Date();
+  for (let i = 0; i < 30; i++) {
+    const d = new Date(today); d.setDate(d.getDate() - i);
+    const dateStr = d.toISOString().slice(0, 10);
+    await new Promise(resolve => {
+      const unsub = window.__FC.loadDailyLog(user.uid, dateStr, entries => {
+        unsub();
+        entries.forEach(e => {
+          rows.push([dateStr, e.type||'', e.name||'', e.kcal||0, e.protein||0, e.carbs||0, e.fat||0]);
+        });
+        resolve();
+      });
+    });
+  }
+  downloadCSV(`nutrihome-journal-${todayDate()}.csv`, rows);
+  toast('✓ Journal exporté', 'success');
+}
+
+function exportWeightCSV() {
+  if (!weightLog.length) { toast('Aucune donnée de poids à exporter', 'error'); return; }
+  const rows = [['Date','Poids (kg)','Masse grasse (%)','Masse grasse (kg)','Muscle (%)','Muscle (kg)','Os (kg)','Eau (%)','Viscérale','BMR (kcal)']];
+  [...weightLog].sort((a,b) => a.date.localeCompare(b.date)).forEach(e => {
+    rows.push([e.date, e.weight||'', e.fatPct||'', e.fatKg||'', e.musclePct||'', e.muscleKg||'', e.boneKg||'', e.waterPct||'', e.visceral||'', e.bmr||'']);
+  });
+  downloadCSV(`nutrihome-poids-${todayDate()}.csv`, rows);
+  toast('✓ Suivi poids exporté', 'success');
+}
+
+/* ═══════════════════════════════════════════════════
    UTILS
    ═══════════════════════════════════════════════════ */
 function esc(str) {
@@ -4048,6 +4102,8 @@ window.addEventListener('fc-ready', () => {
 
   // Logout
   document.getElementById('btn-logout').addEventListener('click', () => window.__FC.signOut());
+  document.getElementById('btn-export-journal').addEventListener('click', exportJournalCSV);
+  document.getElementById('btn-export-weight').addEventListener('click', exportWeightCSV);
 
   // Bouton profil
   document.getElementById('btn-profile').addEventListener('click', showOnboarding);
