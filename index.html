@@ -112,6 +112,13 @@
     loadCategories: (uid, cb) => onSnapshot(doc(db, 'userCategories', uid),
       snap => cb(snap.exists() ? snap.data().cats || [] : [])
     ),
+    saveMealPlan: async (uid, weekKey, plan) => {
+      await setDoc(doc(db, 'mealPlan', `${uid}_${weekKey}`), { plan, updatedAt: Date.now() });
+    },
+    loadMealPlan: async (uid, weekKey) => {
+      const snap = await getDoc(doc(db, 'mealPlan', `${uid}_${weekKey}`));
+      return snap.exists() ? snap.data().plan || {} : {};
+    },
     saveDailyLog: async (uid, date, entries) => {
       await setDoc(doc(db, 'dailyLog', `${uid}_${date}`), { entries, updatedAt: Date.now() });
     },
@@ -1327,6 +1334,103 @@ body {
 .weight-withings-toggle { text-align: center; }
 .withings-section-label { font-size: 0.72rem; font-weight: 700; color: var(--ink3); text-transform: uppercase; letter-spacing: 0.06em; padding-top: 2px; }
 
+/* ─── PLANNING ─── */
+.planning-overlay {
+  position: fixed; inset: 0; background: rgba(10,10,14,0.60);
+  display: flex; align-items: flex-end; justify-content: center;
+  z-index: 300; animation: fadeIn 0.18s ease;
+}
+@media (min-width: 520px) { .planning-overlay { align-items: center; } }
+.planning-card {
+  background: var(--surface); border-radius: var(--r-xl) var(--r-xl) 0 0;
+  width: 100%; max-width: 430px; max-height: 85vh;
+  display: flex; flex-direction: column;
+  box-shadow: var(--shadow-lg); animation: springIn 0.36s cubic-bezier(0.34,1.56,0.64,1) both;
+  overflow: hidden;
+}
+@media (min-width: 520px) { .planning-card { border-radius: var(--r-xl); max-height: 80vh; } }
+.planning-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 14px 16px 10px; border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.planning-week-label { flex: 1; text-align: center; font-size: 0.88rem; font-weight: 700; color: var(--ink); }
+.planning-nav-btn {
+  width: 32px; height: 32px; border-radius: 50%; border: 1.5px solid var(--border2);
+  background: var(--surface2); color: var(--ink); font-size: 1.1rem; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.planning-close-btn {
+  width: 28px; height: 28px; border-radius: 50%; border: none;
+  background: var(--surface2); color: var(--ink3); font-size: 0.8rem; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; margin-left: auto;
+}
+.planning-grid {
+  overflow-y: auto; flex: 1;
+  display: grid; grid-template-columns: 68px repeat(7, 1fr);
+  font-size: 0.65rem; padding: 0;
+}
+.plan-col-head {
+  padding: 6px 3px; text-align: center; font-size: 0.60rem; font-weight: 700;
+  color: var(--ink3); text-transform: uppercase; background: var(--surface);
+  position: sticky; top: 0; z-index: 2; border-bottom: 1px solid var(--border);
+}
+.plan-col-head.today { color: var(--green-dk); }
+.plan-row-head {
+  padding: 8px 6px; font-size: 0.62rem; font-weight: 600; color: var(--ink3);
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center; text-align: center;
+  position: sticky; left: 0; z-index: 1;
+}
+.plan-cell {
+  border: 0.5px solid var(--border); min-height: 56px; padding: 4px;
+  cursor: pointer; transition: background 0.13s;
+  display: flex; align-items: center; justify-content: center;
+  text-align: center; position: relative;
+}
+.plan-cell:hover { background: var(--green-l); }
+.plan-cell.today-col { background: rgba(0,135,90,0.04); }
+.plan-cell-empty { color: var(--border2); font-size: 1rem; }
+.plan-cell-recipe { font-size: 0.60rem; color: var(--ink); font-weight: 500; line-height: 1.3; }
+.plan-cell-del {
+  position: absolute; top: 2px; right: 2px; width: 14px; height: 14px;
+  border-radius: 50%; background: var(--red-l); color: var(--red);
+  font-size: 0.55rem; border: none; cursor: pointer; display: none;
+  align-items: center; justify-content: center;
+}
+.plan-cell:hover .plan-cell-del { display: flex; }
+.planning-footer {
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--border); flex-shrink: 0;
+}
+.planning-gen-btn {
+  width: 100%; padding: 12px; border: none; border-radius: var(--r-lg);
+  background: linear-gradient(135deg, #00A36C 0%, #006644 100%);
+  color: #fff; font-size: 0.88rem; font-weight: 700; cursor: pointer;
+  box-shadow: 0 3px 12px rgba(0,102,68,0.28);
+}
+/* Recipe picker */
+.recipe-picker-overlay {
+  position: fixed; inset: 0; background: rgba(10,10,14,0.60);
+  display: flex; align-items: flex-end; justify-content: center;
+  z-index: 350; animation: fadeIn 0.18s ease;
+}
+.recipe-picker-card {
+  background: var(--surface); border-radius: var(--r-xl) var(--r-xl) 0 0;
+  width: 100%; max-width: 430px; max-height: 70vh;
+  padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+  display: flex; flex-direction: column; box-shadow: var(--shadow-lg);
+  animation: springIn 0.36s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.recipe-picker-title { font-size: 1rem; font-weight: 800; color: var(--ink); margin-bottom: 12px; }
+#recipe-picker-list { overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.recipe-picker-item {
+  padding: 10px 12px; border-radius: var(--r); background: var(--surface2);
+  cursor: pointer; font-size: 0.84rem; color: var(--ink); font-weight: 500;
+  transition: background 0.13s;
+}
+.recipe-picker-item:hover { background: var(--green-l); color: var(--green-dk); }
+
 /* ─── DARK MODE TOGGLE ─── */
 .theme-toggle-switch {
   width: 44px; height: 26px; border-radius: 13px;
@@ -1781,6 +1885,7 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
       <div class="tab-header-row">
         <div class="tab-large-title">Recettes</div>
         <div style="display:flex;gap:6px;align-items:center">
+          <button class="icon-btn" id="btn-open-planning" title="Planificateur de repas">📅</button>
           <button class="icon-btn" id="btn-import-url" title="Importer depuis une URL">🔗</button>
           <button id="btn-new-recipe" title="Créer une recette" style="display:flex;align-items:center;gap:5px;padding:6px 12px;background:linear-gradient(135deg,#00A36C,#006644);color:#fff;border:none;border-radius:20px;font-size:0.76rem;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,102,68,0.30);letter-spacing:-0.01em;transition:transform 0.15s,box-shadow 0.15s">✏️ Nouvelle</button>
         </div>
@@ -2208,6 +2313,32 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
       <button class="cat-modal-save" id="weight-modal-save">Enregistrer</button>
       <button class="cat-modal-cancel" id="weight-modal-cancel">Annuler</button>
     </div>
+  </div>
+</div>
+
+<!-- ═══════════════ PLANNING MODAL ═══════════════ -->
+<div id="planning-overlay" class="planning-overlay hidden">
+  <div class="planning-card">
+    <div class="planning-header">
+      <button class="planning-nav-btn" id="planning-prev">‹</button>
+      <div class="planning-week-label" id="planning-week-label">Semaine</div>
+      <button class="planning-nav-btn" id="planning-next">›</button>
+      <button class="planning-close-btn" id="planning-close">✕</button>
+    </div>
+    <div class="planning-grid" id="planning-grid"></div>
+    <div class="planning-footer">
+      <button class="planning-gen-btn" id="planning-gen-list">🛒 Générer la liste de courses</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ RECIPE PICKER MODAL ═══════════════ -->
+<div id="recipe-picker-overlay" class="recipe-picker-overlay hidden">
+  <div class="recipe-picker-card">
+    <div class="recipe-picker-title">Choisir une recette</div>
+    <input id="recipe-picker-search" class="inp" type="search" placeholder="Rechercher…" style="margin:0 0 10px">
+    <div id="recipe-picker-list"></div>
+    <button class="cat-modal-cancel" id="recipe-picker-cancel">Annuler</button>
   </div>
 </div>
 
@@ -4172,6 +4303,188 @@ function addRecipeToJournal(name, kcal, protein, carbs, fat) {
 }
 
 /* ═══════════════════════════════════════════════════
+   MEAL PLANNER
+   ═══════════════════════════════════════════════════ */
+const MEAL_SLOTS = ['petit-déjeuner', 'déjeuner', 'dîner'];
+const SLOT_LABELS = { 'petit-déjeuner':'🌅 Matin', 'déjeuner':'☀️ Midi', 'dîner':'🌙 Soir' };
+const DAY_NAMES = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+
+let planningWeekOffset = 0; // 0 = current week
+let mealPlan = {}; // { 'YYYY-WW_mon_dejeuner': { name, ingredients, calories } }
+let planningSlotPending = null; // { slotKey } when picking recipe
+
+function getWeekKey(offset = 0) {
+  const d = new Date();
+  d.setDate(d.getDate() - d.getDay() + 1 + offset * 7); // Monday
+  const year = d.getFullYear();
+  const jan1 = new Date(year, 0, 1);
+  const week = Math.ceil(((d - jan1) / 86400000 + jan1.getDay() + 1) / 7);
+  return `${year}-W${String(week).padStart(2,'0')}`;
+}
+
+function getWeekDates(offset = 0) {
+  const dates = [];
+  const d = new Date();
+  d.setDate(d.getDate() - d.getDay() + 1 + offset * 7);
+  for (let i = 0; i < 7; i++) {
+    const dd = new Date(d); dd.setDate(d.getDate() + i);
+    dates.push(dd.toISOString().slice(0,10));
+  }
+  return dates;
+}
+
+async function openPlanning() {
+  planningWeekOffset = 0;
+  await loadPlanningWeek();
+  document.getElementById('planning-overlay').classList.remove('hidden');
+}
+
+function closePlanning() {
+  document.getElementById('planning-overlay').classList.add('hidden');
+}
+
+async function loadPlanningWeek() {
+  if (!user) return;
+  const wk = getWeekKey(planningWeekOffset);
+  mealPlan = await window.__FC.loadMealPlan(user.uid, wk);
+  renderPlanningGrid();
+}
+
+function renderPlanningGrid() {
+  const grid = document.getElementById('planning-grid');
+  const dates = getWeekDates(planningWeekOffset);
+  const todayStr = todayDate();
+
+  // Week label
+  const start = dates[0].slice(5).replace('-','/');
+  const end   = dates[6].slice(5).replace('-','/');
+  document.getElementById('planning-week-label').textContent = `${start} – ${end}`;
+
+  let html = '';
+  // Header row
+  html += `<div class="plan-col-head" style="grid-column:1"></div>`;
+  dates.forEach((d, i) => {
+    const isToday = d === todayStr;
+    html += `<div class="plan-col-head${isToday?' today':''}">${DAY_NAMES[i]}<br>${d.slice(8)}</div>`;
+  });
+  // Meal rows
+  MEAL_SLOTS.forEach(slot => {
+    html += `<div class="plan-row-head">${SLOT_LABELS[slot]}</div>`;
+    dates.forEach((date, di) => {
+      const key = `${date}_${slot}`;
+      const entry = mealPlan[key];
+      const isToday = date === todayStr;
+      if (entry) {
+        html += `<div class="plan-cell${isToday?' today-col':''}" data-key="${esc(key)}">
+          <div class="plan-cell-recipe">${esc(entry.name)}</div>
+          <button class="plan-cell-del" data-key="${esc(key)}">✕</button>
+        </div>`;
+      } else {
+        html += `<div class="plan-cell${isToday?' today-col':''}" data-key="${esc(key)}">
+          <div class="plan-cell-empty">＋</div>
+        </div>`;
+      }
+    });
+  });
+  grid.innerHTML = html;
+
+  // Cell click: open recipe picker
+  grid.querySelectorAll('.plan-cell').forEach(cell => {
+    cell.addEventListener('click', async (e) => {
+      if (e.target.classList.contains('plan-cell-del')) return;
+      planningSlotPending = cell.dataset.key;
+      openRecipePicker();
+    });
+  });
+  // Delete button
+  grid.querySelectorAll('.plan-cell-del').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const key = btn.dataset.key;
+      delete mealPlan[key];
+      await window.__FC.saveMealPlan(user.uid, getWeekKey(planningWeekOffset), mealPlan);
+      renderPlanningGrid();
+    });
+  });
+}
+
+function openRecipePicker() {
+  const allRecipes = [...(userRecipes || []), ...(recipes || [])];
+  renderRecipePickerList(allRecipes, '');
+  document.getElementById('recipe-picker-search').value = '';
+  document.getElementById('recipe-picker-overlay').classList.remove('hidden');
+  setTimeout(() => document.getElementById('recipe-picker-search').focus(), 60);
+}
+
+function closeRecipePicker() {
+  document.getElementById('recipe-picker-overlay').classList.add('hidden');
+  planningSlotPending = null;
+}
+
+function renderRecipePickerList(rList, search) {
+  const filtered = search
+    ? rList.filter(r => (r.name||'').toLowerCase().includes(search.toLowerCase()))
+    : rList;
+  const list = document.getElementById('recipe-picker-list');
+  if (!filtered.length) {
+    list.innerHTML = `<div style="text-align:center;color:var(--ink3);padding:20px;font-size:0.84rem">Aucune recette trouvée</div>`;
+    return;
+  }
+  list.innerHTML = filtered.map(r =>
+    `<div class="recipe-picker-item" data-recipe-id="${esc(r.id||r.name)}" data-recipe-name="${esc(r.name)}" data-recipe-cal="${r.calories||0}">
+      ${r.emoji||'🍳'} ${esc(r.name)}${r.calories ? ` · ${r.calories} kcal` : ''}
+    </div>`
+  ).join('');
+  list.querySelectorAll('.recipe-picker-item').forEach(item => {
+    item.addEventListener('click', async () => {
+      if (!planningSlotPending) return;
+      mealPlan[planningSlotPending] = {
+        name: item.dataset.recipeName,
+        calories: parseInt(item.dataset.recipeCal) || 0,
+      };
+      await window.__FC.saveMealPlan(user.uid, getWeekKey(planningWeekOffset), mealPlan);
+      closeRecipePicker();
+      renderPlanningGrid();
+    });
+  });
+}
+
+async function generateShoppingFromPlan() {
+  const dates = getWeekDates(planningWeekOffset);
+  const allRecipes = [...(userRecipes || []), ...(recipes || [])];
+  let added = 0;
+  Object.entries(mealPlan).forEach(([key, entry]) => {
+    const date = key.split('_')[0];
+    if (!dates.includes(date)) return;
+    const recipe = allRecipes.find(r => r.name === entry.name);
+    if (recipe?.ingredients) {
+      recipe.ingredients.forEach(ing => {
+        const name = typeof ing === 'string' ? ing : (ing.name || '');
+        if (!name) return;
+        const exists = shoppingList.some(s => s.name.toLowerCase() === name.toLowerCase());
+        if (!exists) {
+          const cat = foodCategory(name);
+          shoppingList = [...shoppingList, {
+            id: Date.now().toString() + Math.random(),
+            name, recipe: entry.name, bought: false, catKey: cat.key
+          }];
+          added++;
+        }
+      });
+    }
+  });
+  if (added > 0) {
+    try { renderCourses(); } catch(e) {}
+    saveShoppingListDB();
+    toast(`✓ ${added} ingrédient${added>1?'s':''} ajouté${added>1?'s':''} à la liste`, 'success');
+    haptic(20);
+  } else {
+    toast('Tous les ingrédients sont déjà dans la liste', 'success');
+  }
+  closePlanning();
+}
+
+/* ═══════════════════════════════════════════════════
    CSV EXPORT
    ═══════════════════════════════════════════════════ */
 function downloadCSV(filename, rows) {
@@ -4952,6 +5265,30 @@ window.addEventListener('fc-ready', () => {
   document.getElementById('cat-modal-save').addEventListener('click', saveCatModal);
   document.getElementById('cat-inp-emoji').addEventListener('input', e => {
     updateCatEmojiPreview(e.target.value || '🏷️', catModalColor);
+  });
+
+  // ── PLANNING ──
+  document.getElementById('planning-close').addEventListener('click', closePlanning);
+  document.getElementById('planning-overlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('planning-overlay')) closePlanning();
+  });
+  document.getElementById('planning-prev').addEventListener('click', async () => {
+    planningWeekOffset--; await loadPlanningWeek();
+  });
+  document.getElementById('planning-next').addEventListener('click', async () => {
+    planningWeekOffset++; await loadPlanningWeek();
+  });
+  document.getElementById('planning-gen-list').addEventListener('click', generateShoppingFromPlan);
+  document.getElementById('btn-open-planning').addEventListener('click', openPlanning);
+
+  // Recipe picker
+  document.getElementById('recipe-picker-cancel').addEventListener('click', closeRecipePicker);
+  document.getElementById('recipe-picker-overlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('recipe-picker-overlay')) closeRecipePicker();
+  });
+  document.getElementById('recipe-picker-search').addEventListener('input', e => {
+    const allRecipes = [...(userRecipes || []), ...(recipes || [])];
+    renderRecipePickerList(allRecipes, e.target.value);
   });
 
   // ── SANTÉ / MEAL JOURNAL ──
