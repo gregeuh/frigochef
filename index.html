@@ -2198,6 +2198,11 @@ window.addEventListener('fc-ready', () => {
         userRecipes = items; renderRecipes();
       });
 
+      if (unsubPantry) unsubPantry();
+      unsubPantry = window.__FC.loadPantry(fbUser.uid, items => {
+        pantry = items; renderPantry(); renderRecipes();
+      });
+
       if (!profile) {
         showOnboarding();
       } else {
@@ -2210,6 +2215,7 @@ window.addEventListener('fc-ready', () => {
       document.getElementById('app-screen').classList.add('hidden');
       if (unsub) { unsub(); unsub = null; }
       if (unsubRecipes) { unsubRecipes(); unsubRecipes = null; }
+      pantry = []; if (unsubPantry) { unsubPantry(); unsubPantry = null; }
     }
   });
 
@@ -2384,6 +2390,13 @@ window.addEventListener('fc-ready', () => {
     document.getElementById('inp-note').value = '';
     document.getElementById('scan-banner').classList.remove('visible');
     document.getElementById('scanner-view').classList.remove('active');
+    document.getElementById('modal-dest-frigo').classList.add('active');
+    document.getElementById('modal-dest-placard').classList.remove('active');
+    // Pre-select based on current view
+    if (pantryView) {
+      document.getElementById('modal-dest-frigo').classList.remove('active');
+      document.getElementById('modal-dest-placard').classList.add('active');
+    }
     addOverlay.classList.remove('hidden');
     setTimeout(() => document.getElementById('inp-name').focus(), 80);
   }
@@ -2489,6 +2502,34 @@ window.addEventListener('fc-ready', () => {
   document.getElementById('btn-add').addEventListener('click', openAddModal);
   document.getElementById('btn-add-cancel').addEventListener('click', closeAddModal);
   document.getElementById('btn-add-confirm').addEventListener('click', confirmAddFood);
+
+  // Store toggle (frigo / placard)
+  document.getElementById('btn-view-frigo').addEventListener('click', () => {
+    pantryView = false;
+    document.getElementById('btn-view-frigo').classList.add('active');
+    document.getElementById('btn-view-placard').classList.remove('active');
+    document.getElementById('fridge-list').classList.remove('hidden');
+    document.getElementById('pantry-list').classList.add('hidden');
+    renderFridge();
+  });
+  document.getElementById('btn-view-placard').addEventListener('click', () => {
+    pantryView = true;
+    document.getElementById('btn-view-placard').classList.add('active');
+    document.getElementById('btn-view-frigo').classList.remove('active');
+    document.getElementById('fridge-list').classList.add('hidden');
+    document.getElementById('pantry-list').classList.remove('hidden');
+    renderPantry();
+  });
+
+  // Destination toggle in add modal
+  document.getElementById('modal-dest-frigo').addEventListener('click', () => {
+    document.getElementById('modal-dest-frigo').classList.add('active');
+    document.getElementById('modal-dest-placard').classList.remove('active');
+  });
+  document.getElementById('modal-dest-placard').addEventListener('click', () => {
+    document.getElementById('modal-dest-placard').classList.add('active');
+    document.getElementById('modal-dest-frigo').classList.remove('active');
+  });
   addOverlay.addEventListener('click', e => { if (e.target === addOverlay) closeAddModal(); });
   document.getElementById('inp-name').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('inp-qty').focus(); });
   document.getElementById('inp-qty').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('inp-dlc').focus(); });
