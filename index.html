@@ -191,7 +191,6 @@ body {
 @media (min-width: 520px) {
   body { background: #DCDCE4; }
   [data-theme="dark"] body { background: #111114; }
-  #auth-screen { background: transparent; }
   #app-screen {
     max-width: 430px;
     margin: 0 auto;
@@ -928,6 +927,24 @@ body {
 .level-25    { background: rgba(255,59,48,0.15); color: var(--red); }
 .level-10    { background: rgba(255,59,48,0.20); color: var(--red); font-weight: 700; }
 
+/* ─── DESTINATION FRIGO / PLACARD ─── */
+.dest-btn {
+  flex: 1; padding: 9px 8px; border-radius: 11px;
+  border: 2px solid var(--border); background: var(--bg);
+  font-size: 0.82rem; font-weight: 600; cursor: pointer;
+  color: var(--ink3); transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1);
+  text-align: center;
+}
+.dest-btn--frigo.active {
+  background: rgba(0,160,220,0.10); border-color: #0094CC;
+  color: #006E9C; box-shadow: 0 2px 8px rgba(0,148,204,0.18);
+}
+.dest-btn--placard.active {
+  background: rgba(255,140,0,0.10); border-color: #E07800;
+  color: #B05E00; box-shadow: 0 2px 8px rgba(224,120,0,0.18);
+}
+.dest-btn:not(.active):hover { background: var(--surface2); }
+
 /* ─── MANUAL SHOPPING FORM ─── */
 .manual-shop-form { display: flex; gap: 6px; margin-bottom: 10px; }
 .manual-shop-inp {
@@ -1234,9 +1251,9 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
     <div class="tab-header">
       <div class="tab-header-row">
         <div class="tab-large-title">Recettes</div>
-        <div style="display:flex;gap:6px">
+        <div style="display:flex;gap:6px;align-items:center">
           <button class="icon-btn" id="btn-import-url" title="Importer depuis une URL">🔗</button>
-          <button class="icon-btn" id="btn-new-recipe" title="Créer une recette">✏️</button>
+          <button id="btn-new-recipe" title="Créer une recette" style="display:flex;align-items:center;gap:5px;padding:6px 12px;background:linear-gradient(135deg,#2ECC5A,#1A8035);color:#fff;border:none;border-radius:20px;font-size:0.76rem;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(26,128,53,0.30);letter-spacing:-0.01em;transition:transform 0.15s,box-shadow 0.15s">✏️ Nouvelle</button>
         </div>
       </div>
       <div class="tab-sub" id="recipes-sub">Ajoutez des aliments pour découvrir des recettes.</div>
@@ -1258,9 +1275,9 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
       </div>
       <div class="grid" id="recipe-grid">
         <div class="empty">
-          <div class="empty-icon">🍽️</div>
-          <div class="empty-title">Frigo vide</div>
-          <div class="empty-sub">Ajoutez des ingrédients dans votre frigo.</div>
+          <div class="empty-icon">🍳</div>
+          <div class="empty-title">Aucune recette</div>
+          <div class="empty-sub">Ajoutez des aliments dans votre frigo, ou créez vos propres recettes.</div>
         </div>
       </div>
     </div>
@@ -1508,9 +1525,9 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
       <button class="add-modal-delete hidden" id="btn-food-delete">🗑 Supprimer</button>
       <button class="add-modal-confirm" id="btn-add-confirm">✓ Ajouter</button>
     </div>
-    <div id="food-dest-row" style="display:flex;gap:6px;margin-top:8px">
-      <button class="store-btn active" id="modal-dest-frigo" style="flex:1;border:1px solid var(--border);border-radius:8px;padding:8px">🧊 Frigo</button>
-      <button class="store-btn" id="modal-dest-placard" style="flex:1;border:1px solid var(--border);border-radius:8px;padding:8px">🗄 Placard</button>
+    <div id="food-dest-row" style="display:flex;gap:8px;margin-top:10px">
+      <button class="dest-btn dest-btn--frigo active" id="modal-dest-frigo">🧊 Frigo</button>
+      <button class="dest-btn dest-btn--placard" id="modal-dest-placard">🗄 Placard</button>
     </div>
   </div>
 </div>
