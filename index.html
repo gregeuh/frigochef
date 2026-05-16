@@ -217,112 +217,9 @@ body {
     box-shadow: 0 0 0 1px rgba(0,0,0,0.05), 0 20px 60px rgba(0,0,0,0.18);
     position: relative;
   }
+  .bottom-tab-bar { max-width: calc(430px - 40px) !important; }
   .fab { right: calc(50% - 215px + 18px) !important; }
   .overlay { background: rgba(0,0,0,0.55); }
-}
-
-/* ─── macOS: SIDEBAR LAYOUT ─── */
-@media (min-width: 900px) {
-  body { background: #CDD5DA; }
-  [data-theme="dark"] body { background: #050806; }
-
-  #app-screen {
-    max-width: none !important;
-    margin: 0 !important;
-    display: flex;
-    min-height: 100vh;
-    box-shadow: none !important;
-    background: var(--bg) !important;
-  }
-
-  /* Sidebar */
-  .bottom-tab-bar {
-    position: fixed !important;
-    left: 0 !important; top: 0 !important; bottom: 0 !important;
-    transform: none !important;
-    width: 230px !important;
-    flex-direction: column !important;
-    align-items: stretch !important;
-    justify-content: flex-start !important;
-    border-radius: 0 !important;
-    border: none !important;
-    border-right: 1px solid var(--border) !important;
-    border-bottom: none !important;
-    padding: calc(env(safe-area-inset-top, 28px) + 32px) 12px 24px !important;
-    gap: 4px !important;
-    background: var(--glass) !important;
-    backdrop-filter: blur(40px) saturate(180%) !important;
-    -webkit-backdrop-filter: blur(40px) saturate(180%) !important;
-    box-shadow: 1px 0 0 var(--border) !important;
-    height: 100vh !important;
-    overflow-y: auto !important;
-  }
-
-  /* Sidebar logo */
-  .bottom-tab-bar::before {
-    content: 'NutriHome';
-    display: block;
-    font-size: 1.05rem;
-    font-weight: 800;
-    letter-spacing: -0.03em;
-    color: var(--ink);
-    padding: 0 10px 20px;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 12px;
-    flex-shrink: 0;
-  }
-
-  /* Sidebar items */
-  .tab-item {
-    flex-direction: row !important;
-    justify-content: flex-start !important;
-    gap: 10px !important;
-    padding: 10px 12px !important;
-    border-radius: 10px !important;
-    height: 40px !important;
-    min-width: auto !important;
-    width: 100% !important;
-    text-align: left !important;
-  }
-  .tab-item.active {
-    background: rgba(0,135,90,0.12) !important;
-  }
-  .tab-item-icon { font-size: 1.1rem !important; }
-  .tab-item-label {
-    font-size: 0.88rem !important;
-    font-weight: 500 !important;
-    letter-spacing: 0 !important;
-  }
-  .tab-item.active .tab-item-icon { transform: none !important; }
-
-  /* Content area */
-  .tab-page {
-    margin-left: 230px !important;
-    padding-bottom: 40px !important;
-    min-height: 100vh;
-  }
-
-  /* Header full-width on macOS */
-  .tab-header {
-    padding-top: 20px !important;
-  }
-
-  /* FAB position */
-  .fab {
-    right: 24px !important;
-    bottom: 24px !important;
-  }
-
-  /* Modals: centered, not sheet */
-  .add-modal-overlay,
-  .share-overlay,
-  .ob-overlay,
-  .recipe-form-overlay,
-  .import-overlay,
-  .cat-modal-overlay,
-  .meal-modal-overlay {
-    padding-left: 230px !important;
-  }
 }
 
 /* ─── AUTH ─── */
@@ -331,7 +228,6 @@ body {
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
   background: #071812; position: relative; overflow: hidden;
-  padding-top: env(safe-area-inset-top, 0px);
 }
 .auth::before {
   content: ''; position: absolute; inset: 0;
@@ -405,7 +301,7 @@ body {
 .tab-page {
   display: none;
   min-height: 100vh;
-  padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
 }
 .tab-page.active {
   display: block;
@@ -418,13 +314,13 @@ body {
   backdrop-filter: blur(28px) saturate(200%);
   -webkit-backdrop-filter: blur(28px) saturate(200%);
   border-bottom: 1px solid var(--border);
-  padding: calc(env(safe-area-inset-top, 0px) + 14px) 16px 10px;
+  padding: 14px 16px 10px;
 }
 .tab-header-row {
   display: flex; align-items: center; justify-content: space-between;
 }
 .tab-large-title {
-  font-size: 1.30rem; font-weight: 800; letter-spacing: -0.04em; color: var(--ink);
+  font-size: 1.10rem; font-weight: 800; letter-spacing: -0.03em; color: var(--ink);
   display: flex; align-items: center; gap: 6px;
 }
 .tab-sub {
@@ -434,7 +330,7 @@ body {
 
 /* ─── FAB ─── */
 .fab {
-  position: fixed; bottom: calc(70px + env(safe-area-inset-bottom, 0px)); right: 18px;
+  position: fixed; bottom: 86px; right: 18px;
   width: 50px; height: 50px; border-radius: 50%;
   background: linear-gradient(145deg, #00A36C 0%, #006644 100%);
   color: #fff; font-size: 1.5rem; line-height: 1;
@@ -447,50 +343,57 @@ body {
 .fab:active { transform: scale(0.84) rotate(-15deg) !important; box-shadow: 0 2px 8px rgba(0,102,68,0.30) !important; }
 @media (hover: hover) { .fab:hover { transform: scale(1.10); box-shadow: 0 8px 30px rgba(0,102,68,0.55), inset 0 1px 0 rgba(255,255,255,0.25); } }
 
-/* ─── BOTTOM TAB BAR — iOS LIQUID GLASS ─── */
+/* ─── BOTTOM TAB BAR — LIQUID GLASS ─── */
 .bottom-tab-bar {
   position: fixed;
-  bottom: 0; left: 50%; transform: translateX(-50%);
+  bottom: max(20px, env(safe-area-inset-bottom, 20px));
+  left: 50%; transform: translateX(-50%);
   display: flex; align-items: stretch;
-  background: rgba(244,246,248,0.75);
-  backdrop-filter: blur(40px) saturate(200%) brightness(1.05);
-  -webkit-backdrop-filter: blur(40px) saturate(200%) brightness(1.05);
-  border: 1px solid rgba(255,255,255,0.55);
-  border-bottom: none;
-  border-radius: 28px 28px 0 0;
-  padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
+  background: var(--nav-bg);
+  backdrop-filter: blur(28px) saturate(200%);
+  -webkit-backdrop-filter: blur(28px) saturate(200%);
+  border: 1px solid var(--glass-border);
+  border-radius: 28px;
+  padding: 6px 8px;
   gap: 2px;
-  width: min(100vw, 430px);
-  box-shadow: 0 -1px 0 rgba(0,0,0,0.06), 0 -8px 32px rgba(15,31,46,0.08);
+  box-shadow:
+    0 8px 32px rgba(0,0,0,0.10),
+    0 2px 8px rgba(0,0,0,0.06),
+    inset 0 1px 0 rgba(255,255,255,0.95);
   z-index: 200;
+  width: calc(100% - 40px);
+  max-width: 400px;
+  transition: padding 0.3s ease, border-radius 0.3s ease;
 }
-[data-theme="dark"] .bottom-tab-bar {
-  background: rgba(10,14,12,0.80);
-  border-color: rgba(255,255,255,0.10);
-  box-shadow: 0 -1px 0 rgba(255,255,255,0.06), 0 -8px 32px rgba(0,0,0,0.40);
+.bottom-tab-bar.nav-compact {
+  padding: 3px 8px;
+}
+.bottom-tab-bar.nav-compact .tab-item-label {
+  font-size: 0; max-height: 0; overflow: hidden;
+  transition: font-size 0.2s, max-height 0.2s;
+}
+.bottom-tab-bar.nav-compact .tab-item {
+  padding: 6px 4px;
 }
 .tab-item {
   flex: 1; display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  padding: 7px 4px 5px;
-  border: none; border-radius: 20px;
-  background: transparent;
-  color: var(--ink3); cursor: pointer;
-  transition: all 0.20s cubic-bezier(0.34,1.56,0.64,1);
-  min-width: 52px; gap: 3px;
+  align-items: center; justify-content: center; gap: 3px;
+  padding: 8px 4px 6px;
+  border-radius: 20px; border: none;
+  background: transparent; color: var(--ink3);
+  transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1);
+  cursor: pointer; min-width: 56px;
   -webkit-tap-highlight-color: transparent;
-  position: relative;
 }
 .tab-item.active {
-  background: rgba(0,135,90,0.12);
-  color: var(--green);
+  background: rgba(255,255,255,0.98);
+  color: var(--green-dk);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.10), 0 0 0 0.5px rgba(0,0,0,0.04);
+  transform: scale(1.05);
 }
-[data-theme="dark"] .tab-item.active {
-  background: rgba(0,135,90,0.20);
-}
-.tab-item-icon { font-size: 1.35rem; line-height: 1; transition: transform 0.20s cubic-bezier(0.34,1.56,0.64,1); }
-.tab-item.active .tab-item-icon { transform: scale(1.08); }
-.tab-item-label { font-size: 0.60rem; font-weight: 600; letter-spacing: -0.01em; }
+.tab-item-icon { font-size: 1.4rem; line-height: 1; }
+.tab-item-label { font-size: 0.62rem; font-weight: 600; letter-spacing: -0.01em; }
+[data-theme="dark"] .tab-item.active { background: rgba(60,60,68,0.95); }
 
 /* ─── SHARE ICON BTN (in frigo header) ─── */
 .icon-btn {
@@ -4152,7 +4055,15 @@ window.addEventListener('fc-ready', () => {
     applyThemeUI();
   });
 
-  // nav-compact scroll behavior removed — tab bar always visible (iOS HIG)
+  // ── COMPACT NAV ON SCROLL ──
+  let navCompact = false;
+  window.addEventListener('scroll', () => {
+    const compact = window.scrollY > 80;
+    if (compact !== navCompact) {
+      navCompact = compact;
+      document.querySelector('.bottom-tab-bar').classList.toggle('nav-compact', compact);
+    }
+  }, { passive: true });
 
   // ── ONBOARDING EVENTS ──
 
