@@ -1864,6 +1864,10 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
           <span class="settings-label"><span class="settings-row-icon" id="theme-icon">☀️</span><span id="theme-label">Mode sombre</span></span>
           <div class="theme-toggle-switch" id="theme-switch"><div class="theme-toggle-thumb"></div></div>
         </button>
+        <button class="settings-row" id="btn-notif-toggle">
+          <span class="settings-label"><span class="settings-row-icon">🔔</span><span id="notif-label">Notifications DLC</span></span>
+          <span class="settings-chevron" id="notif-status">—</span>
+        </button>
       </div>
 
       <!-- Catégories -->
@@ -3498,11 +3502,54 @@ function updateShareBtn() {
   renderProfileShareCard();
 }
 
+/* ── DLC Push Notifications ── */
+async function requestNotificationPermission() {
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'default') {
+    await Notification.requestPermission();
+  }
+}
+
+function checkExpiringItems() {
+  if (Notification.permission !== 'granted') return;
+  const now = Date.now();
+  const twoDays = 2 * 24 * 60 * 60 * 1000;
+  const expiring = fridge.filter(item => {
+    if (!item.dlc) return false;
+    const dlcDate = new Date(item.dlc).getTime();
+    return dlcDate - now <= twoDays && dlcDate >= now - 24*60*60*1000;
+  });
+  const expired = fridge.filter(item => {
+    if (!item.dlc) return false;
+    return new Date(item.dlc).getTime() < now - 24*60*60*1000;
+  });
+
+  if (expiring.length > 0) {
+    new Notification('⚠️ Aliments bientôt périmés — NutriHome', {
+      body: expiring.map(i => i.name).join(', ') + ' expirent dans moins de 2 jours.',
+      tag: 'dlc-warning',
+    });
+  }
+  if (expired.length > 0) {
+    new Notification('🗑️ Aliments périmés — NutriHome', {
+      body: expired.map(i => i.name).join(', ') + ' sont périmés.',
+      tag: 'dlc-expired',
+    });
+  }
+}
+
+function updateNotifStatus() {
+  const el = document.getElementById('notif-status');
+  if (!el || !('Notification' in window)) return;
+  el.textContent = Notification.permission === 'granted' ? '✓ Activées' : 'Désactivées';
+}
+
 function applyProfileToUI() {
   if (!profile) return;
   updateShareBtn();
   renderProfileShareCard();
   renderSante();
+  updateNotifStatus();
 
   const GOAL_LABELS = {
     lose_weight: '🎯 Perte de poids',
@@ -4134,6 +4181,8 @@ window.addEventListener('fc-ready', () => {
         showOnboarding();
       } else {
         applyProfileToUI();
+        requestNotificationPermission();
+        setTimeout(checkExpiringItems, 3000);
       }
     } else {
       user = null; profile = null; sharedFridgeCode = null;
@@ -4177,6 +4226,18 @@ window.addEventListener('fc-ready', () => {
     document.documentElement.dataset.theme = isDark ? '' : 'dark';
     localStorage.setItem('theme', isDark ? 'light' : 'dark');
     applyThemeUI();
+  });
+
+  // ── NOTIFICATION TOGGLE ──
+  document.getElementById('btn-notif-toggle').addEventListener('click', async () => {
+    if (Notification.permission === 'granted') {
+      toast('Notifications activées. Désactivez-les dans les réglages du navigateur.', 'success');
+    } else {
+      const perm = await Notification.requestPermission();
+      document.getElementById('notif-status').textContent = perm === 'granted' ? '✓' : '✗';
+      if (perm === 'granted') { toast('🔔 Notifications activées !', 'success'); checkExpiringItems(); }
+      else toast('Notifications refusées', 'error');
+    }
   });
 
   // ── COMPACT NAV ON SCROLL ──
