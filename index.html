@@ -334,6 +334,12 @@ body {
 .inp:focus { border-color: var(--green-m); }
 .inp-unit { width: 80px; flex-shrink: 0; }
 .add-modal-actions { display: flex; gap: 8px; margin-top: 1.25rem; }
+.add-modal-delete {
+  flex: 1; padding: 10px; background: var(--red-l, #FFEEEE); color: var(--red);
+  border: 1px solid var(--red); border-radius: 8px; font-size: 0.88rem;
+  cursor: pointer; transition: background 0.15s;
+}
+.add-modal-delete:hover { background: var(--red); color: #fff; }
 .add-modal-cancel {
   flex: 1; padding: 10px; border: 1px solid var(--border); background: transparent;
   color: var(--ink3); border-radius: 8px; font-size: 0.88rem;
@@ -395,6 +401,7 @@ body {
   background: var(--surface); transition: background 0.13s;
   position: relative;
   box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  cursor: pointer;
 }
 .food-row:hover { background: var(--surface2); }
 .f-emoji { font-size: 1.1rem; flex-shrink: 0; }
@@ -943,6 +950,7 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
   padding: 10px 12px; border-radius: var(--r); margin-bottom: 4px;
   background: var(--surface); transition: background 0.13s;
   position: relative; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  cursor: pointer;
 }
 .pantry-row:hover { background: var(--surface2); }
 .pantry-empty {
@@ -1206,7 +1214,7 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
 <!-- ═══════════════ ADD FOOD MODAL ═══════════════ -->
 <div id="add-food-overlay" class="add-modal-overlay hidden">
   <div class="add-modal-card">
-    <div class="add-modal-title">Ajouter un aliment</div>
+    <div class="add-modal-title" id="add-modal-title">Ajouter un aliment</div>
 
     <!-- Bouton scan -->
     <button class="btn-scan" id="btn-scan-barcode">📷 Scanner un code-barres</button>
@@ -1261,9 +1269,10 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
 
     <div class="add-modal-actions">
       <button class="add-modal-cancel" id="btn-add-cancel">Annuler</button>
+      <button class="add-modal-delete hidden" id="btn-food-delete">🗑 Supprimer</button>
       <button class="add-modal-confirm" id="btn-add-confirm">✓ Ajouter</button>
     </div>
-    <div style="display:flex;gap:6px;margin-top:8px">
+    <div id="food-dest-row" style="display:flex;gap:6px;margin-top:8px">
       <button class="store-btn active" id="modal-dest-frigo" style="flex:1;border:1px solid var(--border);border-radius:8px;padding:8px">🧊 Frigo</button>
       <button class="store-btn" id="modal-dest-placard" style="flex:1;border:1px solid var(--border);border-radius:8px;padding:8px">🗄 Placard</button>
     </div>
@@ -1580,7 +1589,7 @@ function renderPantry() {
     return;
   }
   el.innerHTML = pantry.map(item => `
-    <div class="pantry-row">
+    <div class="pantry-row" data-item-id="${item.id}">
       <span class="f-emoji">${item.emoji}</span>
       <div class="f-info">
         <div class="f-name">${esc(item.name)}</div>
@@ -1594,6 +1603,12 @@ function renderPantry() {
       e.stopPropagation();
       pantry = pantry.filter(f => f.id !== btn.dataset.pantryDel);
       savePantry(); renderPantry(); renderAlerts();
+    });
+  });
+  el.querySelectorAll('[data-item-id]').forEach(row => {
+    row.addEventListener('click', () => {
+      const item = pantry.find(p => p.id === row.dataset.itemId);
+      if (item) openEditModal(item, 'pantry');
     });
   });
 }
@@ -1644,12 +1659,18 @@ function renderFridge() {
       saveFridge(); renderFridge(); renderAlerts();
     });
   });
+  el.querySelectorAll('[data-item-id]').forEach(row => {
+    row.addEventListener('click', () => {
+      const item = fridge.find(f => f.id === row.dataset.itemId);
+      if (item) openEditModal(item, 'fridge');
+    });
+  });
 }
 
 function group(title, items) {
   const rows = items.map(item => {
     const s = item.dlc ? dlcStatus(item.dlc) : null;
-    return `<div class="food-row">
+    return `<div class="food-row" data-item-id="${item.id}">
       <span class="f-emoji">${item.emoji}</span>
       <div class="f-info">
         <div class="f-name">${esc(item.name)}</div>
@@ -2466,7 +2487,14 @@ window.addEventListener('fc-ready', () => {
   const addOverlay = document.getElementById('add-food-overlay');
   let scanner = null;
 
+  let editingFoodCtx = null; // { id, store: 'fridge'|'pantry' } or null
+
   function openAddModal() {
+    editingFoodCtx = null;
+    document.getElementById('add-modal-title').textContent = 'Ajouter un aliment';
+    document.getElementById('btn-add-confirm').textContent = '✓ Ajouter';
+    document.getElementById('btn-food-delete').classList.add('hidden');
+    document.getElementById('food-dest-row').style.display = 'flex';
     document.getElementById('inp-name').value = '';
     document.getElementById('inp-qty').value  = '';
     document.getElementById('inp-unit').value = '';
@@ -2476,11 +2504,34 @@ window.addEventListener('fc-ready', () => {
     document.getElementById('scanner-view').classList.remove('active');
     document.getElementById('modal-dest-frigo').classList.add('active');
     document.getElementById('modal-dest-placard').classList.remove('active');
-    // Pre-select based on current view
     if (pantryView) {
       document.getElementById('modal-dest-frigo').classList.remove('active');
       document.getElementById('modal-dest-placard').classList.add('active');
     }
+    addOverlay.classList.remove('hidden');
+    setTimeout(() => document.getElementById('inp-name').focus(), 80);
+  }
+
+  function openEditModal(item, store) {
+    editingFoodCtx = { id: item.id, store };
+    document.getElementById('add-modal-title').textContent = 'Modifier l\'aliment';
+    document.getElementById('btn-add-confirm').textContent = '✓ Enregistrer';
+    document.getElementById('btn-food-delete').classList.remove('hidden');
+    document.getElementById('food-dest-row').style.display = 'none';
+    document.getElementById('scan-banner').classList.remove('visible');
+    document.getElementById('scanner-view').classList.remove('active');
+
+    // Parse qty + unit
+    const qtyFull = item.qty || '';
+    const unitMatch = qtyFull.match(/(g|kg|mL|L|tranches)$/);
+    const unitVal = unitMatch ? unitMatch[1] : '';
+    const qtyVal  = unitVal ? qtyFull.replace(unitVal, '').trim() : qtyFull;
+
+    document.getElementById('inp-name').value = item.name || '';
+    document.getElementById('inp-qty').value  = qtyVal;
+    document.getElementById('inp-unit').value = unitVal;
+    document.getElementById('inp-dlc').value  = item.dlc || '';
+    document.getElementById('inp-note').value = item.note || '';
     addOverlay.classList.remove('hidden');
     setTimeout(() => document.getElementById('inp-name').focus(), 80);
   }
@@ -2562,10 +2613,36 @@ window.addEventListener('fc-ready', () => {
     const qty  = document.getElementById('inp-qty').value.trim();
     const unit = document.getElementById('inp-unit').value;
     const note = document.getElementById('inp-note').value.trim();
+    const qtyStr = qty ? (unit ? `${qty} ${unit}` : qty) : (unit || '');
+
+    if (editingFoodCtx) {
+      // — Mode édition —
+      const updated = {
+        id: editingFoodCtx.id,
+        name,
+        qty:   qtyStr || '1',
+        dlc:   document.getElementById('inp-dlc').value || null,
+        note:  note || null,
+        emoji: emoji(name)
+      };
+      if (editingFoodCtx.store === 'pantry') {
+        pantry = pantry.map(i => i.id === updated.id ? updated : i);
+        savePantry(); renderPantry(); renderRecipes();
+        toast(`${updated.emoji} ${name} modifié`);
+      } else {
+        fridge = fridge.map(i => i.id === updated.id ? updated : i);
+        saveFridge(); renderFridge(); renderAlerts();
+        toast(`${updated.emoji} ${name} modifié`);
+      }
+      closeAddModal();
+      return;
+    }
+
+    // — Mode ajout —
     const item = {
       id:    Date.now().toString(),
       name,
-      qty:   qty ? (unit ? `${qty} ${unit}` : qty) : (unit || '1'),
+      qty:   qtyStr || '1',
       dlc:   document.getElementById('inp-dlc').value || null,
       note:  note || null,
       emoji: emoji(name)
@@ -2586,6 +2663,24 @@ window.addEventListener('fc-ready', () => {
   document.getElementById('btn-add').addEventListener('click', openAddModal);
   document.getElementById('btn-add-cancel').addEventListener('click', closeAddModal);
   document.getElementById('btn-add-confirm').addEventListener('click', confirmAddFood);
+
+  document.getElementById('btn-food-delete').addEventListener('click', () => {
+    if (!editingFoodCtx) return;
+    const store = editingFoodCtx.store;
+    const id    = editingFoodCtx.id;
+    if (store === 'pantry') {
+      const item = pantry.find(i => i.id === id);
+      pantry = pantry.filter(i => i.id !== id);
+      savePantry(); renderPantry(); renderRecipes();
+      toast(`${item?.emoji || ''} ${item?.name || 'Article'} supprimé`);
+    } else {
+      const item = fridge.find(i => i.id === id);
+      fridge = fridge.filter(i => i.id !== id);
+      saveFridge(); renderFridge(); renderAlerts();
+      toast(`${item?.emoji || ''} ${item?.name || 'Aliment'} supprimé`);
+    }
+    closeAddModal();
+  });
 
   // Store toggle (frigo / placard)
   document.getElementById('btn-view-frigo').addEventListener('click', () => {
