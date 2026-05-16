@@ -1228,6 +1228,14 @@ body {
 .weight-bar-lbl { font-size: 0.55rem; color: var(--ink3); white-space: nowrap; }
 .weight-bar-val { font-size: 0.62rem; font-weight: 600; color: var(--ink2); }
 .weight-empty { font-size: 0.80rem; color: var(--ink3); text-align: center; padding: 8px 0; }
+.w-metrics-grid { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+.w-metric-chip {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 6px 10px; border-radius: 10px; border: 1.5px solid;
+  background: var(--surface2); min-width: 62px;
+}
+.w-metric-val { font-size: 0.82rem; font-weight: 800; letter-spacing: -0.02em; }
+.w-metric-lbl { font-size: 0.58rem; color: var(--ink3); font-weight: 500; margin-top: 1px; text-transform: uppercase; letter-spacing: 0.04em; }
 
 /* Journal section */
 .journal-section { margin: 0 14px 10px; }
@@ -1284,8 +1292,10 @@ body {
 .meal-modal-title { font-size: 1.05rem; font-weight: 800; color: var(--ink); text-align: center; margin-bottom: 18px; }
 .meal-modal-body { padding: 0 20px; display: flex; flex-direction: column; gap: 12px; }
 .meal-macro-toggle { text-align: center; }
-.meal-macro-toggle-btn { background: none; border: 1px dashed var(--border2); border-radius: 20px; padding: 4px 14px; font-size: 0.75rem; color: var(--ink3); cursor: pointer; }
+.meal-macro-toggle-btn { background: none; border: 1px dashed var(--border2); border-radius: 20px; padding: 4px 14px; font-size: 0.75rem; color: var(--ink3); cursor: pointer; display:inline-flex;align-items:center;gap:5px; }
 .meal-macro-toggle-btn:hover { color: var(--green-dk); border-color: var(--green); }
+.weight-withings-toggle { text-align: center; }
+.withings-section-label { font-size: 0.72rem; font-weight: 700; color: var(--ink3); text-transform: uppercase; letter-spacing: 0.06em; padding-top: 2px; }
 
 /* ─── DARK MODE TOGGLE ─── */
 .theme-toggle-switch {
@@ -1922,6 +1932,7 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
         <div class="weight-progress-sub" id="weight-progress-sub"></div>
       </div>
       <div class="weight-chart" id="weight-chart" style="display:none"></div>
+      <div class="w-metrics-grid" id="weight-metrics" style="display:none"></div>
       <div class="weight-empty" id="weight-empty">Pesez-vous pour commencer le suivi</div>
     </div>
 
@@ -2050,17 +2061,76 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
 
 <!-- ═══════════════ WEIGHT LOG MODAL ═══════════════ -->
 <div id="weight-modal-overlay" class="meal-modal-overlay hidden">
-  <div class="meal-modal-card">
+  <div class="meal-modal-card" style="max-height:90vh;overflow-y:auto">
     <div class="meal-modal-title">⚖️ Enregistrer mon poids</div>
     <div class="meal-modal-body">
-      <div class="rf-field">
-        <label class="rf-label">Poids actuel (kg)</label>
-        <input id="weight-inp" class="inp" type="number" placeholder="70.5" min="30" max="300" step="0.1">
+      <!-- Poids + cible -->
+      <div style="display:flex;gap:10px">
+        <div class="rf-field" style="flex:1">
+          <label class="rf-label">Poids actuel (kg) *</label>
+          <input id="weight-inp" class="inp" type="number" placeholder="70.5" min="30" max="300" step="0.1">
+        </div>
+        <div class="rf-field" style="flex:1">
+          <label class="rf-label">Poids cible (kg)</label>
+          <input id="target-weight-inp" class="inp" type="number" placeholder="65" min="30" max="300" step="0.1">
+        </div>
       </div>
-      <div class="rf-field" id="target-weight-field">
-        <label class="rf-label">Poids cible (kg) — optionnel</label>
-        <input id="target-weight-inp" class="inp" type="number" placeholder="65" min="30" max="300" step="0.1">
+
+      <!-- Withings toggle -->
+      <div class="weight-withings-toggle">
+        <button class="meal-macro-toggle-btn" id="btn-toggle-withings">
+          <span style="font-size:1rem">⚡</span> Données Withings / balance connectée
+        </button>
       </div>
+
+      <div id="weight-withings-section" style="display:none;display:flex;flex-direction:column;gap:10px">
+        <!-- Composition corporelle -->
+        <div class="withings-section-label">🏋️ Composition corporelle</div>
+        <div style="display:flex;gap:10px">
+          <div class="rf-field" style="flex:1">
+            <label class="rf-label">Masse grasse (%)</label>
+            <input id="w-fat-pct" class="inp" type="number" placeholder="22.5" min="1" max="70" step="0.1">
+          </div>
+          <div class="rf-field" style="flex:1">
+            <label class="rf-label">Masse grasse (kg)</label>
+            <input id="w-fat-kg" class="inp" type="number" placeholder="15.8" min="0" max="200" step="0.1">
+          </div>
+        </div>
+        <div style="display:flex;gap:10px">
+          <div class="rf-field" style="flex:1">
+            <label class="rf-label">Masse musculaire (%)</label>
+            <input id="w-muscle-pct" class="inp" type="number" placeholder="45.0" min="1" max="80" step="0.1">
+          </div>
+          <div class="rf-field" style="flex:1">
+            <label class="rf-label">Masse musculaire (kg)</label>
+            <input id="w-muscle-kg" class="inp" type="number" placeholder="31.5" min="0" max="150" step="0.1">
+          </div>
+        </div>
+        <div style="display:flex;gap:10px">
+          <div class="rf-field" style="flex:1">
+            <label class="rf-label">Masse osseuse (kg)</label>
+            <input id="w-bone-kg" class="inp" type="number" placeholder="3.2" min="0" max="30" step="0.1">
+          </div>
+          <div class="rf-field" style="flex:1">
+            <label class="rf-label">Eau corporelle (%)</label>
+            <input id="w-water-pct" class="inp" type="number" placeholder="58.0" min="10" max="90" step="0.1">
+          </div>
+        </div>
+
+        <!-- Métabolisme -->
+        <div class="withings-section-label">⚡ Métabolisme</div>
+        <div style="display:flex;gap:10px">
+          <div class="rf-field" style="flex:1">
+            <label class="rf-label">Graisse viscérale (index)</label>
+            <input id="w-visceral" class="inp" type="number" placeholder="5" min="1" max="60" step="1">
+          </div>
+          <div class="rf-field" style="flex:1">
+            <label class="rf-label">Métabolisme de base (kcal)</label>
+            <input id="w-bmr" class="inp" type="number" placeholder="1650" min="800" max="5000" step="1">
+          </div>
+        </div>
+      </div>
+
       <button class="cat-modal-save" id="weight-modal-save">Enregistrer</button>
       <button class="cat-modal-cancel" id="weight-modal-cancel">Annuler</button>
     </div>
@@ -3701,10 +3771,35 @@ function renderSante() {
         <div class="weight-bar-lbl">${d}</div>
       </div>`;
     }).join('');
+
+    // Withings metrics from latest entry
+    const wMetrics = document.getElementById('weight-metrics');
+    const chips = [
+      latest.fatPct    != null ? { icon:'🟡', label:'Graisse',  val:`${latest.fatPct}%`,    color:'#FFD43B' } : null,
+      latest.musclePct != null ? { icon:'🔴', label:'Muscle',   val:`${latest.musclePct}%`, color:'#FF8C42' } : null,
+      latest.waterPct  != null ? { icon:'🔵', label:'Eau',      val:`${latest.waterPct}%`,  color:'#74C0FC' } : null,
+      latest.fatKg     != null ? { icon:'',   label:'M. grasse',val:`${latest.fatKg} kg`,   color:'#FFA94D' } : null,
+      latest.muscleKg  != null ? { icon:'',   label:'M. musc.', val:`${latest.muscleKg} kg`,color:'#FF8C42' } : null,
+      latest.boneKg    != null ? { icon:'',   label:'Os',       val:`${latest.boneKg} kg`,  color:'#868E96' } : null,
+      latest.visceral  != null ? { icon:'',   label:'Visc.',    val:`idx ${latest.visceral}`,color:'#E64980'} : null,
+      latest.bmr       != null ? { icon:'',   label:'BMR',      val:`${latest.bmr} kcal`,   color:'#9775FA' } : null,
+    ].filter(Boolean);
+    if (chips.length) {
+      wMetrics.style.display = 'flex';
+      wMetrics.innerHTML = chips.map(c =>
+        `<div class="w-metric-chip" style="border-color:${c.color}22;color:${c.color}">
+          <span class="w-metric-val">${c.val}</span>
+          <span class="w-metric-lbl">${c.label}</span>
+        </div>`
+      ).join('');
+    } else {
+      wMetrics.style.display = 'none';
+    }
   } else {
     wEmpty.style.display = 'block';
     wChart.style.display = 'none';
     wProgress.style.display = 'none';
+    document.getElementById('weight-metrics').style.display = 'none';
   }
 
   // ── Journal ──
@@ -3787,8 +3882,20 @@ function openWeightModal() {
   const latest = weightLog.length > 0
     ? [...weightLog].sort((a,b) => a.date.localeCompare(b.date)).at(-1)
     : null;
-  document.getElementById('weight-inp').value = latest?.weight || profile?.weight || '';
+  document.getElementById('weight-inp').value        = latest?.weight || profile?.weight || '';
   document.getElementById('target-weight-inp').value = profile?.targetWeight || '';
+  // Prefill Withings fields from latest entry
+  const W = { 'w-fat-pct': latest?.fatPct, 'w-fat-kg': latest?.fatKg,
+    'w-muscle-pct': latest?.musclePct, 'w-muscle-kg': latest?.muscleKg,
+    'w-bone-kg': latest?.boneKg, 'w-water-pct': latest?.waterPct,
+    'w-visceral': latest?.visceral, 'w-bmr': latest?.bmr };
+  for (const [id, val] of Object.entries(W)) {
+    document.getElementById(id).value = val != null ? val : '';
+  }
+  // Show withings section if previous entry had withings data
+  const hasWithings = latest && (latest.fatPct || latest.musclePct || latest.waterPct);
+  const ws = document.getElementById('weight-withings-section');
+  ws.style.display = hasWithings ? 'flex' : 'none';
   document.getElementById('weight-modal-overlay').classList.remove('hidden');
   setTimeout(() => document.getElementById('weight-inp').focus(), 60);
 }
@@ -3801,17 +3908,27 @@ async function saveWeightModal() {
   const w = parseFloat(document.getElementById('weight-inp').value);
   const t = parseFloat(document.getElementById('target-weight-inp').value);
   if (!w || w < 30 || w > 300) { toast('Entrez un poids valide', 'error'); return; }
-  const entry = { date: todayDate(), weight: w };
-  // Remove existing entry for today if any, then add new
+
+  const g = id => { const v = parseFloat(document.getElementById(id).value); return isNaN(v) ? undefined : v; };
+  const entry = {
+    date: todayDate(), weight: w,
+    fatPct:    g('w-fat-pct'),    fatKg:     g('w-fat-kg'),
+    musclePct: g('w-muscle-pct'), muscleKg:  g('w-muscle-kg'),
+    boneKg:    g('w-bone-kg'),    waterPct:  g('w-water-pct'),
+    visceral:  g('w-visceral'),   bmr:       g('w-bmr'),
+  };
+  // Strip undefined fields
+  Object.keys(entry).forEach(k => entry[k] === undefined && delete entry[k]);
+
   weightLog = [...weightLog.filter(e => e.date !== todayDate()), entry];
   await window.__FC.saveWeightLog(user.uid, weightLog);
   if (t && t >= 30 && t <= 300) {
-    profile = { ...profile, targetWeight: t };
-    await window.__FC.saveProfile(user.uid, profile);
+    profile = { ...profile, targetWeight: t, weight: w };
+  } else {
+    profile = { ...profile, weight: w };
   }
-  // also update current weight in profile
-  profile = { ...profile, weight: w };
   await window.__FC.saveProfile(user.uid, profile);
+  applyProfileToUI();
   renderSante();
   closeWeightModal();
   toast(`⚖️ ${w} kg enregistré`, 'success');
@@ -4469,6 +4586,16 @@ window.addEventListener('fc-ready', () => {
 
   // ── WEIGHT LOG ──
   document.getElementById('btn-log-weight').addEventListener('click', openWeightModal);
+  document.getElementById('btn-toggle-withings').addEventListener('click', () => {
+    const sec = document.getElementById('weight-withings-section');
+    const btn = document.getElementById('btn-toggle-withings');
+    const visible = sec.style.display !== 'none';
+    sec.style.display = visible ? 'none' : 'flex';
+    sec.style.flexDirection = 'column';
+    sec.style.gap = '10px';
+    btn.style.color = visible ? '' : 'var(--green-dk)';
+    btn.style.borderColor = visible ? '' : 'var(--green)';
+  });
   document.getElementById('weight-modal-overlay').addEventListener('click', e => {
     if (e.target === document.getElementById('weight-modal-overlay')) closeWeightModal();
   });
