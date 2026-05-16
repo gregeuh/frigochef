@@ -1403,6 +1403,18 @@ body {
 }
 .manual-shop-btn:active { transform: scale(0.94); }
 
+/* ─── VOICE INPUT ─── */
+.voice-shop-btn {
+  width: 40px; height: 40px; border-radius: 12px; border: none;
+  background: var(--surface2); color: var(--ink3); font-size: 1.1rem;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0;
+  transition: all 0.18s cubic-bezier(0.34,1.56,0.64,1);
+}
+.voice-shop-btn:hover { background: var(--green-l); color: var(--green-dk); }
+.voice-shop-btn.listening { background: var(--red-l); color: var(--red); animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+
 /* ─── SHARE MODAL ─── */
 .share-overlay {
   position: fixed; inset: 0; background: rgba(10,10,14,0.60);
@@ -1781,6 +1793,7 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
     <div class="tab-body">
       <div class="manual-shop-form">
         <input class="manual-shop-inp" id="inp-manual-shop" type="text" placeholder="Ajouter un article…" autocomplete="off">
+        <button class="voice-shop-btn" id="btn-voice-shop" title="Ajouter par la voix">🎙️</button>
         <button class="manual-shop-btn" id="btn-manual-shop">＋</button>
       </div>
       <div id="manual-shop-cat-row" style="display:none;gap:5px;flex-wrap:wrap;margin-bottom:10px"></div>
@@ -4338,6 +4351,54 @@ window.addEventListener('fc-ready', () => {
 
   document.getElementById('btn-scan-barcode').addEventListener('click', startScanner);
   document.getElementById('btn-scan-stop').addEventListener('click', stopScanner);
+
+  /* ── Voice Input ── */
+  let voiceRecognition = null;
+  let voiceListening = false;
+
+  function startVoiceInput() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) { toast('Reconnaissance vocale non supportée sur ce navigateur', 'error'); return; }
+    if (voiceListening) { stopVoiceInput(); return; }
+
+    voiceRecognition = new SpeechRecognition();
+    voiceRecognition.lang = 'fr-FR';
+    voiceRecognition.continuous = false;
+    voiceRecognition.interimResults = false;
+
+    voiceRecognition.onstart = () => {
+      voiceListening = true;
+      document.getElementById('btn-voice-shop').classList.add('listening');
+      toast('🎙️ Parlez maintenant…', 'success');
+    };
+    voiceRecognition.onresult = (e) => {
+      const text = e.results[0][0].transcript.trim();
+      const inp = document.getElementById('inp-manual-shop');
+      if (inp) {
+        inp.value = text;
+        inp.dispatchEvent(new Event('input'));
+        renderManualCatPicker(text);
+      }
+      stopVoiceInput();
+      haptic(15);
+    };
+    voiceRecognition.onerror = (e) => {
+      toast('Erreur de reconnaissance vocale', 'error');
+      stopVoiceInput();
+    };
+    voiceRecognition.onend = () => stopVoiceInput();
+    voiceRecognition.start();
+  }
+
+  function stopVoiceInput() {
+    voiceListening = false;
+    document.getElementById('btn-voice-shop')?.classList.remove('listening');
+    try { voiceRecognition?.stop(); } catch(e) {}
+    voiceRecognition = null;
+  }
+
+  document.getElementById('btn-voice-shop').addEventListener('click', startVoiceInput);
+
 
   function confirmAddFood() {
     const nameEl = document.getElementById('inp-name');
