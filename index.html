@@ -1114,11 +1114,24 @@ function dlcStatus(dateStr) {
 
 function saveFridge() {
   if (!user) return;
-  if (sharedFridgeCode) {
-    window.__FC.saveSharedFridge(sharedFridgeCode, fridge);
-  } else {
-    window.__FC.saveFridge(user.uid, fridge);
-  }
+  const p = sharedFridgeCode
+    ? window.__FC.saveSharedFridge(sharedFridgeCode, fridge)
+    : window.__FC.saveFridge(user.uid, fridge);
+  p.catch(err => {
+    console.error('Erreur sauvegarde frigo:', err);
+    toast('Erreur de sauvegarde — vérifiez votre connexion', 'error');
+  });
+}
+
+function toast(msg, type = 'info') {
+  const el = document.createElement('div');
+  el.textContent = msg;
+  el.style.cssText = `position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+    background:${type === 'error' ? 'var(--red)' : '#222'};color:#fff;padding:10px 20px;
+    border-radius:8px;font-size:.85rem;z-index:9999;opacity:0;transition:opacity .2s;max-width:90vw;text-align:center`;
+  document.body.appendChild(el);
+  requestAnimationFrame(() => { el.style.opacity = '1'; });
+  setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 3500);
 }
 
 /* ═══════════════════════════════════════════════════
