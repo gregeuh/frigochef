@@ -142,6 +142,26 @@ input  { font-family: inherit; }
   --r-xl: 32px;
   --glass:        rgba(255,255,255,0.82);
   --glass-border: rgba(255,255,255,0.70);
+  --nav-bg:    rgba(242,242,247,0.88);
+  --header-bg: rgba(242,242,247,0.92);
+}
+[data-theme="dark"] {
+  --bg:        #000000;
+  --surface:   #1C1C1E;
+  --surface2:  rgba(255,255,255,0.07);
+  --border:    rgba(255,255,255,0.12);
+  --border2:   rgba(255,255,255,0.22);
+  --ink:       #FFFFFF;
+  --ink2:      #EBEBF5;
+  --ink3:      #8E8E93;
+  --green-l:   rgba(52,199,89,0.18);
+  --red-l:     rgba(255,59,48,0.15);
+  --orange-l:  rgba(255,149,0,0.15);
+  --amber-l:   rgba(255,204,0,0.15);
+  --glass:        rgba(28,28,30,0.88);
+  --glass-border: rgba(255,255,255,0.14);
+  --nav-bg:    rgba(28,28,30,0.92);
+  --header-bg: rgba(0,0,0,0.92);
 }
 
 html, body {
@@ -223,7 +243,7 @@ body {
 
 .tab-header {
   position: sticky; top: 0; z-index: 50;
-  background: rgba(242,242,247,0.92);
+  background: var(--header-bg);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border-bottom: 1px solid var(--border);
@@ -260,10 +280,10 @@ body {
   bottom: max(20px, env(safe-area-inset-bottom, 20px));
   left: 50%; transform: translateX(-50%);
   display: flex; align-items: stretch;
-  background: rgba(242,242,247,0.88);
+  background: var(--nav-bg);
   backdrop-filter: blur(28px) saturate(200%);
   -webkit-backdrop-filter: blur(28px) saturate(200%);
-  border: 1px solid rgba(255,255,255,0.72);
+  border: 1px solid var(--glass-border);
   border-radius: 28px;
   padding: 6px 8px;
   gap: 2px;
@@ -274,6 +294,17 @@ body {
   z-index: 200;
   width: calc(100% - 40px);
   max-width: 400px;
+  transition: padding 0.3s ease, border-radius 0.3s ease;
+}
+.bottom-tab-bar.nav-compact {
+  padding: 3px 8px;
+}
+.bottom-tab-bar.nav-compact .tab-item-label {
+  font-size: 0; max-height: 0; overflow: hidden;
+  transition: font-size 0.2s, max-height 0.2s;
+}
+.bottom-tab-bar.nav-compact .tab-item {
+  padding: 6px 4px;
 }
 .tab-item {
   flex: 1; display: flex; flex-direction: column;
@@ -742,6 +773,34 @@ body {
 .settings-row-icon { font-size: 1.1rem; }
 .settings-chevron { color: var(--ink3); font-size: 1.1rem; }
 
+/* ─── DARK MODE TOGGLE ─── */
+.theme-toggle-switch {
+  width: 44px; height: 26px; border-radius: 13px;
+  background: var(--surface2); border: 1px solid var(--border2);
+  position: relative; transition: background 0.25s;
+  flex-shrink: 0;
+}
+[data-theme="dark"] .theme-toggle-switch { background: var(--green); border-color: var(--green); }
+.theme-toggle-thumb {
+  position: absolute; top: 3px; left: 3px;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+  transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
+}
+[data-theme="dark"] .theme-toggle-thumb { transform: translateX(18px); }
+
+/* ─── NAV dark ─── */
+[data-theme="dark"] .tab-item.active {
+  background: rgba(255,255,255,0.10);
+}
+
+/* ─── FOOD CATEGORY BADGE ─── */
+.cat-type-badge {
+  display: inline-block; font-size: 0.65rem; font-weight: 600;
+  padding: 2px 7px; border-radius: 8px; background: var(--surface2);
+  color: var(--ink3); margin-left: 4px; vertical-align: middle;
+}
+
 /* ─── SHARE MODAL ─── */
 .share-overlay {
   position: fixed; inset: 0; background: rgba(20,16,10,0.65);
@@ -1094,6 +1153,10 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
         <button class="settings-row" id="btn-share-profil">
           <span class="settings-label"><span class="settings-row-icon">👥</span><span id="share-label">Frigo partagé</span></span>
           <span class="settings-chevron">›</span>
+        </button>
+        <button class="settings-row" id="btn-toggle-theme">
+          <span class="settings-label"><span class="settings-row-icon" id="theme-icon">☀️</span><span id="theme-label">Mode sombre</span></span>
+          <div class="theme-toggle-switch" id="theme-switch"><div class="theme-toggle-thumb"></div></div>
         </button>
       </div>
       <div class="settings-group">
@@ -1503,6 +1566,44 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
 
 <script>
 /* ═══════════════════════════════════════════════════
+   THEME (dark / light) — init before render
+   ═══════════════════════════════════════════════════ */
+(function() {
+  const saved = localStorage.getItem('theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  if (saved === 'dark' || (!saved && prefersDark)) {
+    document.documentElement.dataset.theme = 'dark';
+  }
+})();
+
+/* ═══════════════════════════════════════════════════
+   FOOD CATEGORIES
+   ═══════════════════════════════════════════════════ */
+const FOOD_CATEGORIES = [
+  { key: 'fruits',   label: '🍎 Fruits',            color: '#FF6B6B', bg: 'rgba(255,107,107,0.10)',
+    words: ['pomme','banane','orange','citron','citron vert','fraise','raisin','poire','pêche','abricot','cerise','mangue','ananas','kiwi','melon','pastèque','figue','prune','myrtille','framboise','mûre','clémentine','mandarine','pamplemousse','fruit'] },
+  { key: 'legumes',  label: '🥦 Légumes',            color: '#51CF66', bg: 'rgba(81,207,102,0.10)',
+    words: ['carotte','tomate','salade','laitue','épinard','courgette','aubergine','poivron','oignon','ail','poireau','brocoli','chou','haricot','petit pois','maïs','betterave','navet','céleri','concombre','radis','champignon','endive','asperge','artichaut','fenouil','potiron','courge','patate douce','pomme de terre','légume','bette','blette','mâche','roquette','avocat'] },
+  { key: 'viandes',  label: '🥩 Viandes & Poissons', color: '#FF8C42', bg: 'rgba(255,140,66,0.10)',
+    words: ['poulet','bœuf','boeuf','porc','veau','agneau','canard','dinde','lapin','saumon','thon','cabillaud','sole','dorade','sardine','crevette','moule','calamar','seiche','jambon','lardons','bacon','saucisse','merguez','chipolata','steak','côte','filet','viande','poisson','blanc de poulet'] },
+  { key: 'laitier',  label: '🧀 Produits laitiers',  color: '#FFD43B', bg: 'rgba(255,212,59,0.10)',
+    words: ['lait','beurre','crème','yaourt','yogurt','fromage','mozzarella','parmesan','camembert','brie','emmental','gruyère','ricotta','mascarpone','comté','roquefort','chèvre','feta','crème fraîche','crème liquide'] },
+  { key: 'oeufs',    label: '🥚 Œufs',               color: '#FFA94D', bg: 'rgba(255,169,77,0.10)',
+    words: ['œuf','oeuf','oeufs','œufs'] },
+  { key: 'epicerie', label: '🌾 Épicerie',            color: '#74C0FC', bg: 'rgba(116,192,252,0.10)',
+    words: ['farine','sucre','sel','huile','vinaigre','pâtes','riz','lentille','quinoa','pain','biscottes','céréale','miel','confiture','sauce','ketchup','moutarde','mayonnaise','curry','cumin','paprika','poivre','cannelle','levure','bouillon','conserve','chocolat','cacao','vanille','orge','épeautre','semoule','boulgour'] },
+  { key: 'boissons', label: '🧃 Boissons',            color: '#9775FA', bg: 'rgba(151,117,250,0.10)',
+    words: ['eau','jus','soda','bière','vin','café','thé','smoothie','limonade','sirop','kombucha','lait','boisson'] },
+];
+function foodCategory(name) {
+  const n = name.toLowerCase();
+  for (const cat of FOOD_CATEGORIES) {
+    if (cat.words.some(w => n.includes(w))) return cat;
+  }
+  return { key: 'autres', label: '📦 Autres', color: '#868E96', bg: 'rgba(134,142,150,0.10)' };
+}
+
+/* ═══════════════════════════════════════════════════
    STATE
    ═══════════════════════════════════════════════════ */
 let user    = null;
@@ -1588,7 +1689,15 @@ function renderPantry() {
     el.innerHTML = `<div class="pantry-empty"><div class="pantry-empty-icon">🗄</div>Votre placard est vide.<br>Ajoutez vos basiques !</div>`;
     return;
   }
-  el.innerHTML = pantry.map(item => `
+  // Group pantry items by food category
+  const grouped = {};
+  pantry.forEach(item => {
+    const cat = foodCategory(item.name);
+    (grouped[cat.label] = grouped[cat.label] || { cat, items: [] }).items.push(item);
+  });
+  el.innerHTML = Object.values(grouped).map(({ cat, items }) => `
+    <div class="cat-head" style="color:${cat.color}">${cat.label}</div>
+    ${items.map(item => `
     <div class="pantry-row" data-item-id="${item.id}">
       <span class="f-emoji">${item.emoji}</span>
       <div class="f-info">
@@ -1596,7 +1705,7 @@ function renderPantry() {
         <div class="f-qty">${esc(item.qty || '')}${item.note ? ` · <em>${esc(item.note)}</em>` : ''}</div>
       </div>
       <button class="f-del" data-pantry-del="${item.id}" title="Supprimer">✕</button>
-    </div>
+    </div>`).join('')}
   `).join('');
   el.querySelectorAll('[data-pantry-del]').forEach(btn => {
     btn.addEventListener('click', e => {
@@ -1669,11 +1778,12 @@ function renderFridge() {
 
 function group(title, items) {
   const rows = items.map(item => {
-    const s = item.dlc ? dlcStatus(item.dlc) : null;
+    const s   = item.dlc ? dlcStatus(item.dlc) : null;
+    const cat = foodCategory(item.name);
     return `<div class="food-row" data-item-id="${item.id}">
       <span class="f-emoji">${item.emoji}</span>
       <div class="f-info">
-        <div class="f-name">${esc(item.name)}</div>
+        <div class="f-name">${esc(item.name)} <span class="cat-type-badge" style="background:${cat.bg};color:${cat.color}">${cat.label.split(' ').slice(1).join(' ')}</span></div>
         <div class="f-qty">${esc(item.qty || '')}${item.note ? ` · <em>${esc(item.note)}</em>` : ''}</div>
       </div>
       ${s ? `<span class="dlc-tag ${s.cls}">${s.label}</span>` : ''}
@@ -2334,6 +2444,31 @@ window.addEventListener('fc-ready', () => {
 
   // Bouton profil
   document.getElementById('btn-profile').addEventListener('click', showOnboarding);
+
+  // ── DARK MODE TOGGLE ──
+  function applyThemeUI() {
+    const isDark = document.documentElement.dataset.theme === 'dark';
+    document.getElementById('theme-icon').textContent  = isDark ? '🌙' : '☀️';
+    document.getElementById('theme-label').textContent = isDark ? 'Mode clair' : 'Mode sombre';
+    document.querySelector('meta[name="theme-color"]').content = isDark ? '#000000' : '#F2F2F7';
+  }
+  applyThemeUI();
+  document.getElementById('btn-toggle-theme').addEventListener('click', () => {
+    const isDark = document.documentElement.dataset.theme === 'dark';
+    document.documentElement.dataset.theme = isDark ? '' : 'dark';
+    localStorage.setItem('theme', isDark ? 'light' : 'dark');
+    applyThemeUI();
+  });
+
+  // ── COMPACT NAV ON SCROLL ──
+  let navCompact = false;
+  window.addEventListener('scroll', () => {
+    const compact = window.scrollY > 80;
+    if (compact !== navCompact) {
+      navCompact = compact;
+      document.querySelector('.bottom-tab-bar').classList.toggle('nav-compact', compact);
+    }
+  }, { passive: true });
 
   // ── ONBOARDING EVENTS ──
 
