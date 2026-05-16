@@ -6,8 +6,8 @@
 <meta name="theme-color" content="#F2F2F7">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="MaCuisine">
-<title>MaCuisine</title>
+<meta name="apple-mobile-web-app-title" content="NutriHome">
+<title>NutriHome</title>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
@@ -1676,7 +1676,7 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
 <!-- ═══════════════ AUTH SCREEN ═══════════════ -->
 <div id="auth-screen" class="auth">
   <div class="auth-card">
-    <div class="auth-wordmark">Ma<span>Cuisine</span></div>
+    <div class="auth-wordmark">Nutri<span>Home</span></div>
     <div class="auth-tagline">Votre cuisine française, intelligente</div>
     <div class="auth-divider">Connexion</div>
     <button class="btn-google" id="btn-login">
@@ -1799,7 +1799,7 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
           <div class="profile-avatar-lg" id="user-avatar">?</div>
           <div class="profile-hero-info">
             <div class="profile-name-lg" id="user-name"></div>
-            <div class="profile-goal-badge" id="profile-goal-badge">MaCuisine</div>
+            <div class="profile-goal-badge" id="profile-goal-badge">NutriHome</div>
           </div>
           <button class="profile-edit-btn" id="btn-profile-edit" title="Modifier le profil">✏️</button>
         </div>
@@ -3241,7 +3241,7 @@ function exportPDF(r) {
   doc.setFillColor(245, 245, 247);
   doc.rect(0, 0, W, 38, 'F');
   doc.setFontSize(9); doc.setTextColor(140);
-  doc.text('MaCuisine', M, 13);
+  doc.text('NutriHome', M, 13);
   doc.setFontSize(20); doc.setFont('helvetica', 'bold'); doc.setTextColor(0);
   const titleLines = doc.splitTextToSize(r.name, CW);
   doc.text(titleLines, M, 26);
@@ -3293,7 +3293,7 @@ function exportPDF(r) {
 
   // Footer
   doc.setFontSize(8); doc.setTextColor(180);
-  doc.text('Généré par MaCuisine', M, 290);
+  doc.text('Généré par NutriHome', M, 290);
 
   doc.save(`${r.name.replace(/[^a-z0-9]/gi, '_').substring(0, 40)}.pdf`);
   toast('PDF téléchargé !');
@@ -3490,7 +3490,7 @@ function applyProfileToUI() {
   };
 
   const badge = document.getElementById('profile-goal-badge');
-  if (badge && profile.goal) badge.textContent = GOAL_LABELS[profile.goal] || 'MaCuisine';
+  if (badge && profile.goal) badge.textContent = GOAL_LABELS[profile.goal] || 'NutriHome';
 
   // Stats block
   if (profile.dailyCalories || profile.weight) {
