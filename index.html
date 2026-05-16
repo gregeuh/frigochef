@@ -48,6 +48,13 @@
         if (snap.exists()) cb(snap.data().items || []);
         else cb([]);
       });
+    },
+    saveProfile: async (uid, data) => {
+      await setDoc(doc(db, 'profiles', uid), { ...data, updatedAt: Date.now() });
+    },
+    loadProfile: async (uid) => {
+      const snap = await getDoc(doc(db, 'profiles', uid));
+      return snap.exists() ? snap.data() : null;
     }
   };
 
@@ -484,6 +491,114 @@ body {
 .shop-row { display: flex; align-items: center; gap: 9px; font-size: 0.85rem; padding: 5px 0; }
 .shop-row input[type=checkbox] { accent-color: var(--green); width: 15px; height: 15px; }
 
+/* ─── ONBOARDING ─── */
+.ob-overlay {
+  position: fixed; inset: 0;
+  background: rgba(20,16,10,0.7);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 300; padding: 1rem;
+  animation: fadeIn 0.2s ease;
+}
+.ob-card {
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  width: 100%; max-width: 460px;
+  padding: 2.25rem 2rem 2rem;
+  box-shadow: 0 24px 64px rgba(20,16,10,0.22);
+  animation: slideUp 0.25s ease;
+}
+.ob-progress {
+  display: flex; gap: 6px; margin-bottom: 2rem; justify-content: center;
+}
+.ob-dot {
+  height: 6px; width: 6px; border-radius: 3px;
+  background: var(--border2); transition: all 0.25s;
+}
+.ob-dot.active { width: 22px; background: var(--green); }
+.ob-dot.done   { background: var(--green-m); }
+.ob-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.65rem; font-weight: 700; color: var(--ink);
+  margin-bottom: 0.3rem; line-height: 1.2;
+}
+.ob-sub { font-size: 0.85rem; color: var(--ink3); margin-bottom: 1.6rem; }
+.ob-choices {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 9px;
+  margin-bottom: 1.75rem;
+}
+.ob-choice {
+  border: 2px solid var(--border); border-radius: var(--r);
+  padding: 1rem 0.75rem; text-align: center;
+  cursor: pointer; background: var(--bg);
+  transition: all 0.15s;
+}
+.ob-choice:hover { border-color: var(--green-m); background: var(--green-l); }
+.ob-choice.selected { border-color: var(--green); background: var(--green-l); }
+.ob-choice-icon { font-size: 1.75rem; margin-bottom: 0.35rem; }
+.ob-choice-label { font-size: 0.83rem; font-weight: 500; color: var(--ink); }
+.ob-choice-desc { font-size: 0.7rem; color: var(--ink3); margin-top: 2px; }
+.ob-checks {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  margin-bottom: 1rem;
+}
+.ob-check-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 12px; border-radius: var(--r);
+  border: 1.5px solid var(--border); background: var(--bg);
+  cursor: pointer; transition: all 0.15s;
+  font-size: 0.84rem; user-select: none;
+}
+.ob-check-item:hover { border-color: var(--green-m); }
+.ob-check-item.checked { border-color: var(--green); background: var(--green-l); color: var(--green); font-weight: 500; }
+.ob-field { margin-bottom: 1.1rem; }
+.ob-field-label {
+  display: block; font-size: 0.72rem; font-weight: 500;
+  color: var(--ink2); margin-bottom: 6px;
+  text-transform: uppercase; letter-spacing: 0.07em;
+}
+.ob-hint { font-size: 0.72rem; color: var(--ink3); margin-top: 5px; }
+.ob-footer { display: flex; gap: 9px; margin-top: 0.25rem; }
+.ob-btn-next {
+  flex: 1; padding: 12px;
+  background: linear-gradient(135deg, var(--green), var(--green-m));
+  color: #fff; border: none; border-radius: var(--r);
+  font-family: 'Jost', sans-serif; font-size: 0.92rem; font-weight: 500;
+  transition: opacity 0.15s;
+}
+.ob-btn-next:hover { opacity: 0.88; }
+.ob-btn-back {
+  padding: 12px 16px; background: none; color: var(--ink3);
+  border: 1.5px solid var(--border); border-radius: var(--r);
+  font-family: 'Jost', sans-serif; font-size: 0.9rem;
+  transition: all 0.15s;
+}
+.ob-btn-back:hover { background: var(--surface2); color: var(--ink); }
+.ob-no-restriction {
+  font-size: 0.75rem; color: var(--ink3); text-align: center; margin-bottom: 1.4rem;
+}
+
+/* ─── NUTRITION BADGE ─── */
+.cal-badge {
+  font-size: 0.7rem; font-weight: 600; padding: 2px 7px;
+  border-radius: 9px; background: var(--amber-l); color: var(--amber);
+  white-space: nowrap;
+}
+.nutrition-row {
+  display: flex; gap: 8px; flex-wrap: wrap; margin-top: 0.6rem;
+}
+.nutr-chip {
+  font-size: 0.75rem; padding: 3px 9px; border-radius: 8px;
+  background: var(--bg); color: var(--ink2); font-weight: 500;
+}
+
+/* ─── PROFILE BTN ─── */
+.profile-btn {
+  font-size: 0.75rem; color: var(--ink3); background: none;
+  border: 1px solid var(--border); padding: 4px 10px;
+  border-radius: 8px; transition: all 0.15s; cursor: pointer;
+}
+.profile-btn:hover { background: var(--surface2); color: var(--ink); }
+
 /* ─── HIDDEN ─── */
 .hidden { display: none !important; }
 </style>
@@ -524,6 +639,7 @@ body {
       <button class="tab" data-tab="courses">Courses</button>
     </nav>
     <div class="user-zone">
+      <button class="profile-btn hidden" id="btn-profile" title="Modifier mon profil">⚙️ Mon profil</button>
       <div class="avatar" id="user-avatar">?</div>
       <span class="user-name" id="user-name"></span>
       <button class="logout-btn" id="btn-logout">Déconnexion</button>
@@ -600,9 +716,95 @@ body {
   </div>
 </div>
 
-<!-- ═══════════════ MODAL ═══════════════ -->
+<!-- ═══════════════ MODAL RECETTE ═══════════════ -->
 <div id="modal-overlay" class="overlay hidden">
   <div class="modal" id="modal-body"></div>
+</div>
+
+<!-- ═══════════════ ONBOARDING ═══════════════ -->
+<div id="ob-overlay" class="ob-overlay hidden">
+  <div class="ob-card">
+    <div class="ob-progress">
+      <div class="ob-dot active" id="ob-dot-0"></div>
+      <div class="ob-dot" id="ob-dot-1"></div>
+      <div class="ob-dot" id="ob-dot-2"></div>
+    </div>
+
+    <!-- Étape 0 : Objectif -->
+    <div id="ob-step-0">
+      <div class="ob-title">Bienvenue 👋</div>
+      <div class="ob-sub">Quel est votre objectif principal ?</div>
+      <div class="ob-choices">
+        <div class="ob-choice" data-goal="lose_weight">
+          <div class="ob-choice-icon">🎯</div>
+          <div class="ob-choice-label">Perdre du poids</div>
+          <div class="ob-choice-desc">Recettes légères &amp; rassasiantes</div>
+        </div>
+        <div class="ob-choice" data-goal="maintain">
+          <div class="ob-choice-icon">⚖️</div>
+          <div class="ob-choice-label">Maintenir mon poids</div>
+          <div class="ob-choice-desc">Alimentation équilibrée</div>
+        </div>
+        <div class="ob-choice" data-goal="eat_healthy">
+          <div class="ob-choice-icon">🥗</div>
+          <div class="ob-choice-label">Manger sainement</div>
+          <div class="ob-choice-desc">Qualité nutritionnelle</div>
+        </div>
+        <div class="ob-choice" data-goal="build_muscle">
+          <div class="ob-choice-icon">💪</div>
+          <div class="ob-choice-label">Prendre du muscle</div>
+          <div class="ob-choice-desc">Riche en protéines</div>
+        </div>
+      </div>
+      <div class="ob-footer">
+        <button class="ob-btn-next" id="ob-next-0">Suivant →</button>
+      </div>
+    </div>
+
+    <!-- Étape 1 : Régime -->
+    <div id="ob-step-1" class="hidden">
+      <div class="ob-title">Votre régime</div>
+      <div class="ob-sub">Vos préférences alimentaires (plusieurs possibles)</div>
+      <div class="ob-checks" id="ob-checks">
+        <label class="ob-check-item"><input type="checkbox" value="végétarien"> 🌿 Végétarien</label>
+        <label class="ob-check-item"><input type="checkbox" value="végan"> 🌱 Végan</label>
+        <label class="ob-check-item"><input type="checkbox" value="sans gluten"> 🌾 Sans gluten</label>
+        <label class="ob-check-item"><input type="checkbox" value="sans lactose"> 🥛 Sans lactose</label>
+        <label class="ob-check-item"><input type="checkbox" value="halal"> ☪️ Halal</label>
+        <label class="ob-check-item"><input type="checkbox" value="sans porc"> 🚫 Sans porc</label>
+      </div>
+      <div class="ob-no-restriction">Aucune sélection = pas de restriction particulière</div>
+      <div class="ob-footer">
+        <button class="ob-btn-back" id="ob-back-1">← Retour</button>
+        <button class="ob-btn-next" id="ob-next-1">Suivant →</button>
+      </div>
+    </div>
+
+    <!-- Étape 2 : Calories + Temps -->
+    <div id="ob-step-2" class="hidden">
+      <div class="ob-title">Votre programme</div>
+      <div class="ob-sub">Personnalisez vos recettes selon vos besoins</div>
+      <div class="ob-field">
+        <label class="ob-field-label">Calories par repas (kcal)</label>
+        <input type="number" class="inp" id="ob-calories" placeholder="ex : 500" min="200" max="1500" step="50">
+        <div class="ob-hint" id="ob-cal-hint"></div>
+      </div>
+      <div class="ob-field">
+        <label class="ob-field-label">Temps de cuisine maximum</label>
+        <select class="inp" id="ob-cooktime">
+          <option value="15">≤ 15 min (express)</option>
+          <option value="30" selected>≤ 30 min (rapide)</option>
+          <option value="45">≤ 45 min (modéré)</option>
+          <option value="60">≤ 60 min (classique)</option>
+          <option value="120">Sans limite</option>
+        </select>
+      </div>
+      <div class="ob-footer">
+        <button class="ob-btn-back" id="ob-back-2">← Retour</button>
+        <button class="ob-btn-next" id="ob-next-2">C'est parti ! 🚀</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -614,6 +816,15 @@ let fridge  = [];
 let recipes = [];
 let filter  = 'all';
 let unsub   = null;
+let profile = null;
+
+const GOAL_LABELS = {
+  lose_weight:  'Perte de poids',
+  maintain:     'Maintien du poids',
+  eat_healthy:  'Alimentation saine',
+  build_muscle: 'Prise de muscle'
+};
+const GOAL_CALORIES = { lose_weight: 450, maintain: 620, eat_healthy: 540, build_muscle: 750 };
 
 const FOOD_EMOJI_MAP = {
   'tomate':'🍅','poulet':'🍗','oeuf':'🥚','lait':'🥛','fromage':'🧀',
@@ -731,9 +942,14 @@ function renderRecipes() {
     (r.matched || []).some(m => urgentNames.some(u => m.toLowerCase().includes(u) || u.includes(m.toLowerCase())))
   );
 
+  const profileSub = profile
+    ? ` · ${GOAL_LABELS[profile.goal] || ''} · ${profile.caloriesPerMeal} kcal/repas`
+    : '';
   sub.textContent = recipes.length
-    ? `${recipes.length} recette${recipes.length>1?'s':''} basée${recipes.length>1?'s':''} sur votre frigo · cuisine française & européenne`
-    : 'Ajoutez des aliments et générez vos recettes.';
+    ? `${recipes.length} recette${recipes.length>1?'s':''} basée${recipes.length>1?'s':''} sur votre frigo${profileSub}`
+    : profile
+      ? `Profil : ${GOAL_LABELS[profile.goal]} · ${profile.caloriesPerMeal} kcal/repas — Ajoutez des aliments et générez vos recettes.`
+      : 'Ajoutez des aliments et générez vos recettes.';
 
   if (!list.length) {
     grid.innerHTML = `<div class="empty">
@@ -753,6 +969,8 @@ function renderRecipes() {
       ...(r.missing||[]).slice(0,1).map(t=>`<span class="chip chip-missing">+ ${esc(t)}</span>`),
       hasUrgent ? `<span class="chip chip-urgent">⏰ Urgent</span>` : ''
     ].join('');
+    const calBadge = r.calories
+      ? `<span class="cal-badge">🔥 ${r.calories} kcal</span>` : '';
     return `<div class="card" data-id="${r.id}">
       <div class="card-thumb" style="background:${bgCol}">
         <span>${r.emoji}</span>
@@ -765,7 +983,8 @@ function renderRecipes() {
           <span>👥 ${r.servings} pers.</span>
           <span>📊 ${esc(r.difficulty||'')}</span>
         </div>
-        <div class="chip-row">${chips}</div>
+        <div class="chip-row" style="margin-bottom:${calBadge ? '0.4rem' : '0'}">${chips}</div>
+        ${calBadge}
       </div>
     </div>`;
   }).join('');
@@ -823,6 +1042,24 @@ function openModal(r) {
         ${r.missing.map(m => `<div class="shop-item"><input class="shop-cb" type="checkbox"><span>${esc(m)}</span></div>`).join('')}
        </div>` : '';
 
+  const nutritionSection = r.calories ? `
+    <div class="m-section">
+      <div class="m-label">Valeurs nutritionnelles (par portion)</div>
+      <div class="nutrition-row">
+        <span class="nutr-chip">🔥 ${r.calories} kcal</span>
+        ${r.protein !== undefined ? `<span class="nutr-chip">🥩 ${r.protein}g protéines</span>` : ''}
+        ${r.carbs   !== undefined ? `<span class="nutr-chip">🌾 ${r.carbs}g glucides</span>` : ''}
+        ${r.fat     !== undefined ? `<span class="nutr-chip">🧈 ${r.fat}g lipides</span>` : ''}
+      </div>
+      ${profile?.caloriesPerMeal ? (() => {
+        const pct = Math.round((r.calories / profile.caloriesPerMeal) * 100);
+        const col = pct <= 110 ? 'var(--green)' : pct <= 130 ? 'var(--orange)' : 'var(--red)';
+        return `<div style="margin-top:8px;font-size:0.75rem;color:${col};font-weight:500">
+          ${pct <= 110 ? '✓' : '⚠️'} ${pct}% de votre objectif (${profile.caloriesPerMeal} kcal/repas)
+        </div>`;
+      })() : ''}
+    </div>` : '';
+
   body.innerHTML = `
     <div class="modal-hero">
       <div class="modal-emoji">${r.emoji}</div>
@@ -831,6 +1068,7 @@ function openModal(r) {
         <div class="modal-meta">⏱ ${r.time} min &nbsp;·&nbsp; 👥 ${r.servings} personnes &nbsp;·&nbsp; 📊 ${esc(r.difficulty||'')}</div>
       </div>
     </div>
+    ${nutritionSection}
     <div class="m-section">
       <div class="m-label">Ingrédients</div>
       <div class="ing-grid">${ings}</div>
@@ -875,11 +1113,22 @@ async function generateRecipes() {
   const ingredients = validFridge.map(f => f.name).join(', ');
   const urgents = fridge.filter(f => f.dlc && dlcStatus(f.dlc)?.days >= 0 && dlcStatus(f.dlc)?.days <= 3).map(f => f.name);
 
+  const profileBlock = profile ? `
+⚙️ PROFIL UTILISATEUR — respecter impérativement ces contraintes :
+- Objectif santé : ${GOAL_LABELS[profile.goal] || profile.goal}
+- Régime alimentaire : ${profile.diet?.length ? profile.diet.join(', ') : 'aucune restriction'}
+- Budget calorique par repas : ~${profile.caloriesPerMeal} kcal (tolérance ±15 %)
+- Temps de cuisine maximum : ${profile.maxCookTime >= 120 ? 'sans limite' : profile.maxCookTime + ' minutes'}
+Toutes les recettes DOIVENT respecter le régime et ne pas dépasser le budget calorique.
+${profile.goal === 'lose_weight' ? 'Préférer les recettes faibles en matières grasses, riches en fibres et protéines maigres.' : ''}
+${profile.goal === 'build_muscle' ? 'Chaque recette doit contenir au minimum 30g de protéines par portion.' : ''}
+` : '';
+
   const prompt = `Tu es un chef cuisinier français expert en cuisine française et européenne (brasserie, bistro, cuisine de terroir, recettes régionales françaises, cuisines italienne, espagnole, belge).
 
 Ingrédients disponibles dans le frigo : ${ingredients}.
 ${urgents.length ? `\n⚠️ Aliments à utiliser EN PRIORITÉ (DLC proche dans 0-3 jours) : ${urgents.join(', ')}. Ces ingrédients doivent apparaître dans au moins 2 recettes.` : ''}
-
+${profileBlock}
 Propose exactement 4 recettes variées et savoureuses à dominante française/européenne. Varie les types : entrée, plat principal, repas rapide, soupe ou dessert. Maximise l'utilisation des ingrédients du frigo.
 
 Réponds UNIQUEMENT en JSON valide, sans aucun texte avant ou après, sans backticks markdown :
@@ -896,6 +1145,10 @@ Réponds UNIQUEMENT en JSON valide, sans aucun texte avant ou après, sans backt
     "matched": ["Ingrédient 1 du frigo", "Ingrédient 2 du frigo"],
     "missing": ["Ingrédient manquant 1"],
     "matchPct": 80,
+    "calories": 450,
+    "protein": 35,
+    "carbs": 40,
+    "fat": 12,
     "steps": [
       "Étape 1 claire et précise.",
       "Étape 2.",
@@ -989,6 +1242,47 @@ const FALLBACK_RECIPES = [
 ];
 
 /* ═══════════════════════════════════════════════════
+   ONBOARDING
+   ═══════════════════════════════════════════════════ */
+let obData = { goal: null, diet: [], caloriesPerMeal: null, maxCookTime: 30 };
+
+function obSetStep(step) {
+  document.querySelectorAll('.ob-dot').forEach((dot, i) => {
+    dot.classList.toggle('active', i === step);
+    dot.classList.toggle('done',   i < step);
+    dot.classList.remove('active');
+    if (i === step) dot.classList.add('active');
+    else if (i < step) dot.classList.add('done');
+  });
+  [0, 1, 2].forEach(i =>
+    document.getElementById(`ob-step-${i}`).classList.toggle('hidden', i !== step)
+  );
+}
+
+function showOnboarding() {
+  obData = { goal: null, diet: [], caloriesPerMeal: null, maxCookTime: 30 };
+  // Reset UI
+  document.querySelectorAll('.ob-choice').forEach(c => c.classList.remove('selected'));
+  document.querySelectorAll('.ob-check-item').forEach(c => {
+    c.classList.remove('checked');
+    c.querySelector('input').checked = false;
+  });
+  document.getElementById('ob-calories').value = '';
+  document.getElementById('ob-cal-hint').textContent = '';
+  document.getElementById('ob-overlay').classList.remove('hidden');
+  obSetStep(0);
+}
+
+function hideOnboarding() {
+  document.getElementById('ob-overlay').classList.add('hidden');
+}
+
+function applyProfileToUI() {
+  if (!profile) return;
+  document.getElementById('btn-profile').classList.remove('hidden');
+}
+
+/* ═══════════════════════════════════════════════════
    UTILS
    ═══════════════════════════════════════════════════ */
 function esc(str) {
@@ -1012,10 +1306,20 @@ window.addEventListener('fc-ready', () => {
       unsub = window.__FC.loadFridge(fbUser.uid, items => {
         fridge = items; renderFridge(); renderAlerts();
       });
+
+      // Charger le profil — afficher l'onboarding si absent
+      profile = await window.__FC.loadProfile(fbUser.uid);
+      if (!profile) {
+        showOnboarding();
+      } else {
+        applyProfileToUI();
+      }
     } else {
       user = null;
+      profile = null;
       document.getElementById('auth-screen').classList.remove('hidden');
       document.getElementById('app-screen').classList.add('hidden');
+      document.getElementById('btn-profile').classList.add('hidden');
       if (unsub) { unsub(); unsub = null; }
     }
   });
@@ -1027,6 +1331,57 @@ window.addEventListener('fc-ready', () => {
 
   // Logout
   document.getElementById('btn-logout').addEventListener('click', () => window.__FC.signOut());
+
+  // Bouton profil
+  document.getElementById('btn-profile').addEventListener('click', showOnboarding);
+
+  // ── ONBOARDING EVENTS ──
+
+  // Étape 0 : sélection de l'objectif
+  document.querySelectorAll('.ob-choice').forEach(choice => {
+    choice.addEventListener('click', () => {
+      document.querySelectorAll('.ob-choice').forEach(c => c.classList.remove('selected'));
+      choice.classList.add('selected');
+      obData.goal = choice.dataset.goal;
+      const cal = GOAL_CALORIES[obData.goal];
+      document.getElementById('ob-calories').value = cal;
+      document.getElementById('ob-cal-hint').textContent =
+        `Recommandé pour "${GOAL_LABELS[obData.goal]}" : ~${cal} kcal/repas`;
+    });
+  });
+
+  document.getElementById('ob-next-0').addEventListener('click', () => {
+    if (!obData.goal) { alert('Veuillez choisir un objectif pour continuer.'); return; }
+    obSetStep(1);
+  });
+
+  // Étape 1 : régime alimentaire
+  document.querySelectorAll('.ob-check-item').forEach(item => {
+    item.addEventListener('click', () => item.classList.toggle('checked'));
+  });
+
+  document.getElementById('ob-back-1').addEventListener('click', () => obSetStep(0));
+  document.getElementById('ob-next-1').addEventListener('click', () => {
+    obData.diet = [...document.querySelectorAll('.ob-check-item.checked input')].map(i => i.value);
+    obSetStep(2);
+  });
+
+  // Étape 2 : calories + temps
+  document.getElementById('ob-back-2').addEventListener('click', () => obSetStep(1));
+  document.getElementById('ob-next-2').addEventListener('click', async () => {
+    const cal  = parseInt(document.getElementById('ob-calories').value);
+    const time = parseInt(document.getElementById('ob-cooktime').value);
+    if (!cal || cal < 200 || cal > 1500) {
+      alert('Entrez un objectif calorique entre 200 et 1500 kcal.'); return;
+    }
+    obData.caloriesPerMeal = cal;
+    obData.maxCookTime = time;
+    profile = { ...obData, createdAt: profile?.createdAt || Date.now() };
+    await window.__FC.saveProfile(user.uid, profile);
+    hideOnboarding();
+    applyProfileToUI();
+    renderRecipes(); // recalcule le sous-titre
+  });
 
   // Add food
   document.getElementById('btn-add').addEventListener('click', addFood);
