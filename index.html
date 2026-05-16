@@ -798,6 +798,53 @@ body {
   color: var(--ink3); margin-left: 4px; vertical-align: middle;
 }
 
+/* ─── SEARCH BAR ─── */
+.search-bar-wrap { position: relative; margin-bottom: 8px; }
+.search-inp {
+  width: 100%; padding: 7px 10px 7px 30px;
+  border: 1px solid var(--border); border-radius: 10px;
+  background: var(--surface); color: var(--ink);
+  font-size: 0.82rem; outline: none; transition: border-color 0.15s;
+  -webkit-appearance: none;
+}
+.search-inp:focus { border-color: var(--green); }
+.search-inp::placeholder { color: var(--ink3); }
+.search-bar-icon {
+  position: absolute; left: 9px; top: 50%; transform: translateY(-50%);
+  font-size: 0.72rem; pointer-events: none; color: var(--ink3);
+}
+
+/* ─── LEVEL INDICATOR ─── */
+.level-btns { display: flex; gap: 3px; margin-top: 6px; }
+.level-btn {
+  flex: 1; padding: 5px 2px; border: 1px solid var(--border);
+  border-radius: 6px; font-size: 0.7rem; background: var(--surface);
+  color: var(--ink3); cursor: pointer; text-align: center; transition: all 0.13s;
+}
+.level-btn.sel { background: var(--green-l); color: var(--green-dk); border-color: var(--green); font-weight: 600; }
+.level-badge {
+  font-size: 0.62rem; font-weight: 600; padding: 1px 5px;
+  border-radius: 5px; margin-left: 3px; flex-shrink: 0;
+}
+.level-full  { display: none; }
+.level-75    { background: rgba(52,199,89,0.15); color: var(--green-dk); }
+.level-50    { background: rgba(255,149,0,0.15); color: var(--orange); }
+.level-25    { background: rgba(255,59,48,0.15); color: var(--red); }
+.level-10    { background: rgba(255,59,48,0.20); color: var(--red); font-weight: 700; }
+
+/* ─── MANUAL SHOPPING FORM ─── */
+.manual-shop-form { display: flex; gap: 6px; margin-bottom: 10px; }
+.manual-shop-inp {
+  flex: 1; padding: 7px 10px; border: 1px solid var(--border);
+  border-radius: 9px; background: var(--surface); color: var(--ink);
+  font-size: 0.82rem; outline: none; transition: border-color 0.15s;
+}
+.manual-shop-inp:focus { border-color: var(--green); }
+.manual-shop-btn {
+  padding: 7px 14px; background: var(--green); color: #fff;
+  border: none; border-radius: 9px; font-size: 1rem; font-weight: 600; cursor: pointer;
+}
+
 /* ─── SHARE MODAL ─── */
 .share-overlay {
   position: fixed; inset: 0; background: rgba(20,16,10,0.65);
@@ -1055,6 +1102,10 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
       </div>
     </div>
     <div class="tab-body">
+      <div class="search-bar-wrap">
+        <span class="search-bar-icon">🔍</span>
+        <input class="search-inp" id="inp-frigo-search" type="search" placeholder="Rechercher un aliment…" autocomplete="off">
+      </div>
       <div class="store-toggle">
         <button class="store-btn active" id="btn-view-frigo">🧊 Frigo</button>
         <button class="store-btn" id="btn-view-placard">🗄 Placard</button>
@@ -1088,6 +1139,10 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
     </div>
     <div class="tab-body">
       <div id="alerts"></div>
+      <div class="search-bar-wrap">
+        <span class="search-bar-icon">🔍</span>
+        <input class="search-inp" id="inp-recipe-search" type="search" placeholder="Rechercher une recette…" autocomplete="off">
+      </div>
       <div class="filters" id="filters">
         <button class="pill on" data-f="all">Toutes</button>
         <button class="pill" data-f="fav">⭐ Favoris</button>
@@ -1095,6 +1150,7 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
         <button class="pill" data-f="top">≥ 70% match</button>
         <button class="pill" data-f="urgent">Priorité DLC</button>
         <button class="pill" data-f="fast">≤ 20 min</button>
+        <button class="pill" data-f="regime" id="pill-regime" style="display:none">🌿 Mon régime</button>
       </div>
       <div class="grid" id="recipe-grid">
         <div class="empty">
@@ -1113,6 +1169,10 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
       <div class="tab-sub">Ingrédients manquants pour vos recettes</div>
     </div>
     <div class="tab-body">
+      <div class="manual-shop-form">
+        <input class="manual-shop-inp" id="inp-manual-shop" type="text" placeholder="Ajouter un article manuellement…" autocomplete="off">
+        <button class="manual-shop-btn" id="btn-manual-shop">＋</button>
+      </div>
       <div id="courses-content" class="courses-card">
         <div style="color:var(--ink3);font-size:0.88rem;text-align:center;padding:2rem 0">
           Générez des recettes pour voir ce qui manque.
@@ -1322,6 +1382,16 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
       <input id="inp-dlc" class="inp" type="date">
     </div>
 
+    <div class="add-modal-field" id="level-field">
+      <label class="add-modal-label">Quantité restante</label>
+      <div class="level-btns">
+        <button class="level-btn sel" data-level="100">Plein</button>
+        <button class="level-btn" data-level="75">¾</button>
+        <button class="level-btn" data-level="50">½</button>
+        <button class="level-btn" data-level="25">¼</button>
+        <button class="level-btn" data-level="10">⚠️ Presque vide</button>
+      </div>
+    </div>
     <div class="add-modal-field">
       <label class="add-modal-label" for="inp-note">Note (optionnel)</label>
       <input id="inp-note" class="inp" type="text" placeholder="ex : bio, ouvert, à finir…">
@@ -1610,13 +1680,24 @@ let filter  = 'all';
 let unsub   = null;
 let profile = null;
 let sharedFridgeCode = null;
-let favorites    = [];   // recipe IDs marked as favorites
-let userRecipes  = [];   // custom/imported recipes
+let favorites    = [];
+let userRecipes  = [];
 let unsubRecipes = null;
-let editingRecipeId = null; // ID being edited in the form modal
+let editingRecipeId = null;
 let pantry = [];
 let unsubPantry = null;
-let pantryView = false; // false = frigo view, true = placard view
+let pantryView = false;
+let fridgeSearch = '';
+let recipeSearch = '';
+
+const RESTRICTION_KEYWORDS = {
+  'végétarien': ['poulet','bœuf','boeuf','porc','veau','agneau','canard','dinde','lapin','saumon','thon','cabillaud','dorade','sardine','crevette','moule','calamar','lardons','bacon','jambon','merguez','chipolata','steak','filet de poisson'],
+  'végan':      ['poulet','bœuf','boeuf','porc','veau','agneau','canard','dinde','lapin','saumon','thon','cabillaud','lardons','bacon','jambon','lait','beurre','crème','fromage','yaourt','œuf','oeuf','mozzarella','parmesan','camembert','miel'],
+  'sans gluten':['farine','pâtes','pain','biscottes','semoule','couscous','orge','blé','épeautre','chapelure'],
+  'sans lactose':['lait','beurre','crème fraîche','crème liquide','fromage','yaourt','mozzarella','parmesan','camembert','brie','gruyère','emmental','ricotta','mascarpone'],
+  'halal':      ['porc','lardons','bacon','jambon','saucisse de porc','rillettes','vin','bière','alcool','cidre'],
+  'sans porc':  ['porc','lardons','bacon','jambon','saucisse de porc','rillettes','chorizo'],
+};
 let shoppingList = []; // { id, name, recipe, bought }
 let unsubShopping = null;
 
@@ -1686,9 +1767,15 @@ function renderPantry() {
     el.innerHTML = `<div class="pantry-empty"><div class="pantry-empty-icon">🗄</div>Votre placard est vide.<br>Ajoutez vos basiques !</div>`;
     return;
   }
+  const qp = fridgeSearch.toLowerCase();
+  const pantryVisible = qp ? pantry.filter(p => p.name.toLowerCase().includes(qp)) : pantry;
+  if (qp && !pantryVisible.length) {
+    el.innerHTML = `<div class="pantry-empty">Aucun résultat pour "<strong>${esc(fridgeSearch)}</strong>"</div>`;
+    return;
+  }
   // Group pantry items by food category
   const grouped = {};
-  pantry.forEach(item => {
+  pantryVisible.forEach(item => {
     const cat = foodCategory(item.name);
     (grouped[cat.label] = grouped[cat.label] || { cat, items: [] }).items.push(item);
   });
@@ -1747,9 +1834,16 @@ function renderFridge() {
     return;
   }
 
-  const expired = fridge.filter(f => f.dlc && dlcStatus(f.dlc)?.days < 0);
-  const urgent  = fridge.filter(f => f.dlc && dlcStatus(f.dlc)?.days >= 0 && dlcStatus(f.dlc)?.days <= 2);
-  const fresh   = fridge.filter(f => !f.dlc || !dlcStatus(f.dlc) || dlcStatus(f.dlc)?.days > 2);
+  const q = fridgeSearch.toLowerCase();
+  const visible = q ? fridge.filter(f => f.name.toLowerCase().includes(q)) : fridge;
+  if (q && !visible.length) {
+    el.innerHTML = `<div class="fridge-empty">Aucun résultat pour "<strong>${esc(fridgeSearch)}</strong>"</div>`;
+    return;
+  }
+
+  const expired = visible.filter(f => f.dlc && dlcStatus(f.dlc)?.days < 0);
+  const urgent  = visible.filter(f => f.dlc && dlcStatus(f.dlc)?.days >= 0 && dlcStatus(f.dlc)?.days <= 2);
+  const fresh   = visible.filter(f => !f.dlc || !dlcStatus(f.dlc) || dlcStatus(f.dlc)?.days > 2);
 
   let html = '';
   if (expired.length) html += group('⛔ Expirés', expired);
@@ -1773,14 +1867,17 @@ function renderFridge() {
   });
 }
 
+const LEVEL_LABELS = { '100': null, '75': ['¾', 'level-75'], '50': ['½', 'level-50'], '25': ['¼', 'level-25'], '10': ['⚠️', 'level-10'] };
 function group(title, items) {
   const rows = items.map(item => {
     const s   = item.dlc ? dlcStatus(item.dlc) : null;
     const cat = foodCategory(item.name);
+    const lv  = LEVEL_LABELS[item.level || '100'];
+    const lvBadge = lv ? `<span class="level-badge ${lv[1]}">${lv[0]}</span>` : '';
     return `<div class="food-row" data-item-id="${item.id}">
       <span class="f-emoji">${item.emoji}</span>
       <div class="f-info">
-        <div class="f-name">${esc(item.name)} <span class="cat-type-badge" style="background:${cat.bg};color:${cat.color}">${cat.label.split(' ').slice(1).join(' ')}</span></div>
+        <div class="f-name">${esc(item.name)}${lvBadge} <span class="cat-type-badge" style="background:${cat.bg};color:${cat.color}">${cat.label.split(' ').slice(1).join(' ')}</span></div>
         <div class="f-qty">${esc(item.qty || '')}${item.note ? ` · <em>${esc(item.note)}</em>` : ''}</div>
       </div>
       ${s ? `<span class="dlc-tag ${s.cls}">${s.label}</span>` : ''}
@@ -1844,6 +1941,10 @@ function renderRecipes() {
 
   const allRecipes = [...recipesWithPantry, ...customFull];
 
+  // Show/hide régime filter pill
+  const regimePill = document.getElementById('pill-regime');
+  if (regimePill) regimePill.style.display = (profile?.diet?.length) ? '' : 'none';
+
   let list = [...allRecipes];
   if (filter === 'fav')    list = list.filter(r => favorites.includes(String(r.id)));
   if (filter === 'mine')   list = customFull;
@@ -1852,6 +1953,20 @@ function renderRecipes() {
   if (filter === 'urgent') list = list.filter(r =>
     (r.matched || []).some(m => urgentNames.some(u => m.toLowerCase().includes(u) || u.includes(m.toLowerCase())))
   );
+  if (filter === 'regime' && profile?.diet?.length) {
+    const forbidden = profile.diet.flatMap(d => RESTRICTION_KEYWORDS[d] || []);
+    list = list.filter(r => {
+      const allIngs = [...(r.matched||[]), ...(r.missing||[]), ...(r.allIngredients||[])].map(i => i.toLowerCase());
+      return !forbidden.some(kw => allIngs.some(i => i.includes(kw)));
+    });
+  }
+  // Apply text search
+  if (recipeSearch) {
+    const q = recipeSearch.toLowerCase();
+    list = list.filter(r => r.name.toLowerCase().includes(q) ||
+      (r.allIngredients||[]).some(i => i.toLowerCase().includes(q)) ||
+      (r.matched||[]).some(i => i.toLowerCase().includes(q)));
+  }
 
   const total = recipes.length + userRecipes.length;
   const profileSub = profile ? ` · ${GOAL_LABELS[profile.goal] || ''} · ${profile.caloriesPerMeal} kcal/repas` : '';
@@ -2621,6 +2736,12 @@ window.addEventListener('fc-ready', () => {
 
   let editingFoodCtx = null; // { id, store: 'fridge'|'pantry' } or null
 
+  function setLevelBtn(level) {
+    document.querySelectorAll('.level-btn').forEach(b => {
+      b.classList.toggle('sel', b.dataset.level === String(level));
+    });
+  }
+
   function openAddModal() {
     editingFoodCtx = null;
     document.getElementById('add-modal-title').textContent = 'Ajouter un aliment';
@@ -2632,6 +2753,7 @@ window.addEventListener('fc-ready', () => {
     document.getElementById('inp-unit').value = '';
     document.getElementById('inp-dlc').value  = '';
     document.getElementById('inp-note').value = '';
+    setLevelBtn(100);
     document.getElementById('scan-banner').classList.remove('visible');
     document.getElementById('scanner-view').classList.remove('active');
     document.getElementById('modal-dest-frigo').classList.add('active');
@@ -2653,7 +2775,6 @@ window.addEventListener('fc-ready', () => {
     document.getElementById('scan-banner').classList.remove('visible');
     document.getElementById('scanner-view').classList.remove('active');
 
-    // Parse qty + unit
     const qtyFull = item.qty || '';
     const unitMatch = qtyFull.match(/(g|kg|mL|L|tranches)$/);
     const unitVal = unitMatch ? unitMatch[1] : '';
@@ -2664,6 +2785,7 @@ window.addEventListener('fc-ready', () => {
     document.getElementById('inp-unit').value = unitVal;
     document.getElementById('inp-dlc').value  = item.dlc || '';
     document.getElementById('inp-note').value = item.note || '';
+    setLevelBtn(item.level || 100);
     addOverlay.classList.remove('hidden');
     setTimeout(() => document.getElementById('inp-name').focus(), 80);
   }
@@ -2747,15 +2869,16 @@ window.addEventListener('fc-ready', () => {
     const unit = document.getElementById('inp-unit').value;
     const note = document.getElementById('inp-note').value.trim();
     const qtyStr = qty ? (unit ? `${qty} ${unit}` : qty) : (unit || '');
+    const level  = document.querySelector('.level-btn.sel')?.dataset.level || '100';
 
     if (editingFoodCtx) {
-      // — Mode édition —
       const updated = {
         id: editingFoodCtx.id,
         name,
         qty:   qtyStr || '1',
         dlc:   document.getElementById('inp-dlc').value || null,
         note:  note || null,
+        level,
         emoji: emoji(name)
       };
       if (editingFoodCtx.store === 'pantry') {
@@ -2778,6 +2901,7 @@ window.addEventListener('fc-ready', () => {
       qty:   qtyStr || '1',
       dlc:   document.getElementById('inp-dlc').value || null,
       note:  note || null,
+      level,
       emoji: emoji(name)
     };
     const toPantry = document.getElementById('modal-dest-placard').classList.contains('active');
@@ -2813,6 +2937,39 @@ window.addEventListener('fc-ready', () => {
       toast(`${item?.emoji || ''} ${item?.name || 'Aliment'} supprimé`);
     }
     closeAddModal();
+  });
+
+  // ── Level buttons ──
+  document.querySelectorAll('.level-btn').forEach(btn => {
+    btn.addEventListener('click', () => setLevelBtn(btn.dataset.level));
+  });
+
+  // ── Search — frigo/placard ──
+  document.getElementById('inp-frigo-search').addEventListener('input', e => {
+    fridgeSearch = e.target.value;
+    renderFridge();
+    renderPantry();
+  });
+
+  // ── Search — recettes ──
+  document.getElementById('inp-recipe-search').addEventListener('input', e => {
+    recipeSearch = e.target.value;
+    renderRecipes();
+  });
+
+  // ── Ajout manuel liste de courses ──
+  function addManualShopItem() {
+    const inp = document.getElementById('inp-manual-shop');
+    const name = inp.value.trim();
+    if (!name) return;
+    shoppingList = [...shoppingList, { id: Date.now().toString(), name, recipe: 'Manuel', bought: false }];
+    saveShoppingListDB(); renderCourses();
+    inp.value = '';
+    inp.focus();
+  }
+  document.getElementById('btn-manual-shop').addEventListener('click', addManualShopItem);
+  document.getElementById('inp-manual-shop').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addManualShopItem();
   });
 
   // Store toggle (frigo / placard)
