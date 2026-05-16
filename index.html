@@ -119,49 +119,52 @@ input  { font-family: inherit; }
 
 /* ─── TOKENS ─── */
 :root {
-  --bg:        #F2F2F7;
+  --bg:        #F5F5F7;
   --surface:   #FFFFFF;
-  --surface2:  rgba(120,120,128,0.08);
-  --border:    rgba(60,60,67,0.13);
-  --border2:   rgba(60,60,67,0.25);
-  --ink:       #000000;
+  --surface2:  rgba(120,120,128,0.09);
+  --border:    rgba(60,60,67,0.11);
+  --border2:   rgba(60,60,67,0.22);
+  --ink:       #1C1C1E;
   --ink2:      #3C3C43;
-  --ink3:      #8E8E93;
-  --green:     #34C759;
-  --green-dk:  #248A3D;
-  --green-l:   rgba(52,199,89,0.12);
-  --green-m:   #30D158;
-  --red:       #FF3B30;
-  --red-l:     rgba(255,59,48,0.10);
-  --orange:    #FF9500;
-  --orange-l:  rgba(255,149,0,0.10);
-  --amber:     #FFCC00;
-  --amber-l:   rgba(255,204,0,0.10);
-  --r:    14px;
-  --r-lg: 20px;
-  --r-xl: 32px;
-  --glass:        rgba(255,255,255,0.82);
-  --glass-border: rgba(255,255,255,0.70);
-  --nav-bg:    rgba(242,242,247,0.88);
-  --header-bg: rgba(242,242,247,0.92);
+  --ink3:      #98989D;
+  --green:     #30A84B;
+  --green-dk:  #1E7A35;
+  --green-l:   rgba(48,168,75,0.11);
+  --green-m:   #34C759;
+  --red:       #E53935;
+  --red-l:     rgba(229,57,53,0.10);
+  --orange:    #F57C00;
+  --orange-l:  rgba(245,124,0,0.10);
+  --amber:     #F9A825;
+  --amber-l:   rgba(249,168,37,0.12);
+  --accent:    #1C7EF0;
+  --accent-l:  rgba(28,126,240,0.10);
+  --r:    12px;
+  --r-lg: 16px;
+  --r-xl: 28px;
+  --glass:        rgba(255,255,255,0.86);
+  --glass-border: rgba(255,255,255,0.72);
+  --nav-bg:    rgba(245,245,247,0.90);
+  --header-bg: rgba(245,245,247,0.94);
 }
 [data-theme="dark"] {
-  --bg:        #000000;
+  --bg:        #0D0D0F;
   --surface:   #1C1C1E;
   --surface2:  rgba(255,255,255,0.07);
-  --border:    rgba(255,255,255,0.12);
-  --border2:   rgba(255,255,255,0.22);
-  --ink:       #FFFFFF;
+  --border:    rgba(255,255,255,0.10);
+  --border2:   rgba(255,255,255,0.20);
+  --ink:       #F2F2F7;
   --ink2:      #EBEBF5;
   --ink3:      #8E8E93;
-  --green-l:   rgba(52,199,89,0.18);
-  --red-l:     rgba(255,59,48,0.15);
-  --orange-l:  rgba(255,149,0,0.15);
-  --amber-l:   rgba(255,204,0,0.15);
-  --glass:        rgba(28,28,30,0.88);
-  --glass-border: rgba(255,255,255,0.14);
-  --nav-bg:    rgba(28,28,30,0.92);
-  --header-bg: rgba(0,0,0,0.92);
+  --green-l:   rgba(48,168,75,0.20);
+  --red-l:     rgba(229,57,53,0.18);
+  --orange-l:  rgba(245,124,0,0.18);
+  --amber-l:   rgba(249,168,37,0.18);
+  --accent-l:  rgba(28,126,240,0.18);
+  --glass:        rgba(28,28,30,0.90);
+  --glass-border: rgba(255,255,255,0.12);
+  --nav-bg:    rgba(18,18,20,0.94);
+  --header-bg: rgba(13,13,15,0.95);
 }
 
 html, body {
@@ -176,6 +179,24 @@ body {
   font-size: 14px;
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
+}
+
+/* ─── DESKTOP: centre l'app comme un téléphone ─── */
+@media (min-width: 520px) {
+  body { background: #E5E5EA; }
+  [data-theme="dark"] body { background: #1a1a1a; }
+  #auth-screen { background: transparent; }
+  #app-screen {
+    max-width: 430px;
+    margin: 0 auto;
+    background: var(--bg);
+    min-height: 100vh;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.06), 0 8px 40px rgba(0,0,0,0.12);
+    position: relative;
+  }
+  .bottom-tab-bar { max-width: calc(430px - 40px) !important; }
+  .fab { right: calc(50% - 215px + 18px) !important; }
+  .overlay { background: rgba(0,0,0,0.5); }
 }
 
 /* ─── AUTH ─── */
@@ -244,19 +265,20 @@ body {
 .tab-header {
   position: sticky; top: 0; z-index: 50;
   background: var(--header-bg);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(200%);
+  -webkit-backdrop-filter: blur(24px) saturate(200%);
   border-bottom: 1px solid var(--border);
-  padding: 16px 16px 10px;
+  padding: 14px 14px 10px;
 }
 .tab-header-row {
   display: flex; align-items: center; justify-content: space-between;
 }
 .tab-large-title {
-  font-size: 1.15rem; font-weight: 700; letter-spacing: -0.02em; color: var(--ink);
+  font-size: 1.05rem; font-weight: 700; letter-spacing: -0.02em; color: var(--ink);
+  display: flex; align-items: center; gap: 6px;
 }
 .tab-sub {
-  font-size: 0.75rem; color: var(--ink3); margin-top: 2px;
+  font-size: 0.72rem; color: var(--ink3); margin-top: 2px;
 }
 .tab-body { padding: 10px 12px 0; }
 
@@ -528,13 +550,18 @@ body {
 
 /* ─── EMPTY STATE ─── */
 .empty {
-  grid-column: 1/-1; text-align: center; padding: 2.5rem 1.5rem;
+  grid-column: 1/-1; text-align: center; padding: 2rem 1.5rem;
 }
-.empty-icon { font-size: 2.4rem; opacity: 0.25; margin-bottom: 0.6rem; }
+.empty-icon { font-size: 2rem; opacity: 0.22; margin-bottom: 0.5rem; }
 .empty-title {
-  font-size: 1rem; font-weight: 600; color: var(--ink); margin-bottom: 0.25rem;
+  font-size: 0.92rem; font-weight: 600; color: var(--ink); margin-bottom: 0.2rem;
 }
-.empty-sub { color: var(--ink3); font-size: 0.8rem; }
+.empty-sub { color: var(--ink3); font-size: 0.76rem; line-height: 1.5; }
+
+/* ─── RECIPE CARD accent ─── */
+.card { border-radius: var(--r); }
+.card-thumb { background: var(--surface2); }
+.card-fav-dot { position:absolute;top:7px;left:7px;font-size:0.75rem; }
 
 /* ─── MODAL ─── */
 .overlay {
@@ -726,31 +753,29 @@ body {
 
 /* ─── PROFILE TAB ─── */
 .profile-section {
-  display: flex; flex-direction: column; align-items: center;
-  padding: 20px 16px 14px;
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 14px 10px;
 }
 .profile-avatar-lg {
-  width: 60px; height: 60px; border-radius: 50%;
-  background: var(--green-l); color: var(--green-dk);
-  font-size: 1.5rem; font-weight: 700;
+  width: 46px; height: 46px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--green-m), var(--green-dk));
+  color: #fff;
+  font-size: 1.2rem; font-weight: 700;
   display: flex; align-items: center; justify-content: center;
-  margin-bottom: 8px;
-  box-shadow: 0 3px 14px rgba(52,199,89,0.18);
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(48,168,75,0.30);
 }
-.profile-name-lg { font-size: 1rem; font-weight: 700; color: var(--ink); margin-bottom: 4px; }
+.profile-info { flex: 1; min-width: 0; }
+.profile-name-lg { font-size: 0.95rem; font-weight: 700; color: var(--ink); }
 .profile-goal-badge {
-  font-size: 0.72rem; color: var(--ink3); background: var(--surface2);
-  padding: 3px 10px; border-radius: 20px;
+  display: inline-block; font-size: 0.68rem; color: var(--green-dk);
+  background: var(--green-l); padding: 2px 8px; border-radius: 20px;
+  margin-top: 2px; font-weight: 500;
 }
-.profile-calories {
-  background: var(--surface); border-radius: var(--r);
-  padding: 10px 14px; margin: 0 12px 8px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
-}
-.cal-stat { text-align: center; }
-.cal-value { font-size: 1.2rem; font-weight: 700; color: var(--green-dk); letter-spacing: -0.02em; }
-.cal-label { font-size: 0.67rem; color: var(--ink3); margin-top: 1px; }
+.profile-calories { align-items: flex-end; }
+.cal-stat { text-align: right; }
+.cal-value { font-size: 0.95rem; font-weight: 700; color: var(--green-dk); letter-spacing: -0.01em; }
+.cal-label { font-size: 0.62rem; color: var(--ink3); margin-top: 1px; }
 .settings-group {
   margin: 0 12px 8px;
   background: var(--surface); border-radius: var(--r); overflow: hidden;
@@ -1113,7 +1138,7 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
       <div id="fridge-list">
         <div class="fridge-empty">
           <div class="fridge-empty-icon">🧊</div>
-          Votre frigo est vide.<br>Ajoutez des aliments !
+          Frigo vide — appuyez sur <strong>＋</strong> pour commencer
         </div>
       </div>
       <div id="pantry-list" class="hidden">
@@ -1189,17 +1214,19 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
     <div class="tab-body">
       <div class="profile-section">
         <div class="profile-avatar-lg" id="user-avatar">?</div>
-        <div class="profile-name-lg" id="user-name"></div>
-        <div class="profile-goal-badge" id="profile-goal-badge">MaCuisine</div>
-      </div>
-      <div class="profile-calories hidden" id="profile-calories">
-        <div class="cal-stat">
-          <div class="cal-value" id="profile-kcal-val">—</div>
-          <div class="cal-label">kcal / jour</div>
+        <div class="profile-info">
+          <div class="profile-name-lg" id="user-name"></div>
+          <div class="profile-goal-badge" id="profile-goal-badge">MaCuisine</div>
         </div>
-        <div class="cal-stat">
-          <div class="cal-value" id="profile-meal-val">—</div>
-          <div class="cal-label">kcal / repas</div>
+        <div class="profile-calories hidden" id="profile-calories" style="display:none;flex-direction:row;gap:10px;text-align:right">
+          <div class="cal-stat">
+            <div class="cal-value" id="profile-kcal-val" style="font-size:0.95rem">—</div>
+            <div class="cal-label">kcal/j</div>
+          </div>
+          <div class="cal-stat">
+            <div class="cal-value" id="profile-meal-val" style="font-size:0.95rem">—</div>
+            <div class="cal-label">kcal/rep</div>
+          </div>
         </div>
       </div>
       <div class="settings-group">
@@ -2471,7 +2498,9 @@ function applyProfileToUI() {
   const badge = document.getElementById('profile-goal-badge');
   if (badge && profile.goal) badge.textContent = GOAL_LABELS[profile.goal] || 'MaCuisine';
   if (profile.dailyCalories) {
-    document.getElementById('profile-calories').classList.remove('hidden');
+    const calEl = document.getElementById('profile-calories');
+    calEl.classList.remove('hidden');
+    calEl.style.display = 'flex';
     document.getElementById('profile-kcal-val').textContent = profile.dailyCalories;
     document.getElementById('profile-meal-val').textContent = profile.caloriesPerMeal || '—';
   }
