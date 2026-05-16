@@ -94,6 +94,12 @@
     },
     loadPantry: (uid, cb) => onSnapshot(doc(db, 'pantry', uid),
       snap => cb(snap.exists() ? snap.data().items || [] : [])
+    ),
+    saveShoppingList: async (uid, items) => {
+      await setDoc(doc(db, 'shoppingList', uid), { items, updatedAt: Date.now() });
+    },
+    loadShoppingList: (uid, cb) => onSnapshot(doc(db, 'shoppingList', uid),
+      snap => cb(snap.exists() ? snap.data().items || [] : [])
     )
   };
 
@@ -1495,6 +1501,8 @@ let editingRecipeId = null; // ID being edited in the form modal
 let pantry = [];
 let unsubPantry = null;
 let pantryView = false; // false = frigo view, true = placard view
+let shoppingList = []; // { id, name, recipe, bought }
+let unsubShopping = null;
 
 const GOAL_LABELS = {
   lose_weight:  'Perte de poids',
@@ -1766,24 +1774,76 @@ function renderRecipes() {
 /* ═══════════════════════════════════════════════════
    RENDER — COURSES
    ═══════════════════════════════════════════════════ */
+function saveShoppingListDB() {
+  if (!user) return;
+  window.__FC.saveShoppingList(user.uid, shoppingList)
+    .catch(e => console.error('Erreur liste de courses:', e));
+}
+
+function toggleShoppingItem(name, recipeName) {
+  const existing = shoppingList.find(i => i.name === name && i.recipe === recipeName);
+  if (existing) {
+    shoppingList = shoppingList.filter(i => !(i.name === name && i.recipe === recipeName));
+  } else {
+    shoppingList = [...shoppingList, { id: Date.now().toString(), name, recipe: recipeName, bought: false }];
+  }
+  saveShoppingListDB();
+  renderCourses();
+}
+
 function renderCourses() {
   const el = document.getElementById('courses-content');
-  const allMissing = recipes.flatMap(r => (r.missing||[]).map(m => ({ recipe: r.name, item: m })));
-  if (!allMissing.length) {
-    el.innerHTML = `<div style="color:var(--ink3);font-size:0.88rem;text-align:center;padding:2rem 0">${recipes.length ? 'Aucun ingrédient manquant 🎉' : 'La liste de courses apparaîtra avec vos recettes.'}</div>`;
+  if (!shoppingList.length) {
+    el.innerHTML = `<div style="color:var(--ink3);font-size:0.88rem;text-align:center;padding:2.5rem 1rem">
+      <div style="font-size:2rem;margin-bottom:0.5rem;opacity:0.3">🛒</div>
+      Cochez des ingrédients dans une recette<br>pour les ajouter ici.
+    </div>`;
     return;
   }
+
+  const todo   = shoppingList.filter(i => !i.bought);
+  const bought = shoppingList.filter(i => i.bought);
   const byRecipe = {};
-  allMissing.forEach(({ recipe, item }) => {
-    if (!byRecipe[recipe]) byRecipe[recipe] = [];
-    byRecipe[recipe].push(item);
+  todo.forEach(i => { (byRecipe[i.recipe] = byRecipe[i.recipe] || []).push(i); });
+
+  const todoHtml = Object.entries(byRecipe).map(([recipe, items]) => `
+    <div class="courses-recipe">
+      <div class="courses-recipe-name"><span>🍽️</span>${esc(recipe)}</div>
+      ${items.map(item => `
+        <div class="shop-row" data-shop-id="${item.id}">
+          <input type="checkbox" class="shop-cb shop-toggle" data-id="${item.id}">
+          <span>${esc(item.name)}</span>
+        </div>`).join('')}
+    </div>`).join('');
+
+  const boughtHtml = bought.length ? `
+    <div class="courses-recipe" style="opacity:0.5">
+      <div class="courses-recipe-name"><span>✅</span>Achetés</div>
+      ${bought.map(item => `
+        <div class="shop-row" style="text-decoration:line-through">
+          <input type="checkbox" class="shop-cb shop-toggle" data-id="${item.id}" checked>
+          <span>${esc(item.name)}</span>
+        </div>`).join('')}
+    </div>
+    <button id="btn-clear-bought" style="width:100%;margin-top:8px;padding:10px;border:1px solid var(--border);
+      border-radius:var(--r);background:none;color:var(--ink3);font-size:0.85rem;cursor:pointer">
+      🗑 Vider les achétés (${bought.length})
+    </button>` : '';
+
+  el.innerHTML = todoHtml + boughtHtml;
+
+  el.querySelectorAll('.shop-toggle').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const id = cb.dataset.id;
+      shoppingList = shoppingList.map(i => i.id === id ? { ...i, bought: cb.checked } : i);
+      saveShoppingListDB(); renderCourses();
+    });
   });
-  el.innerHTML = Object.entries(byRecipe).map(([name, items]) =>
-    `<div class="courses-recipe">
-      <div class="courses-recipe-name"><span>🍽️</span>${esc(name)}</div>
-      ${items.map(item => `<div class="shop-row"><input type="checkbox" class="shop-cb"><span>${esc(item)}</span></div>`).join('')}
-    </div>`
-  ).join('');
+  const clearBtn = document.getElementById('btn-clear-bought');
+  if (clearBtn) clearBtn.addEventListener('click', () => {
+    shoppingList = shoppingList.filter(i => !i.bought);
+    saveShoppingListDB(); renderCourses();
+  });
 }
 
 /* ═══════════════════════════════════════════════════
@@ -1805,8 +1865,14 @@ function openModal(r) {
 
   const shopping = r.missing?.length
     ? `<div class="shopping-box">
-        <div class="m-label" style="margin-bottom:0.5rem">🛒 À acheter</div>
-        ${r.missing.map(m => `<div class="shop-item"><input class="shop-cb" type="checkbox"><span>${esc(m)}</span></div>`).join('')}
+        <div class="m-label" style="margin-bottom:0.5rem">🛒 À acheter — cochez pour ajouter à vos courses</div>
+        ${r.missing.map(m => {
+          const inList = shoppingList.some(i => i.name === m && i.recipe === r.name);
+          return `<div class="shop-item">
+            <input class="shop-cb shop-modal-cb" type="checkbox" data-name="${esc(m)}" data-recipe="${esc(r.name)}" ${inList ? 'checked' : ''}>
+            <span>${esc(m)}</span>
+          </div>`;
+        }).join('')}
        </div>` : '';
 
   const nutritionSection = r.calories ? `
@@ -1863,6 +1929,9 @@ function openModal(r) {
     </div>
   `;
   overlay.classList.remove('hidden');
+  body.querySelectorAll('.shop-modal-cb').forEach(cb => {
+    cb.addEventListener('change', () => toggleShoppingItem(cb.dataset.name, cb.dataset.recipe));
+  });
   document.getElementById('modal-close').addEventListener('click', closeModal);
   document.getElementById('modal-fav').addEventListener('click', () => {
     toggleFavorite(String(r.id));
@@ -2203,6 +2272,11 @@ window.addEventListener('fc-ready', () => {
         pantry = items; renderPantry(); renderRecipes();
       });
 
+      if (unsubShopping) unsubShopping();
+      unsubShopping = window.__FC.loadShoppingList(fbUser.uid, items => {
+        shoppingList = items; renderCourses();
+      });
+
       if (!profile) {
         showOnboarding();
       } else {
@@ -2216,6 +2290,7 @@ window.addEventListener('fc-ready', () => {
       if (unsub) { unsub(); unsub = null; }
       if (unsubRecipes) { unsubRecipes(); unsubRecipes = null; }
       pantry = []; if (unsubPantry) { unsubPantry(); unsubPantry = null; }
+      shoppingList = []; if (unsubShopping) { unsubShopping(); unsubShopping = null; }
     }
   });
 
