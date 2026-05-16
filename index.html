@@ -1213,6 +1213,26 @@ body {
 }
 .nutri-score-label { font-size: 0.72rem; color: var(--ink3); vertical-align: middle; }
 
+/* Line chart card */
+.line-chart-card {
+  background: var(--surface); border-radius: var(--r-lg);
+  margin: 0 14px 10px; padding: 14px 16px;
+  box-shadow: var(--shadow-sm);
+}
+.line-chart-title { font-size: 0.80rem; font-weight: 700; color: var(--ink); margin-bottom: 12px; }
+.line-chart-wrap { position: relative; height: 80px; }
+.cal-bar-chart { display: flex; align-items: flex-end; gap: 4px; height: 70px; }
+.cal-bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; justify-content: flex-end; }
+.cal-bar-fill { width: 100%; border-radius: 4px 4px 0 0; min-height: 3px;
+  background: linear-gradient(180deg, #00A36C, #006644);
+  transition: height 0.5s cubic-bezier(0.34,1.56,0.64,1); }
+.cal-bar-fill.over { background: linear-gradient(180deg, #FF8C42, #E53935); }
+.cal-bar-lbl { font-size: 0.55rem; color: var(--ink3); }
+.cal-bar-val { font-size: 0.58rem; font-weight: 600; color: var(--ink2); }
+
+/* Weight SVG line chart */
+.weight-line-svg { width: 100%; height: 80px; overflow: visible; }
+
 /* Weight card */
 .weight-card {
   background: var(--surface); border-radius: var(--r-lg);
@@ -1955,6 +1975,12 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
           <div class="macro-nums"><span id="macro-fat-val">0</span>/<span id="macro-fat-goal">—</span>g</div>
         </div>
       </div>
+    </div>
+
+    <!-- Calories 7 jours -->
+    <div class="line-chart-card" id="cal-history-card" style="display:none">
+      <div class="line-chart-title">📈 Calories — 7 derniers jours</div>
+      <div class="line-chart-wrap" id="cal-history-chart"></div>
     </div>
 
     <!-- Weight tracking -->
@@ -3816,6 +3842,48 @@ function calcNutriScore() {
   return { score, grade, color };
 }
 
+let calHistory = []; // [{date, kcal}] last 7 days — loaded async
+
+async function loadCalHistory() {
+  if (!user) return;
+  const today = new Date();
+  const results = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today); d.setDate(d.getDate() - i);
+    const dateStr = d.toISOString().slice(0, 10);
+    await new Promise(resolve => {
+      const unsub = window.__FC.loadDailyLog(user.uid, dateStr, entries => {
+        unsub();
+        const kcal = entries.reduce((s,e) => s + (e.kcal||0), 0);
+        results.push({ date: dateStr, kcal });
+        resolve();
+      });
+    });
+  }
+  calHistory = results;
+  renderCalHistory();
+}
+
+function renderCalHistory() {
+  const card = document.getElementById('cal-history-card');
+  const wrap = document.getElementById('cal-history-chart');
+  if (!card || !wrap) return;
+  if (calHistory.length === 0) { card.style.display = 'none'; return; }
+  card.style.display = 'block';
+  const goal = profile?.dailyCalories || 0;
+  const max = Math.max(...calHistory.map(d => d.kcal), goal || 1);
+  wrap.innerHTML = `<div class="cal-bar-chart">${calHistory.map(d => {
+    const h = max > 0 ? Math.max(3, Math.round(d.kcal / max * 65)) : 3;
+    const over = goal && d.kcal > goal * 1.1;
+    const dayLabel = new Date(d.date + 'T12:00').toLocaleDateString('fr-FR', { weekday: 'short' }).slice(0,3);
+    return `<div class="cal-bar-col">
+      <div class="cal-bar-val">${d.kcal||''}</div>
+      <div class="cal-bar-fill${over?' over':''}" style="height:${h}px"></div>
+      <div class="cal-bar-lbl">${dayLabel}</div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
 function renderSante() {
   if (!document.getElementById('tab-sante')) return;
 
@@ -3902,21 +3970,36 @@ function renderSante() {
     } else {
       wProgress.style.display = 'none';
     }
-    // Mini chart (last 6)
-    const last6 = sorted.slice(-6);
-    const minW = Math.min(...last6.map(e => e.weight));
-    const maxW = Math.max(...last6.map(e => e.weight));
+    // SVG line chart for weight
+    const last10 = sorted.slice(-10);
+    const minW = Math.min(...last10.map(e => e.weight));
+    const maxW = Math.max(...last10.map(e => e.weight));
     const range = maxW - minW || 1;
-    wChart.style.display = 'flex';
-    wChart.innerHTML = last6.map(e => {
-      const h = Math.max(6, Math.round((e.weight - minW) / range * 50) + 6);
-      const d = e.date.slice(5); // MM-DD
-      return `<div class="weight-bar-wrap">
-        <div class="weight-bar-val">${e.weight}</div>
-        <div class="weight-bar" style="height:${h}px"></div>
-        <div class="weight-bar-lbl">${d}</div>
-      </div>`;
-    }).join('');
+    const W = 280, H = 65, PAD = 10;
+    const pts = last10.map((e, i) => {
+      const x = PAD + (i / Math.max(last10.length - 1, 1)) * (W - PAD*2);
+      const y = H - PAD - ((e.weight - minW) / range) * (H - PAD*2);
+      return { x, y, e };
+    });
+    const polyline = pts.map(p => `${p.x},${p.y}`).join(' ');
+    const area = `${pts[0].x},${H} ${polyline} ${pts[pts.length-1].x},${H}`;
+    wChart.style.display = 'block';
+    wChart.style.height = 'auto';
+    wChart.innerHTML = `<svg class="weight-line-svg" viewBox="0 0 ${W} ${H}">
+      <defs>
+        <linearGradient id="wGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#00875A" stop-opacity="0.3"/>
+          <stop offset="100%" stop-color="#00875A" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <polygon points="${area}" fill="url(#wGrad)"/>
+      <polyline points="${polyline}" fill="none" stroke="#00875A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      ${pts.map((p,i) => `
+        <circle cx="${p.x}" cy="${p.y}" r="3" fill="#00875A"/>
+        <text x="${p.x}" y="${p.y - 6}" text-anchor="middle" font-size="8" fill="#64748B">${p.e.weight}</text>
+        ${i % 2 === 0 ? `<text x="${p.x}" y="${H - 1}" text-anchor="middle" font-size="7" fill="#64748B">${p.e.date.slice(5)}</text>` : ''}
+      `).join('')}
+    </svg>`;
 
     // Withings metrics from latest entry
     const wMetrics = document.getElementById('weight-metrics');
@@ -4018,6 +4101,7 @@ async function saveAddMealModal() {
   dailyLog = [...dailyLog, entry];
   await window.__FC.saveDailyLog(user.uid, todayDate(), dailyLog);
   renderSante();
+  loadCalHistory();
   closeAddMealModal();
   toast(`✓ ${name} ajouté au journal`, 'success');
   haptic(15);
@@ -4234,6 +4318,8 @@ window.addEventListener('fc-ready', () => {
       unsubCategories = window.__FC.loadCategories(fbUser.uid, cats => {
         userCategories = cats; renderProfileCats();
       });
+
+      loadCalHistory();
 
       if (unsubDailyLog) unsubDailyLog();
       unsubDailyLog = window.__FC.loadDailyLog(fbUser.uid, todayDate(), entries => {
