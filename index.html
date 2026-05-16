@@ -87,8 +87,6 @@
   window.dispatchEvent(new Event('fc-ready'));
 </script>
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
 
 <style>
 /* ─── RESET ─── */
@@ -98,181 +96,184 @@ input  { font-family: inherit; }
 
 /* ─── TOKENS ─── */
 :root {
-  --bg:           #F7F3EE;
-  --surface:      #FFFFFF;
-  --surface2:     #F2EDE6;
-  --border:       rgba(60,45,20,0.13);
-  --border2:      rgba(60,45,20,0.22);
-  --ink:          #1E1A14;
-  --ink2:         #6B5E4A;
-  --ink3:         #A8997F;
-  --green:        #2A5C3F;
-  --green-l:      #EAF3EC;
-  --green-m:      #3D7A55;
-  --amber:        #A05C1A;
-  --amber-l:      #FDF0DF;
-  --red:          #B03030;
-  --red-l:        #FDEAEA;
-  --orange:       #C05820;
-  --orange-l:     #FEF0E6;
-  --gold:         #C8963E;
-  --r:            12px;
-  --r-lg:         18px;
+  --bg:        #F2F2F7;
+  --surface:   #FFFFFF;
+  --surface2:  rgba(120,120,128,0.08);
+  --border:    rgba(60,60,67,0.13);
+  --border2:   rgba(60,60,67,0.25);
+  --ink:       #000000;
+  --ink2:      #3C3C43;
+  --ink3:      #8E8E93;
+  --green:     #34C759;
+  --green-dk:  #248A3D;
+  --green-l:   rgba(52,199,89,0.12);
+  --green-m:   #30D158;
+  --red:       #FF3B30;
+  --red-l:     rgba(255,59,48,0.10);
+  --orange:    #FF9500;
+  --orange-l:  rgba(255,149,0,0.10);
+  --amber:     #FFCC00;
+  --amber-l:   rgba(255,204,0,0.10);
+  --r:    14px;
+  --r-lg: 20px;
+  --r-xl: 32px;
+  --glass:        rgba(255,255,255,0.82);
+  --glass-border: rgba(255,255,255,0.70);
 }
 
 body {
-  font-family: 'Jost', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
   background: var(--bg);
   color: var(--ink);
   min-height: 100vh;
   font-size: 15px;
-  line-height: 1.55;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* ─── AUTH ─── */
 .auth {
   min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: var(--bg);
-  position: relative;
-  overflow: hidden;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  background: var(--bg); position: relative; overflow: hidden;
 }
 .auth::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image: radial-gradient(ellipse at 20% 50%, rgba(42,92,63,0.06) 0%, transparent 60%),
-                    radial-gradient(ellipse at 80% 20%, rgba(200,150,62,0.07) 0%, transparent 55%);
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 30% 40%, rgba(52,199,89,0.08) 0%, transparent 55%),
+              radial-gradient(ellipse at 80% 70%, rgba(0,122,255,0.06) 0%, transparent 50%);
   pointer-events: none;
 }
 .auth-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  padding: 3rem 2.5rem 2.5rem;
-  text-align: center;
-  max-width: 400px;
-  width: 90%;
-  position: relative;
-  box-shadow: 0 4px 40px rgba(30,26,20,0.07);
+  background: var(--glass);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-xl); padding: 3rem 2.5rem 2.5rem;
+  text-align: center; max-width: 380px; width: 90%;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.08), 0 1px 0 rgba(255,255,255,0.9) inset;
 }
 .auth-wordmark {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 2.8rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--ink);
-  margin-bottom: 0.25rem;
+  font-size: 2.6rem; font-weight: 800; letter-spacing: -0.04em;
+  color: var(--ink); margin-bottom: 0.2rem;
 }
-.auth-wordmark span { color: var(--green); }
+.auth-wordmark span { color: var(--green-dk); }
 .auth-tagline {
-  font-size: 0.88rem;
-  color: var(--ink3);
-  margin-bottom: 2.5rem;
-  font-weight: 300;
-  letter-spacing: 0.02em;
+  font-size: 0.88rem; color: var(--ink3); margin-bottom: 2.5rem; font-weight: 400;
 }
 .auth-divider {
   display: flex; align-items: center; gap: 12px;
-  margin-bottom: 1.25rem; color: var(--ink3); font-size: 0.78rem;
+  margin-bottom: 1.25rem; color: var(--ink3); font-size: 0.75rem;
 }
-.auth-divider::before, .auth-divider::after {
-  content: ''; flex: 1; height: 1px; background: var(--border);
-}
+.auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 .btn-google {
   display: flex; align-items: center; justify-content: center; gap: 10px;
   width: 100%; padding: 13px;
-  background: var(--surface); border: 1.5px solid var(--border2);
+  background: var(--surface); border: 1px solid var(--border);
   border-radius: var(--r); font-size: 0.92rem; font-weight: 500;
   color: var(--ink); transition: all 0.18s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
 }
-.btn-google:hover {
-  background: var(--bg); border-color: var(--ink3);
-  box-shadow: 0 2px 12px rgba(30,26,20,0.08);
-}
+.btn-google:hover { background: var(--bg); box-shadow: 0 2px 12px rgba(0,0,0,0.1); }
 .google-logo { width: 18px; height: 18px; }
 .auth-perks {
   display: grid; grid-template-columns: 1fr 1fr 1fr;
-  gap: 1rem; margin-top: 2rem; padding-top: 1.75rem;
+  gap: 1rem; margin-top: 2rem; padding-top: 1.5rem;
   border-top: 1px solid var(--border);
 }
-.perk { font-size: 0.75rem; color: var(--ink3); display: flex; flex-direction: column; align-items: center; gap: 5px; }
-.perk-icon { font-size: 1.3rem; }
+.perk { font-size: 0.72rem; color: var(--ink3); display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.perk-icon { font-size: 1.25rem; }
 
-/* ─── TOP BAR ─── */
-.topbar {
-  position: sticky; top: 0; z-index: 100;
-  height: 58px;
+/* ─── APP LAYOUT — FULL SCREEN TABS ─── */
+#app-screen { position: relative; }
+
+.tab-page {
+  display: none;
+  min-height: 100vh;
+  padding-bottom: 110px;
+}
+.tab-page.active { display: block; }
+
+.tab-header {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(242,242,247,0.92);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid var(--border);
+  padding: 52px 20px 12px;
+}
+.tab-header-row {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 0 1.5rem;
-  background: rgba(247,243,238,0.92);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--border);
 }
-.brand {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 1.5rem; font-weight: 700; color: var(--green);
-  letter-spacing: -0.01em;
+.tab-large-title {
+  font-size: 2rem; font-weight: 700; letter-spacing: -0.03em; color: var(--ink);
 }
-.tab-nav { display: flex; gap: 2px; }
-.tab {
-  padding: 6px 18px; border-radius: 20px; border: none;
-  background: transparent; font-size: 0.85rem; font-weight: 500;
-  color: var(--ink3); transition: all 0.15s;
+.tab-sub {
+  font-size: 0.83rem; color: var(--ink3); margin-top: 2px;
 }
-.tab.on { background: var(--green); color: #fff; }
-.tab:hover:not(.on) { background: var(--surface2); color: var(--ink); }
-.user-zone {
-  display: flex; align-items: center; gap: 10px;
-}
-.user-name { font-size: 0.82rem; color: var(--ink2); }
-.avatar {
-  width: 30px; height: 30px; border-radius: 50%;
-  background: var(--green-l); color: var(--green);
-  font-size: 0.72rem; font-weight: 600;
+.tab-body { padding: 16px 16px 0; }
+
+/* ─── FAB ─── */
+.fab {
+  position: fixed; bottom: 96px; right: 22px;
+  width: 56px; height: 56px; border-radius: 50%;
+  background: var(--green-dk); color: #fff;
+  font-size: 1.7rem; line-height: 1;
+  border: none;
+  box-shadow: 0 4px 20px rgba(36,138,61,0.38), 0 1px 4px rgba(0,0,0,0.12);
   display: flex; align-items: center; justify-content: center;
+  z-index: 150; transition: transform 0.18s, box-shadow 0.18s;
 }
-.logout-btn {
-  font-size: 0.78rem; color: var(--ink3); background: none; border: none;
-  padding: 4px 8px; border-radius: 6px; transition: all 0.15s;
-}
-.logout-btn:hover { background: var(--surface2); color: var(--ink); }
+.fab:active { transform: scale(0.94); }
+@media (hover: hover) { .fab:hover { transform: scale(1.06); box-shadow: 0 6px 28px rgba(36,138,61,0.45); } }
 
-/* ─── LAYOUT ─── */
-.shell {
-  display: grid;
-  grid-template-columns: 320px 1fr;
-  min-height: calc(100vh - 58px);
+/* ─── BOTTOM TAB BAR — LIQUID GLASS ─── */
+.bottom-tab-bar {
+  position: fixed; bottom: 20px;
+  left: 50%; transform: translateX(-50%);
+  display: flex; align-items: stretch;
+  background: rgba(242,242,247,0.88);
+  backdrop-filter: blur(28px) saturate(200%);
+  -webkit-backdrop-filter: blur(28px) saturate(200%);
+  border: 1px solid rgba(255,255,255,0.72);
+  border-radius: 28px;
+  padding: 6px 8px;
+  gap: 2px;
+  box-shadow:
+    0 8px 32px rgba(0,0,0,0.10),
+    0 2px 8px rgba(0,0,0,0.06),
+    inset 0 1px 0 rgba(255,255,255,0.95);
+  z-index: 200;
+  width: calc(100% - 40px);
+  max-width: 400px;
 }
+.tab-item {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 3px;
+  padding: 8px 4px 6px;
+  border-radius: 20px; border: none;
+  background: transparent; color: var(--ink3);
+  transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1);
+  cursor: pointer; min-width: 56px;
+  -webkit-tap-highlight-color: transparent;
+}
+.tab-item.active {
+  background: rgba(255,255,255,0.95);
+  color: var(--green-dk);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08), 0 0 0 0.5px rgba(0,0,0,0.05);
+  transform: scale(1.04);
+}
+.tab-item-icon { font-size: 1.35rem; line-height: 1; }
+.tab-item-label { font-size: 0.62rem; font-weight: 600; letter-spacing: -0.01em; }
 
-/* ─── SIDEBAR ─── */
-.sidebar {
-  background: var(--surface);
-  border-right: 1px solid var(--border);
-  display: flex; flex-direction: column;
-  position: sticky; top: 58px;
-  height: calc(100vh - 58px);
-  overflow: hidden;
+/* ─── SHARE ICON BTN (in frigo header) ─── */
+.icon-btn {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--surface2); border: none;
+  font-size: 1.05rem; display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s; flex-shrink: 0;
 }
-.sidebar-top {
-  padding: 1.1rem 1.1rem 0.8rem;
-  border-bottom: 1px solid var(--border);
-}
-.section-label {
-  font-size: 0.68rem; text-transform: uppercase;
-  letter-spacing: 0.1em; color: var(--ink3); font-weight: 500;
-  margin-bottom: 0.75rem;
-}
-.btn-add {
-  width: 100%; padding: 9px 13px; background: var(--green); color: #fff;
-  border: none; border-radius: 8px; font-size: 0.85rem; font-weight: 500;
-  white-space: nowrap; transition: background 0.15s; cursor: pointer;
-  display: flex; align-items: center; justify-content: center; gap: 6px;
-}
-.btn-add:hover { background: var(--green-m); }
+.icon-btn:hover { background: var(--border); }
 
 /* ── Add-food modal ── */
 .add-modal-overlay {
@@ -286,7 +287,7 @@ body {
   box-shadow: 0 20px 60px rgba(20,16,10,0.22); animation: slideUp 0.2s ease;
 }
 .add-modal-title {
-  font-family: 'Cormorant Garamond', serif;
+
   font-size: 1.4rem; font-weight: 700; color: var(--ink); margin-bottom: 1.25rem;
 }
 .add-modal-field { margin-bottom: 0.9rem; }
@@ -300,21 +301,21 @@ body {
   border: 1px solid var(--border); background: var(--bg);
   color: var(--ink); font-size: 0.88rem; outline: none;
   transition: border-color 0.15s; width: 100%;
-  font-family: 'Jost', sans-serif;
+
 }
 .inp:focus { border-color: var(--green-m); }
 .inp-unit { width: 80px; flex-shrink: 0; }
 .add-modal-actions { display: flex; gap: 8px; margin-top: 1.25rem; }
 .add-modal-cancel {
   flex: 1; padding: 10px; border: 1px solid var(--border); background: transparent;
-  color: var(--ink3); border-radius: 8px; font-size: 0.88rem; font-family: 'Jost', sans-serif;
+  color: var(--ink3); border-radius: 8px; font-size: 0.88rem;
   cursor: pointer; transition: background 0.15s;
 }
 .add-modal-cancel:hover { background: var(--bg); }
 .add-modal-confirm {
   flex: 2; padding: 10px; background: var(--green); color: #fff;
   border: none; border-radius: 8px; font-size: 0.88rem; font-weight: 500;
-  font-family: 'Jost', sans-serif; cursor: pointer; transition: background 0.15s;
+ cursor: pointer; transition: background 0.15s;
 }
 .add-modal-confirm:hover { background: var(--green-m); }
 
@@ -322,7 +323,7 @@ body {
 .btn-scan {
   width: 100%; padding: 9px 13px; margin-bottom: 0.9rem;
   background: var(--bg); color: var(--ink); border: 1px dashed var(--border2,var(--border));
-  border-radius: 8px; font-size: 0.88rem; font-family: 'Jost', sans-serif;
+  border-radius: 8px; font-size: 0.88rem;
   cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
   transition: background 0.15s;
 }
@@ -341,7 +342,7 @@ body {
 .btn-scan-cancel {
   width: 100%; padding: 7px; margin-top: 6px;
   background: transparent; border: 1px solid var(--border); border-radius: 8px;
-  font-size: 0.82rem; font-family: 'Jost', sans-serif; color: var(--ink3);
+  font-size: 0.82rem; color: var(--ink3);
   cursor: pointer;
 }
 .scan-result-banner {
@@ -352,9 +353,8 @@ body {
 .scan-result-banner.visible { display: flex; align-items: center; gap: 8px; }
 .scan-kcal { font-size: 0.75rem; color: var(--ink3); margin-top: 2px; }
 
-.fridge-scroll { flex: 1; overflow-y: auto; padding: 0.7rem; }
-.fridge-scroll::-webkit-scrollbar { width: 3px; }
-.fridge-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+.fridge-list-wrap { padding: 0; }
+.fridge-scroll::-webkit-scrollbar { display: none; }
 
 .cat-head {
   font-size: 0.68rem; text-transform: uppercase;
@@ -363,20 +363,21 @@ body {
 }
 .food-row {
   display: flex; align-items: center; gap: 7px;
-  padding: 7px 9px; border-radius: 9px; margin-bottom: 3px;
-  background: var(--bg); transition: background 0.13s;
+  padding: 10px 12px; border-radius: var(--r); margin-bottom: 4px;
+  background: var(--surface); transition: background 0.13s;
   position: relative;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
 .food-row:hover { background: var(--surface2); }
-.f-emoji { font-size: 1.05rem; flex-shrink: 0; }
+.f-emoji { font-size: 1.1rem; flex-shrink: 0; }
 .f-info { flex: 1; min-width: 0; }
-.f-name { font-size: 0.85rem; font-weight: 500; color: var(--ink); }
+.f-name { font-size: 0.87rem; font-weight: 500; color: var(--ink); }
 .f-qty  { font-size: 0.72rem; color: var(--ink3); }
 .dlc-tag {
   font-size: 0.68rem; font-weight: 600; padding: 2px 7px;
   border-radius: 9px; white-space: nowrap; flex-shrink: 0;
 }
-.dlc-ok     { background: var(--green-l); color: var(--green); }
+.dlc-ok     { background: var(--green-l); color: var(--green-dk); }
 .dlc-soon   { background: var(--orange-l); color: var(--orange); }
 .dlc-urgent { background: var(--red-l); color: var(--red); }
 .dlc-gone   { background: var(--surface2); color: var(--ink3); text-decoration: line-through; }
@@ -392,14 +393,10 @@ body {
 }
 .fridge-empty-icon { font-size: 2.5rem; margin-bottom: 0.5rem; opacity: 0.4; }
 
-/* ─── CONTENT ─── */
-.content { padding: 1.5rem; overflow-y: auto; }
-
 .page-head { margin-bottom: 1.25rem; }
 .page-title {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 2rem; font-weight: 700; color: var(--ink);
-  letter-spacing: -0.01em; margin-bottom: 0.15rem;
+  font-size: 1.4rem; font-weight: 700; color: var(--ink);
+  letter-spacing: -0.02em; margin-bottom: 0.15rem;
 }
 .page-sub { font-size: 0.85rem; color: var(--ink3); }
 
@@ -447,7 +444,7 @@ body {
 .pct-lo  { background: var(--surface2); color: var(--ink3); }
 .card-body { padding: 0.95rem 1rem; flex: 1; }
 .card-name {
-  font-family: 'Cormorant Garamond', serif;
+
   font-size: 1.08rem; font-weight: 700; color: var(--ink);
   margin-bottom: 0.3rem;
 }
@@ -470,7 +467,7 @@ body {
 }
 .empty-icon { font-size: 4rem; opacity: 0.25; margin-bottom: 1rem; }
 .empty-title {
-  font-family: 'Cormorant Garamond', serif;
+
   font-size: 1.5rem; font-weight: 700; color: var(--ink); margin-bottom: 0.4rem;
 }
 .empty-sub { color: var(--ink3); font-size: 0.88rem; }
@@ -499,7 +496,7 @@ body {
 }
 .modal-emoji { font-size: 2.6rem; line-height: 1; }
 .modal-title {
-  font-family: 'Cormorant Garamond', serif;
+
   font-size: 1.6rem; font-weight: 700; color: var(--ink);
 }
 .modal-meta { font-size: 0.82rem; color: var(--ink3); margin-top: 3px; }
@@ -542,7 +539,7 @@ body {
 .btn-close {
   width: 100%; padding: 12px; background: var(--ink); color: #fff;
   border: none; border-radius: var(--r);
-  font-family: 'Jost', sans-serif; font-size: 0.92rem; font-weight: 500;
+ font-size: 0.92rem; font-weight: 500;
   transition: background 0.15s;
 }
 .btn-close:hover { background: #3A3228; }
@@ -554,7 +551,7 @@ body {
 }
 .courses-recipe { margin-bottom: 1.25rem; }
 .courses-recipe-name {
-  font-family: 'Cormorant Garamond', serif;
+
   font-size: 1rem; font-weight: 700; color: var(--ink);
   margin-bottom: 0.5rem; display: flex; gap: 7px; align-items: center;
 }
@@ -587,7 +584,7 @@ body {
 .ob-dot.active { width: 22px; background: var(--green); }
 .ob-dot.done   { background: var(--green-m); }
 .ob-title {
-  font-family: 'Cormorant Garamond', serif;
+
   font-size: 1.65rem; font-weight: 700; color: var(--ink);
   margin-bottom: 0.3rem; line-height: 1.2;
 }
@@ -632,14 +629,14 @@ body {
   flex: 1; padding: 12px;
   background: linear-gradient(135deg, var(--green), var(--green-m));
   color: #fff; border: none; border-radius: var(--r);
-  font-family: 'Jost', sans-serif; font-size: 0.92rem; font-weight: 500;
+ font-size: 0.92rem; font-weight: 500;
   transition: opacity 0.15s;
 }
 .ob-btn-next:hover { opacity: 0.88; }
 .ob-btn-back {
   padding: 12px 16px; background: none; color: var(--ink3);
   border: 1.5px solid var(--border); border-radius: var(--r);
-  font-family: 'Jost', sans-serif; font-size: 0.9rem;
+ font-size: 0.9rem;
   transition: all 0.15s;
 }
 .ob-btn-back:hover { background: var(--surface2); color: var(--ink); }
@@ -661,27 +658,54 @@ body {
   background: var(--bg); color: var(--ink2); font-weight: 500;
 }
 
-/* ─── PROFILE BTN ─── */
-.profile-btn {
-  font-size: 0.75rem; color: var(--ink3); background: none;
-  border: 1px solid var(--border); padding: 4px 10px;
-  border-radius: 8px; transition: all 0.15s; cursor: pointer;
-}
-.profile-btn:hover { background: var(--surface2); color: var(--ink); }
-
 /* ─── HIDDEN ─── */
 .hidden { display: none !important; }
 
-/* ─── SIDEBAR SHARE ─── */
-.sidebar-share { padding: 0.55rem 1.1rem; border-bottom: 1px solid var(--border); }
-.share-btn {
-  width: 100%; display: flex; align-items: center; gap: 8px;
-  padding: 7px 10px; border-radius: 9px;
-  border: 1.5px solid var(--border); background: var(--bg);
-  font-size: 0.82rem; color: var(--ink2); cursor: pointer; transition: all 0.15s;
+/* ─── PROFILE TAB ─── */
+.profile-section {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 32px 20px 20px;
 }
-.share-btn:hover { border-color: var(--green-m); color: var(--green); background: var(--green-l); }
-.share-btn.active { border-color: var(--green); background: var(--green-l); color: var(--green); font-weight: 500; }
+.profile-avatar-lg {
+  width: 80px; height: 80px; border-radius: 50%;
+  background: var(--green-l); color: var(--green-dk);
+  font-size: 2rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 12px;
+  box-shadow: 0 4px 20px rgba(52,199,89,0.2);
+}
+.profile-name-lg { font-size: 1.25rem; font-weight: 700; color: var(--ink); margin-bottom: 6px; }
+.profile-goal-badge {
+  font-size: 0.78rem; color: var(--ink3); background: var(--surface2);
+  padding: 4px 14px; border-radius: 20px;
+}
+.profile-calories {
+  background: var(--surface); border-radius: var(--r-lg);
+  padding: 16px 18px; margin: 0 16px 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+}
+.cal-stat { text-align: center; }
+.cal-value { font-size: 1.5rem; font-weight: 700; color: var(--green-dk); letter-spacing: -0.02em; }
+.cal-label { font-size: 0.72rem; color: var(--ink3); margin-top: 2px; }
+.settings-group {
+  margin: 0 16px 10px;
+  background: var(--surface); border-radius: var(--r-lg); overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+.settings-row {
+  width: 100%; padding: 15px 18px;
+  display: flex; align-items: center; justify-content: space-between;
+  background: none; border: none; border-bottom: 1px solid var(--border);
+  font-size: 0.92rem; color: var(--ink); text-align: left; cursor: pointer;
+  transition: background 0.12s;
+}
+.settings-row:last-child { border-bottom: none; }
+.settings-row:hover { background: var(--surface2); }
+.settings-row.danger { color: var(--red); }
+.settings-label { flex: 1; display: flex; align-items: center; gap: 10px; }
+.settings-row-icon { font-size: 1.1rem; }
+.settings-chevron { color: var(--ink3); font-size: 1.1rem; }
 
 /* ─── SHARE MODAL ─── */
 .share-overlay {
@@ -696,7 +720,7 @@ body {
   animation: slideUp 0.2s ease;
 }
 .share-modal-title {
-  font-family: 'Cormorant Garamond', serif;
+
   font-size: 1.4rem; font-weight: 700; color: var(--ink); margin-bottom: 0.3rem;
 }
 .share-modal-sub { font-size: 0.82rem; color: var(--ink3); margin-bottom: 1.25rem; }
@@ -705,13 +729,13 @@ body {
   border-radius: var(--r); padding: 1.25rem; text-align: center; margin-bottom: 1rem;
 }
 .share-code-text {
-  font-family: 'Cormorant Garamond', serif;
+
   font-size: 2.5rem; font-weight: 700; letter-spacing: 0.15em; color: var(--green);
 }
 .share-action-btn {
   width: 100%; padding: 11px; margin-bottom: 8px;
   background: var(--green); color: #fff; border: none; border-radius: var(--r);
-  font-family: 'Jost', sans-serif; font-size: 0.9rem; font-weight: 500;
+ font-size: 0.9rem; font-weight: 500;
   cursor: pointer; transition: opacity 0.15s;
 }
 .share-action-btn:hover { opacity: 0.88; }
@@ -720,7 +744,7 @@ body {
 .share-action-danger { background: var(--red); }
 .share-cancel-btn {
   width: 100%; padding: 9px; background: none; color: var(--ink3);
-  border: none; font-family: 'Jost', sans-serif; font-size: 0.85rem; cursor: pointer;
+  border: none; font-size: 0.85rem; cursor: pointer;
 }
 .share-cancel-btn:hover { color: var(--ink); }
 
@@ -740,7 +764,7 @@ body {
 .ob-meal-btn {
   flex: 1; padding: 8px 4px; border: 1.5px solid var(--border);
   border-radius: var(--r); background: var(--bg);
-  font-family: 'Jost', sans-serif; font-size: 0.82rem; cursor: pointer; transition: all 0.15s;
+ font-size: 0.82rem; cursor: pointer; transition: all 0.15s;
   color: var(--ink2);
 }
 .ob-meal-btn.active { border-color: var(--green); background: var(--green-l); color: var(--green); font-weight: 500; }
@@ -811,86 +835,127 @@ body {
 <!-- ═══════════════ APP ═══════════════ -->
 <div id="app-screen" class="hidden">
 
-  <!-- TOP BAR -->
-  <header class="topbar">
-    <div class="brand">🥘 FrigoChef</div>
-    <nav class="tab-nav">
-      <button class="tab on" data-tab="recettes">Recettes</button>
-      <button class="tab" data-tab="courses">Courses</button>
-    </nav>
-    <div class="user-zone">
-      <button class="profile-btn hidden" id="btn-profile" title="Modifier mon profil">⚙️ Mon profil</button>
-      <div class="avatar" id="user-avatar">?</div>
-      <span class="user-name" id="user-name"></span>
-      <button class="logout-btn" id="btn-logout">Déconnexion</button>
-    </div>
-  </header>
-
-  <div class="shell">
-
-    <!-- ── SIDEBAR FRIGO ── -->
-    <aside class="sidebar">
-      <div class="sidebar-top">
-        <div class="section-label" id="fridge-count-label">🧊 Mon frigo</div>
-        <button class="btn-add" id="btn-add">＋ Ajouter un aliment</button>
-      </div>
-
-      <div class="sidebar-share" id="sidebar-share-zone">
-        <button class="share-btn" id="btn-share">
+  <!-- ── TAB: FRIGO ── -->
+  <div class="tab-page active" id="tab-frigo">
+    <div class="tab-header">
+      <div class="tab-header-row">
+        <div class="tab-large-title" id="fridge-count-label">🧊 Mon Frigo</div>
+        <button class="icon-btn" id="btn-share" title="Frigo partagé">
           <span id="share-icon">👥</span>
-          <span id="share-label">Partager mon frigo</span>
         </button>
       </div>
-
-      <div class="fridge-scroll" id="fridge-list">
+    </div>
+    <div class="tab-body">
+      <div id="fridge-list">
         <div class="fridge-empty">
           <div class="fridge-empty-icon">🧊</div>
           Votre frigo est vide.<br>Ajoutez des aliments !
         </div>
       </div>
-
-    </aside>
-
-    <!-- ── CONTENT ── -->
-    <main class="content" id="content">
-
-      <!-- RECETTES TAB -->
-      <div id="tab-recettes">
-        <div class="page-head">
-          <div class="page-title">Recettes suggérées</div>
-          <div class="page-sub" id="recipes-sub">Ajoutez des aliments et générez vos recettes.</div>
-        </div>
-        <div id="alerts"></div>
-        <div class="filters" id="filters">
-          <button class="pill on" data-f="all">Toutes</button>
-          <button class="pill" data-f="top">≥ 70% match</button>
-          <button class="pill" data-f="urgent">Priorité DLC</button>
-          <button class="pill" data-f="fast">≤ 20 min</button>
-        </div>
-        <div class="grid" id="recipe-grid">
-          <div class="empty">
-            <div class="empty-icon">🍽️</div>
-            <div class="empty-title">Pas encore de recettes</div>
-            <div class="empty-sub">Remplissez votre frigo et cliquez sur<br>"Générer des recettes".</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- COURSES TAB -->
-      <div id="tab-courses" class="hidden">
-        <div class="page-head">
-          <div class="page-title">Liste de courses</div>
-          <div class="page-sub">Ingrédients manquants pour vos recettes</div>
-        </div>
-        <div id="courses-content" class="courses-card">
-          <div style="color:var(--ink3);font-size:0.88rem;text-align:center;padding:2rem 0">
-            Générez des recettes pour voir ce qui manque.
-          </div>
-        </div>
-      </div>
-
-    </main>
+    </div>
   </div>
+
+  <!-- ── TAB: RECETTES ── -->
+  <div class="tab-page" id="tab-recettes">
+    <div class="tab-header">
+      <div class="tab-large-title">Recettes</div>
+      <div class="tab-sub" id="recipes-sub">Ajoutez des aliments pour découvrir des recettes.</div>
+    </div>
+    <div class="tab-body">
+      <div id="alerts"></div>
+      <div class="filters" id="filters">
+        <button class="pill on" data-f="all">Toutes</button>
+        <button class="pill" data-f="top">≥ 70% match</button>
+        <button class="pill" data-f="urgent">Priorité DLC</button>
+        <button class="pill" data-f="fast">≤ 20 min</button>
+      </div>
+      <div class="grid" id="recipe-grid">
+        <div class="empty">
+          <div class="empty-icon">🍽️</div>
+          <div class="empty-title">Frigo vide</div>
+          <div class="empty-sub">Ajoutez des ingrédients dans votre frigo.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB: COURSES ── -->
+  <div class="tab-page" id="tab-courses">
+    <div class="tab-header">
+      <div class="tab-large-title">Courses</div>
+      <div class="tab-sub">Ingrédients manquants pour vos recettes</div>
+    </div>
+    <div class="tab-body">
+      <div id="courses-content" class="courses-card">
+        <div style="color:var(--ink3);font-size:0.88rem;text-align:center;padding:2rem 0">
+          Générez des recettes pour voir ce qui manque.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB: PROFIL ── -->
+  <div class="tab-page" id="tab-profil">
+    <div class="tab-header">
+      <div class="tab-large-title">Profil</div>
+    </div>
+    <div class="tab-body">
+      <div class="profile-section">
+        <div class="profile-avatar-lg" id="user-avatar">?</div>
+        <div class="profile-name-lg" id="user-name"></div>
+        <div class="profile-goal-badge" id="profile-goal-badge">FrigoChef</div>
+      </div>
+      <div class="profile-calories hidden" id="profile-calories">
+        <div class="cal-stat">
+          <div class="cal-value" id="profile-kcal-val">—</div>
+          <div class="cal-label">kcal / jour</div>
+        </div>
+        <div class="cal-stat">
+          <div class="cal-value" id="profile-meal-val">—</div>
+          <div class="cal-label">kcal / repas</div>
+        </div>
+      </div>
+      <div class="settings-group">
+        <button class="settings-row" id="btn-profile">
+          <span class="settings-label"><span class="settings-row-icon">⚙️</span>Modifier mon profil</span>
+          <span class="settings-chevron">›</span>
+        </button>
+        <button class="settings-row" id="btn-share-profil">
+          <span class="settings-label"><span class="settings-row-icon">👥</span><span id="share-label">Frigo partagé</span></span>
+          <span class="settings-chevron">›</span>
+        </button>
+      </div>
+      <div class="settings-group">
+        <button class="settings-row danger" id="btn-logout">
+          <span class="settings-label"><span class="settings-row-icon">🚪</span>Déconnexion</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FAB -->
+  <button class="fab" id="btn-add">＋</button>
+
+  <!-- BOTTOM TAB BAR -->
+  <nav class="bottom-tab-bar">
+    <button class="tab-item active" data-tab="frigo">
+      <span class="tab-item-icon">🧊</span>
+      <span class="tab-item-label">Frigo</span>
+    </button>
+    <button class="tab-item" data-tab="recettes">
+      <span class="tab-item-icon">🍳</span>
+      <span class="tab-item-label">Recettes</span>
+    </button>
+    <button class="tab-item" data-tab="courses">
+      <span class="tab-item-icon">🛒</span>
+      <span class="tab-item-label">Courses</span>
+    </button>
+    <button class="tab-item" data-tab="profil">
+      <span class="tab-item-icon">👤</span>
+      <span class="tab-item-label">Profil</span>
+    </button>
+  </nav>
+
 </div>
 
 <!-- ═══════════════ MODAL RECETTE ═══════════════ -->
@@ -1546,8 +1611,15 @@ function updateShareBtn() {
 
 function applyProfileToUI() {
   if (!profile) return;
-  document.getElementById('btn-profile').classList.remove('hidden');
   updateShareBtn();
+  const GOAL_LABELS = { lose_weight:'Perte de poids', maintain:'Maintien du poids', eat_healthy:'Alimentation saine', build_muscle:'Prise de muscle' };
+  const badge = document.getElementById('profile-goal-badge');
+  if (badge && profile.goal) badge.textContent = GOAL_LABELS[profile.goal] || 'FrigoChef';
+  if (profile.dailyCalories) {
+    document.getElementById('profile-calories').classList.remove('hidden');
+    document.getElementById('profile-kcal-val').textContent = profile.dailyCalories;
+    document.getElementById('profile-meal-val').textContent = profile.caloriesPerMeal || '—';
+  }
 }
 
 /* ═══════════════════════════════════════════════════
@@ -1597,7 +1669,6 @@ window.addEventListener('fc-ready', () => {
       sharedFridgeCode = null;
       document.getElementById('auth-screen').classList.remove('hidden');
       document.getElementById('app-screen').classList.add('hidden');
-      document.getElementById('btn-profile').classList.add('hidden');
       if (unsub) { unsub(); unsub = null; }
     }
   });
@@ -1878,16 +1949,20 @@ window.addEventListener('fc-ready', () => {
   document.getElementById('inp-note').addEventListener('keydown', e => { if (e.key === 'Enter') confirmAddFood(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAddModal(); });
 
-  // Tabs
-  document.querySelectorAll('.tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
-      tab.classList.add('on');
-      const t = tab.dataset.tab;
-      document.getElementById('tab-recettes').classList.toggle('hidden', t !== 'recettes');
-      document.getElementById('tab-courses').classList.toggle('hidden', t !== 'courses');
-    });
+  // Bottom nav tabs
+  function switchTab(tabName) {
+    document.querySelectorAll('.tab-item').forEach(i => i.classList.remove('active'));
+    document.querySelectorAll('.tab-page').forEach(p => p.classList.remove('active'));
+    const item = document.querySelector(`.tab-item[data-tab="${tabName}"]`);
+    const page = document.getElementById('tab-' + tabName);
+    if (item) item.classList.add('active');
+    if (page) { page.classList.add('active'); page.scrollTop = 0; }
+    document.querySelector('.fab').style.display = tabName === 'frigo' ? '' : 'none';
+  }
+  document.querySelectorAll('.tab-item').forEach(item => {
+    item.addEventListener('click', () => switchTab(item.dataset.tab));
   });
+  document.getElementById('btn-share-profil').addEventListener('click', openShareModal);
 
   // Filters
   document.getElementById('filters').addEventListener('click', e => {
