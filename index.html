@@ -2,7 +2,11 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#F2F2F7">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="MaCuisine">
 <title>MaCuisine</title>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -140,6 +144,10 @@ input  { font-family: inherit; }
   --glass-border: rgba(255,255,255,0.70);
 }
 
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
   background: var(--bg);
@@ -209,7 +217,7 @@ body {
 .tab-page {
   display: none;
   min-height: 100vh;
-  padding-bottom: 110px;
+  padding-bottom: calc(110px + env(safe-area-inset-bottom, 0px));
 }
 .tab-page.active { display: block; }
 
@@ -248,7 +256,8 @@ body {
 
 /* ─── BOTTOM TAB BAR — LIQUID GLASS ─── */
 .bottom-tab-bar {
-  position: fixed; bottom: 20px;
+  position: fixed;
+  bottom: max(20px, env(safe-area-inset-bottom, 20px));
   left: 50%; transform: translateX(-50%);
   display: flex; align-items: stretch;
   background: rgba(242,242,247,0.88);
@@ -1093,8 +1102,8 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
   <!-- BOTTOM TAB BAR -->
   <nav class="bottom-tab-bar">
     <button class="tab-item active" data-tab="frigo">
-      <span class="tab-item-icon">🧊</span>
-      <span class="tab-item-label">Frigo</span>
+      <span class="tab-item-icon">🍽️</span>
+      <span class="tab-item-label">Cuisine</span>
     </button>
     <button class="tab-item" data-tab="recettes">
       <span class="tab-item-icon">🍳</span>
