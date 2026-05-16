@@ -1204,6 +1204,15 @@ body {
 .macro-bar-fill.fat     { background: linear-gradient(90deg, #FFD43B, #FFA94D); }
 .macro-nums { font-size: 0.70rem; color: var(--ink3); width: 68px; text-align: right; flex-shrink: 0; }
 
+/* Nutri Score */
+.nutri-score-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 8px;
+  font-size: 0.85rem; font-weight: 900; color: #fff;
+  margin-right: 6px; flex-shrink: 0;
+}
+.nutri-score-label { font-size: 0.72rem; color: var(--ink3); vertical-align: middle; }
+
 /* Weight card */
 .weight-card {
   background: var(--surface); border-radius: var(--r-lg);
@@ -1901,6 +1910,10 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
       <button class="icon-btn" id="btn-add-meal" title="Ajouter un repas">＋</button>
     </div>
     <div class="tab-sub" id="sante-sub">Suivez vos calories et votre progression.</div>
+    <div id="nutri-score-wrap" style="display:none;margin-top:6px">
+      <span class="nutri-score-badge" id="nutri-score-badge">A</span>
+      <span class="nutri-score-label" id="nutri-score-label">Score nutritionnel du jour</span>
+    </div>
   </div>
   <div class="tab-body" id="sante-body">
     <!-- Calories ring -->
@@ -3763,6 +3776,46 @@ function getMacroTargets() {
   };
 }
 
+function calcNutriScore() {
+  if (!profile?.dailyCalories || !dailyLog.length) return null;
+  let score = 0;
+  const totalKcal = dailyLog.reduce((s,e) => s + (e.kcal||0), 0);
+  const goal = profile.dailyCalories;
+
+  // Calorie adherence (0-35 pts)
+  const calRatio = totalKcal / goal;
+  if (calRatio >= 0.85 && calRatio <= 1.10) score += 35;
+  else if (calRatio >= 0.70 && calRatio <= 1.20) score += 22;
+  else if (calRatio >= 0.55 && calRatio <= 1.35) score += 12;
+  else score += 0;
+
+  // Macro balance (0-35 pts)
+  const mt = getMacroTargets();
+  if (mt) {
+    const totProt = dailyLog.reduce((s,e) => s + (e.protein||0), 0);
+    const totCarb = dailyLog.reduce((s,e) => s + (e.carbs||0), 0);
+    const totFat  = dailyLog.reduce((s,e) => s + (e.fat||0), 0);
+    const hasMacros = totProt > 0 || totCarb > 0 || totFat > 0;
+    if (hasMacros) {
+      const protScore = Math.max(0, 1 - Math.abs(totProt - mt.protein) / mt.protein);
+      const carbScore = Math.max(0, 1 - Math.abs(totCarb - mt.carbs)   / mt.carbs);
+      const fatScore  = Math.max(0, 1 - Math.abs(totFat  - mt.fat)     / mt.fat);
+      score += Math.round((protScore + carbScore + fatScore) / 3 * 35);
+    } else {
+      score += 15; // partial credit if macros not tracked
+    }
+  }
+
+  // Meal variety (0-30 pts) — different meal types
+  const types = new Set(dailyLog.map(e => e.type).filter(Boolean));
+  score += Math.min(types.size * 10, 30);
+
+  // Grade
+  const grade = score >= 85 ? 'A' : score >= 70 ? 'B' : score >= 50 ? 'C' : score >= 30 ? 'D' : 'E';
+  const color  = score >= 85 ? '#00875A' : score >= 70 ? '#74C0FC' : score >= 50 ? '#FFD43B' : score >= 30 ? '#FF8C42' : '#E53935';
+  return { score, grade, color };
+}
+
 function renderSante() {
   if (!document.getElementById('tab-sante')) return;
 
@@ -3787,6 +3840,21 @@ function renderSante() {
     document.getElementById('cal-ring-remain').textContent = 'pour voir l\'objectif';
   }
   document.getElementById('cal-ring-meals').textContent = `${dailyLog.length} repas aujourd'hui`;
+
+  // ── Nutri Score ──
+  const scoreWrap = document.getElementById('nutri-score-wrap');
+  const ns = calcNutriScore();
+  if (ns) {
+    scoreWrap.style.display = 'flex';
+    scoreWrap.style.alignItems = 'center';
+    const badge = document.getElementById('nutri-score-badge');
+    badge.textContent = ns.grade;
+    badge.style.background = ns.color;
+    document.getElementById('nutri-score-label').textContent =
+      `Score du jour : ${ns.score}/100`;
+  } else {
+    scoreWrap.style.display = 'none';
+  }
 
   // ── Macros ──
   const macroTargets = getMacroTargets();
