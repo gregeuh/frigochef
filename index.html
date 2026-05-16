@@ -255,12 +255,24 @@ body {
 /* ─── APP LAYOUT — FULL SCREEN TABS ─── */
 #app-screen { position: relative; }
 
+@keyframes tabIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.995); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+@keyframes tabOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
 .tab-page {
   display: none;
   min-height: 100vh;
   padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
 }
-.tab-page.active { display: block; }
+.tab-page.active {
+  display: block;
+  animation: tabIn 0.30s cubic-bezier(0.34, 1.3, 0.64, 1) both;
+}
 
 .tab-header {
   position: sticky; top: 0; z-index: 50;
@@ -293,8 +305,9 @@ body {
   display: flex; align-items: center; justify-content: center;
   z-index: 150; transition: transform 0.18s, box-shadow 0.18s;
 }
-.fab:active { transform: scale(0.94); }
-@media (hover: hover) { .fab:hover { transform: scale(1.06); box-shadow: 0 6px 28px rgba(36,138,61,0.45); } }
+.fab { transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.18s; }
+.fab:active { transform: scale(0.86) rotate(-12deg) !important; }
+@media (hover: hover) { .fab:hover { transform: scale(1.08); box-shadow: 0 6px 28px rgba(36,138,61,0.45); } }
 
 /* ─── BOTTOM TAB BAR — LIQUID GLASS ─── */
 .bottom-tab-bar {
@@ -451,12 +464,13 @@ body {
 .food-row {
   display: flex; align-items: center; gap: 6px;
   padding: 7px 10px; border-radius: var(--r); margin-bottom: 3px;
-  background: var(--surface); transition: background 0.13s;
+  background: var(--surface); transition: background 0.13s, transform 0.18s cubic-bezier(0.34,1.56,0.64,1);
   position: relative;
   box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-  cursor: pointer;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
 .food-row:hover { background: var(--surface2); }
+.food-row:active { transform: scale(0.97); }
 .f-emoji { font-size: 1rem; flex-shrink: 0; }
 .f-info { flex: 1; min-width: 0; }
 .f-name { font-size: 0.82rem; font-weight: 500; color: var(--ink); }
@@ -500,23 +514,26 @@ body {
 .pill {
   padding: 4px 11px; border-radius: 20px; border: 1px solid var(--border);
   background: var(--surface); font-size: 0.74rem; font-weight: 500;
-  color: var(--ink3); transition: all 0.14s;
+  color: var(--ink3); transition: all 0.18s cubic-bezier(0.34,1.56,0.64,1);
+  -webkit-tap-highlight-color: transparent;
 }
 .pill.on { background: var(--ink); border-color: var(--ink); color: #fff; }
 .pill:hover:not(.on) { background: var(--surface2); color: var(--ink); }
+.pill:active { transform: scale(0.92); }
 
 /* ─── RECIPE GRID ─── */
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
 
 .card {
   background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--r-lg); overflow: hidden; cursor: pointer;
+  border-radius: var(--r); overflow: hidden; cursor: pointer;
   display: flex; flex-direction: column;
-  transition: transform 0.18s, box-shadow 0.18s;
+  transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.18s;
+  -webkit-tap-highlight-color: transparent;
 }
-.card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 32px rgba(30,26,20,0.10);
+.card:active { transform: scale(0.95) !important; box-shadow: none; }
+@media (hover: hover) {
+  .card:hover { transform: translateY(-4px) scale(1.01); box-shadow: 0 14px 36px rgba(0,0,0,0.12); }
 }
 .card-thumb {
   height: 88px; display: flex; align-items: center; justify-content: center;
@@ -572,14 +589,22 @@ body {
   animation: fadeIn 0.15s ease;
 }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp {
+  from { transform: translateY(70px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+@keyframes springIn {
+  from { opacity: 0; transform: scale(0.88) translateY(24px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0); }
+}
 .modal {
   background: var(--surface);
   border-radius: var(--r-lg) var(--r-lg) 0 0;
   width: 100%; max-width: 600px; max-height: 88vh;
   overflow-y: auto; padding: 1.25rem 1.25rem 1.5rem;
-  animation: slideUp 0.2s ease;
+  animation: slideUp 0.38s cubic-bezier(0.34, 1.3, 0.64, 1) both;
 }
-@keyframes slideUp { from { transform: translateY(40px); } to { transform: translateY(0); } }
+.add-modal-card { animation: springIn 0.36s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
 .modal::-webkit-scrollbar { width: 3px; }
 .modal::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 .modal-hero {
@@ -1076,11 +1101,12 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
 .pantry-row {
   display: flex; align-items: center; gap: 6px;
   padding: 7px 10px; border-radius: var(--r); margin-bottom: 3px;
-  background: var(--surface); transition: background 0.13s;
+  background: var(--surface); transition: background 0.13s, transform 0.18s cubic-bezier(0.34,1.56,0.64,1);
   position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-  cursor: pointer;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
 .pantry-row:hover { background: var(--surface2); }
+.pantry-row:active { transform: scale(0.97); }
 .pantry-empty {
   text-align: center; padding: 1.8rem 1rem;
   color: var(--ink3); font-size: 0.8rem;
@@ -1833,15 +1859,49 @@ function renderPantry() {
   });
 }
 
+function haptic(ms = 8) { if (navigator.vibrate) navigator.vibrate(ms); }
+
 function toast(msg, type = 'info') {
+  document.querySelectorAll('.app-toast').forEach(t => t.remove());
+  const icons = { error: '⚠️', success: '✓', info: '' };
   const el = document.createElement('div');
-  el.textContent = msg;
-  el.style.cssText = `position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
-    background:${type === 'error' ? 'var(--red)' : '#222'};color:#fff;padding:10px 20px;
-    border-radius:8px;font-size:.85rem;z-index:9999;opacity:0;transition:opacity .2s;max-width:90vw;text-align:center`;
+  el.className = 'app-toast';
+  el.innerHTML = `${icons[type] ? `<span>${icons[type]}</span>` : ''}<span>${msg}</span>`;
+  const bg = type === 'error' ? 'var(--red)' : 'rgba(28,28,30,0.94)';
+  el.style.cssText = `
+    position:fixed;bottom:108px;left:50%;
+    transform:translateX(-50%) translateY(16px) scale(0.92);
+    background:${bg};color:#fff;padding:9px 18px;
+    border-radius:24px;font-size:0.8rem;font-weight:500;
+    z-index:9999;opacity:0;
+    transition:all 0.32s cubic-bezier(0.34,1.56,0.64,1);
+    display:flex;align-items:center;gap:7px;
+    backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    box-shadow:0 6px 24px rgba(0,0,0,0.22);
+    max-width:85vw;white-space:nowrap;pointer-events:none`;
   document.body.appendChild(el);
-  requestAnimationFrame(() => { el.style.opacity = '1'; });
-  setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 3500);
+  requestAnimationFrame(() => {
+    el.style.opacity = '1';
+    el.style.transform = 'translateX(-50%) translateY(0) scale(1)';
+  });
+  setTimeout(() => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateX(-50%) translateY(8px) scale(0.94)';
+    setTimeout(() => el.remove(), 350);
+  }, 3000);
+}
+
+const CARD_GRADIENTS = [
+  ['#FF9A9E','#FAD0C4'], ['#A8EDEA','#FED6E3'], ['#FCCB90','#D57EEB'],
+  ['#A1C4FD','#C2E9FB'], ['#D4FC79','#96E6A1'], ['#FEE140','#FA709A'],
+  ['#43E97B','#38F9D7'], ['#4FACFE','#00F2FE'], ['#F093FB','#F5576C'],
+  ['#667EEA','#764BA2'], ['#F6D365','#FDA085'], ['#89F7FE','#66A6FF'],
+];
+function cardGradient(name) {
+  let h = 0;
+  for (const c of name) h = (Math.imul(31, h) + c.charCodeAt(0)) | 0;
+  const [a, b] = CARD_GRADIENTS[Math.abs(h) % CARD_GRADIENTS.length];
+  return `linear-gradient(135deg, ${a} 0%, ${b} 100%)`;
 }
 
 /* ═══════════════════════════════════════════════════
@@ -2013,7 +2073,6 @@ function renderRecipes() {
 
   grid.innerHTML = list.map(r => {
     const pctCls = r.matchPct >= 70 ? 'pct-hi' : r.matchPct >= 50 ? 'pct-mid' : 'pct-lo';
-    const bgCol  = r.matchPct >= 70 ? 'rgba(52,199,89,0.10)' : r.matchPct >= 50 ? 'rgba(255,149,0,0.10)' : 'rgba(120,120,128,0.08)';
     const hasUrgent = (r.matched||[]).some(m => urgentNames.some(u => m.toLowerCase().includes(u) || u.includes(m.toLowerCase())));
     const isFav = favorites.includes(String(r.id));
     const chips = [
@@ -2022,16 +2081,17 @@ function renderRecipes() {
       hasUrgent ? `<span class="chip chip-urgent">⏰ Urgent</span>` : ''
     ].join('');
     const calBadge = r.calories ? `<span class="cal-badge">🔥 ${r.calories} kcal</span>` : '';
+    const grad = cardGradient(r.name);
     return `<div class="card${r.isCustom ? ' is-custom' : ''}" data-id="${r.id}">
       <button class="btn-fav" data-fav-id="${r.id}" title="${isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}">${isFav ? '⭐' : '☆'}</button>
-      <div class="card-thumb" style="background:${bgCol}">
-        <span>${r.emoji}</span>
-        <span class="pct-badge ${pctCls}">${r.matchPct}% match</span>
+      <div class="card-thumb" style="background:${grad}">
+        <span style="filter:drop-shadow(0 2px 6px rgba(0,0,0,0.18))">${r.emoji}</span>
+        <span class="pct-badge ${pctCls}">${r.matchPct}%</span>
       </div>
       <div class="card-body">
         <div class="card-name">${esc(r.name)}</div>
-        <div class="card-meta"><span>⏱ ${r.time} min</span><span>👥 ${r.servings} pers.</span><span>📊 ${esc(r.difficulty||'')}</span></div>
-        <div class="chip-row" style="margin-bottom:${calBadge ? '0.4rem' : '0'}">${chips}</div>
+        <div class="card-meta"><span>⏱ ${r.time}min</span><span>👥 ${r.servings}</span></div>
+        <div class="chip-row" style="margin-bottom:${calBadge ? '0.3rem' : '0'}">${chips}</div>
         ${calBadge}
       </div>
     </div>`;
@@ -3036,18 +3096,35 @@ window.addEventListener('fc-ready', () => {
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAddModal(); });
 
   // Bottom nav tabs
+  const TAB_ORDER = ['frigo', 'recettes', 'courses', 'profil'];
   function switchTab(tabName) {
     document.querySelectorAll('.tab-item').forEach(i => i.classList.remove('active'));
     document.querySelectorAll('.tab-page').forEach(p => p.classList.remove('active'));
     const item = document.querySelector(`.tab-item[data-tab="${tabName}"]`);
     const page = document.getElementById('tab-' + tabName);
     if (item) item.classList.add('active');
-    if (page) { page.classList.add('active'); page.scrollTop = 0; }
+    if (page) { page.classList.add('active'); window.scrollTo(0, 0); }
     document.querySelector('.fab').style.display = tabName === 'frigo' ? '' : 'none';
+    haptic(6);
   }
   document.querySelectorAll('.tab-item').forEach(item => {
     item.addEventListener('click', () => switchTab(item.dataset.tab));
   });
+
+  // ── Swipe horizontal entre onglets ──
+  let _tx = 0, _ty = 0;
+  document.getElementById('app-screen').addEventListener('touchstart', e => {
+    _tx = e.touches[0].clientX; _ty = e.touches[0].clientY;
+  }, { passive: true });
+  document.getElementById('app-screen').addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - _tx;
+    const dy = e.changedTouches[0].clientY - _ty;
+    if (Math.abs(dx) < 55 || Math.abs(dy) > Math.abs(dx) * 0.75) return;
+    const cur = document.querySelector('.tab-item.active')?.dataset.tab;
+    const idx = TAB_ORDER.indexOf(cur);
+    if (dx < 0 && idx < TAB_ORDER.length - 1) switchTab(TAB_ORDER[idx + 1]);
+    if (dx > 0 && idx > 0) switchTab(TAB_ORDER[idx - 1]);
+  }, { passive: true });
   document.getElementById('btn-share-profil').addEventListener('click', openShareModal);
 
   // Filters
