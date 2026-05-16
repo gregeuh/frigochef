@@ -55,6 +55,31 @@
     loadProfile: async (uid) => {
       const snap = await getDoc(doc(db, 'profiles', uid));
       return snap.exists() ? snap.data() : null;
+    },
+    createSharedFridge: async (uid) => {
+      const code = Math.random().toString(36).substr(2, 6).toUpperCase();
+      await setDoc(doc(db, 'sharedFridges', code), {
+        items: [], members: [uid], createdBy: uid, createdAt: Date.now()
+      });
+      return code;
+    },
+    joinSharedFridge: async (code, uid) => {
+      const snap = await getDoc(doc(db, 'sharedFridges', code));
+      if (!snap.exists()) return null;
+      const data = snap.data();
+      if (!data.members.includes(uid)) {
+        await setDoc(doc(db, 'sharedFridges', code), { members: [...data.members, uid] }, { merge: true });
+      }
+      return code;
+    },
+    loadSharedFridge: (code, cb) => {
+      return onSnapshot(doc(db, 'sharedFridges', code), snap => {
+        if (snap.exists()) cb(snap.data().items || []);
+        else cb([]);
+      });
+    },
+    saveSharedFridge: async (code, items) => {
+      await setDoc(doc(db, 'sharedFridges', code), { items, updatedAt: Date.now() }, { merge: true });
     }
   };
 
@@ -577,6 +602,116 @@ body {
 
 /* ─── HIDDEN ─── */
 .hidden { display: none !important; }
+
+/* ─── SIDEBAR SHARE ─── */
+.sidebar-share { padding: 0.55rem 1.1rem; border-bottom: 1px solid var(--border); }
+.share-btn {
+  width: 100%; display: flex; align-items: center; gap: 8px;
+  padding: 7px 10px; border-radius: 9px;
+  border: 1.5px solid var(--border); background: var(--bg);
+  font-size: 0.82rem; color: var(--ink2); cursor: pointer; transition: all 0.15s;
+}
+.share-btn:hover { border-color: var(--green-m); color: var(--green); background: var(--green-l); }
+.share-btn.active { border-color: var(--green); background: var(--green-l); color: var(--green); font-weight: 500; }
+
+/* ─── SHARE MODAL ─── */
+.share-overlay {
+  position: fixed; inset: 0; background: rgba(20,16,10,0.65);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 250; padding: 1rem; animation: fadeIn 0.15s ease;
+}
+.share-card {
+  background: var(--surface); border-radius: var(--r-lg);
+  width: 100%; max-width: 380px; padding: 2rem;
+  box-shadow: 0 20px 60px rgba(20,16,10,0.2);
+  animation: slideUp 0.2s ease;
+}
+.share-modal-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.4rem; font-weight: 700; color: var(--ink); margin-bottom: 0.3rem;
+}
+.share-modal-sub { font-size: 0.82rem; color: var(--ink3); margin-bottom: 1.25rem; }
+.share-code-box {
+  background: var(--bg); border: 2px dashed var(--border2);
+  border-radius: var(--r); padding: 1.25rem; text-align: center; margin-bottom: 1rem;
+}
+.share-code-text {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 2.5rem; font-weight: 700; letter-spacing: 0.15em; color: var(--green);
+}
+.share-action-btn {
+  width: 100%; padding: 11px; margin-bottom: 8px;
+  background: var(--green); color: #fff; border: none; border-radius: var(--r);
+  font-family: 'Jost', sans-serif; font-size: 0.9rem; font-weight: 500;
+  cursor: pointer; transition: opacity 0.15s;
+}
+.share-action-btn:hover { opacity: 0.88; }
+.share-action-secondary { background: var(--surface); color: var(--ink); border: 1.5px solid var(--border2); }
+.share-action-secondary:hover { opacity: 1; background: var(--surface2); }
+.share-action-danger { background: var(--red); }
+.share-cancel-btn {
+  width: 100%; padding: 9px; background: none; color: var(--ink3);
+  border: none; font-family: 'Jost', sans-serif; font-size: 0.85rem; cursor: pointer;
+}
+.share-cancel-btn:hover { color: var(--ink); }
+
+/* ─── OB SUMMARY (step 4) ─── */
+.ob-summary-card {
+  background: var(--bg); border-radius: var(--r); padding: 1rem 1.1rem;
+  margin-bottom: 1.1rem;
+}
+.ob-summary-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 5px 0; font-size: 0.83rem; color: var(--ink2);
+}
+.ob-summary-row.highlight { color: var(--green); font-size: 0.9rem; margin-top: 2px; }
+.ob-summary-divider { height: 1px; background: var(--border); margin: 7px 0; }
+.ob-summary-val { font-weight: 600; }
+.ob-meals-row { display: flex; gap: 7px; margin-bottom: 0.75rem; }
+.ob-meal-btn {
+  flex: 1; padding: 8px 4px; border: 1.5px solid var(--border);
+  border-radius: var(--r); background: var(--bg);
+  font-family: 'Jost', sans-serif; font-size: 0.82rem; cursor: pointer; transition: all 0.15s;
+  color: var(--ink2);
+}
+.ob-meal-btn.active { border-color: var(--green); background: var(--green-l); color: var(--green); font-weight: 500; }
+.ob-meal-result {
+  text-align: center; font-size: 0.95rem; color: var(--green);
+  background: var(--green-l); padding: 9px 12px; border-radius: var(--r);
+  margin-bottom: 1rem;
+}
+
+/* ─── OB genre ─── */
+.ob-genre-row { display: flex; gap: 8px; margin-bottom: 1.1rem; }
+.ob-genre-btn {
+  flex: 1; padding: 9px 6px; text-align: center;
+  border: 2px solid var(--border); border-radius: var(--r);
+  background: var(--bg); font-size: 0.82rem; font-weight: 500;
+  cursor: pointer; transition: all 0.15s; color: var(--ink2);
+}
+.ob-genre-btn:hover { border-color: var(--green-m); }
+.ob-genre-btn.selected { border-color: var(--green); background: var(--green-l); color: var(--green); }
+
+/* ─── OB activity ─── */
+.ob-activity-list { display: flex; flex-direction: column; gap: 7px; margin-bottom: 1.5rem; }
+.ob-activity-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 13px; border: 2px solid var(--border);
+  border-radius: var(--r); background: var(--bg);
+  cursor: pointer; transition: all 0.15s;
+}
+.ob-activity-item:hover { border-color: var(--green-m); background: var(--green-l); }
+.ob-activity-item.selected { border-color: var(--green); background: var(--green-l); }
+.ob-activity-icon { font-size: 1.3rem; flex-shrink: 0; }
+.ob-activity-info { flex: 1; }
+.ob-activity-label { font-size: 0.85rem; font-weight: 500; color: var(--ink); }
+.ob-activity-desc { font-size: 0.71rem; color: var(--ink3); }
+
+/* ─── OB inputs row ─── */
+.ob-inputs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1.1rem; }
+.ob-card { max-height: 90vh; overflow-y: auto; }
+.ob-card::-webkit-scrollbar { width: 3px; }
+.ob-card::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 </style>
 </head>
 <body>
@@ -640,6 +775,13 @@ body {
         </div>
       </div>
 
+      <div class="sidebar-share" id="sidebar-share-zone">
+        <button class="share-btn" id="btn-share">
+          <span id="share-icon">👥</span>
+          <span id="share-label">Partager mon frigo</span>
+        </button>
+      </div>
+
       <div class="fridge-scroll" id="fridge-list">
         <div class="fridge-empty">
           <div class="fridge-empty-icon">🧊</div>
@@ -696,6 +838,45 @@ body {
   <div class="modal" id="modal-body"></div>
 </div>
 
+<!-- ═══════════════ SHARE MODAL ═══════════════ -->
+<div id="share-overlay" class="share-overlay hidden">
+  <div class="share-card">
+    <!-- Vue choix (défaut) -->
+    <div id="sv-choose">
+      <div class="share-modal-title">Frigo partagé 👥</div>
+      <div class="share-modal-sub">Partagez votre frigo avec votre partenaire ou colocataire</div>
+      <button class="share-action-btn" id="btn-create-share">✨ Créer un frigo partagé</button>
+      <button class="share-action-btn share-action-secondary" id="btn-join-share">🔗 Rejoindre avec un code</button>
+      <button class="share-cancel-btn" id="btn-close-choose">Annuler</button>
+    </div>
+    <!-- Vue code créé -->
+    <div id="sv-created" class="hidden">
+      <div class="share-modal-title">Code de partage ✅</div>
+      <div class="share-modal-sub">Partagez ce code à votre colocataire ou partenaire</div>
+      <div class="share-code-box"><div class="share-code-text" id="sv-code-display"></div></div>
+      <button class="share-action-btn" id="btn-copy-created">📋 Copier le code</button>
+      <button class="share-cancel-btn" id="btn-close-created">Fermer</button>
+    </div>
+    <!-- Vue rejoindre -->
+    <div id="sv-join" class="hidden">
+      <div class="share-modal-title">Rejoindre un frigo 🔗</div>
+      <div class="share-modal-sub">Entrez le code partagé par votre partenaire</div>
+      <input class="inp" id="inp-share-code" placeholder="Ex : AB3K9M" maxlength="6" style="text-transform:uppercase;font-size:1.2rem;text-align:center;letter-spacing:0.1em;margin-bottom:0.75rem">
+      <button class="share-action-btn" id="btn-confirm-join">Rejoindre</button>
+      <button class="share-cancel-btn" id="btn-cancel-join">Annuler</button>
+    </div>
+    <!-- Vue gestion (déjà dans un frigo partagé) -->
+    <div id="sv-manage" class="hidden">
+      <div class="share-modal-title">Frigo partagé actif 👥</div>
+      <div class="share-modal-sub">Code de votre frigo partagé</div>
+      <div class="share-code-box"><div class="share-code-text" id="sv-code-manage"></div></div>
+      <button class="share-action-btn" id="btn-copy-manage">📋 Copier le code</button>
+      <button class="share-action-btn share-action-danger" id="btn-leave-share">Quitter le frigo partagé</button>
+      <button class="share-cancel-btn" id="btn-close-manage">Fermer</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══════════════ ONBOARDING ═══════════════ -->
 <div id="ob-overlay" class="ob-overlay hidden">
   <div class="ob-card">
@@ -703,6 +884,8 @@ body {
       <div class="ob-dot active" id="ob-dot-0"></div>
       <div class="ob-dot" id="ob-dot-1"></div>
       <div class="ob-dot" id="ob-dot-2"></div>
+      <div class="ob-dot" id="ob-dot-3"></div>
+      <div class="ob-dot" id="ob-dot-4"></div>
     </div>
 
     <!-- Étape 0 : Objectif -->
@@ -736,8 +919,84 @@ body {
       </div>
     </div>
 
-    <!-- Étape 1 : Régime -->
+    <!-- Étape 1 : Profil physique -->
     <div id="ob-step-1" class="hidden">
+      <div class="ob-title">Votre profil 🧍</div>
+      <div class="ob-sub">Pour calculer vos besoins caloriques réels</div>
+      <div class="ob-genre-row">
+        <button class="ob-genre-btn" data-genre="homme">♂ Homme</button>
+        <button class="ob-genre-btn" data-genre="femme">♀ Femme</button>
+        <button class="ob-genre-btn" data-genre="autre">⊘ Non précisé</button>
+      </div>
+      <div class="ob-inputs-grid">
+        <div class="ob-field" style="margin-bottom:0">
+          <label class="ob-field-label">Âge</label>
+          <input type="number" class="inp" id="ob-age" placeholder="ex : 30" min="15" max="99">
+        </div>
+        <div class="ob-field" style="margin-bottom:0">
+          <label class="ob-field-label">Taille (cm)</label>
+          <input type="number" class="inp" id="ob-height" placeholder="ex : 170" min="100" max="250">
+        </div>
+        <div class="ob-field" style="margin-bottom:0">
+          <label class="ob-field-label">Poids (kg)</label>
+          <input type="number" class="inp" id="ob-weight" placeholder="ex : 70" min="30" max="300">
+        </div>
+      </div>
+      <div class="ob-footer">
+        <button class="ob-btn-back" id="ob-back-1">← Retour</button>
+        <button class="ob-btn-next" id="ob-next-1">Suivant →</button>
+      </div>
+    </div>
+
+    <!-- Étape 2 : Activité physique -->
+    <div id="ob-step-2" class="hidden">
+      <div class="ob-title">Votre activité 🏃</div>
+      <div class="ob-sub">Votre niveau d'activité physique habituel</div>
+      <div class="ob-activity-list">
+        <div class="ob-activity-item" data-activity="sedentary">
+          <div class="ob-activity-icon">🪑</div>
+          <div class="ob-activity-info">
+            <div class="ob-activity-label">Sédentaire</div>
+            <div class="ob-activity-desc">Bureau, peu de mouvement</div>
+          </div>
+        </div>
+        <div class="ob-activity-item" data-activity="light">
+          <div class="ob-activity-icon">🚶</div>
+          <div class="ob-activity-info">
+            <div class="ob-activity-label">Légèrement actif</div>
+            <div class="ob-activity-desc">1-2 séances/sem</div>
+          </div>
+        </div>
+        <div class="ob-activity-item" data-activity="moderate">
+          <div class="ob-activity-icon">🏃</div>
+          <div class="ob-activity-info">
+            <div class="ob-activity-label">Modérément actif</div>
+            <div class="ob-activity-desc">3-4 séances/sem</div>
+          </div>
+        </div>
+        <div class="ob-activity-item" data-activity="active">
+          <div class="ob-activity-icon">🏋️</div>
+          <div class="ob-activity-info">
+            <div class="ob-activity-label">Très actif</div>
+            <div class="ob-activity-desc">5-6 séances/sem</div>
+          </div>
+        </div>
+        <div class="ob-activity-item" data-activity="very_active">
+          <div class="ob-activity-icon">⚡</div>
+          <div class="ob-activity-info">
+            <div class="ob-activity-label">Extrêmement actif</div>
+            <div class="ob-activity-desc">Sport intensif / travail physique</div>
+          </div>
+        </div>
+      </div>
+      <div class="ob-footer">
+        <button class="ob-btn-back" id="ob-back-2">← Retour</button>
+        <button class="ob-btn-next" id="ob-next-2">Suivant →</button>
+      </div>
+    </div>
+
+    <!-- Étape 3 : Régime alimentaire -->
+    <div id="ob-step-3" class="hidden">
       <div class="ob-title">Votre régime</div>
       <div class="ob-sub">Vos préférences alimentaires (plusieurs possibles)</div>
       <div class="ob-checks" id="ob-checks">
@@ -750,19 +1009,38 @@ body {
       </div>
       <div class="ob-no-restriction">Aucune sélection = pas de restriction particulière</div>
       <div class="ob-footer">
-        <button class="ob-btn-back" id="ob-back-1">← Retour</button>
-        <button class="ob-btn-next" id="ob-next-1">Suivant →</button>
+        <button class="ob-btn-back" id="ob-back-3">← Retour</button>
+        <button class="ob-btn-next" id="ob-next-3">Suivant →</button>
       </div>
     </div>
 
-    <!-- Étape 2 : Calories + Temps -->
-    <div id="ob-step-2" class="hidden">
-      <div class="ob-title">Votre programme</div>
-      <div class="ob-sub">Personnalisez vos recettes selon vos besoins</div>
+    <!-- Étape 4 : Résumé calculé -->
+    <div id="ob-step-4" class="hidden">
+      <div class="ob-title">Votre programme 🎯</div>
+      <div class="ob-sub">Résumé de vos besoins caloriques</div>
+      <div class="ob-summary-card" id="ob-summary-card">
+        <div class="ob-summary-row">
+          <span>⚡ Métabolisme de base</span>
+          <span class="ob-summary-val" id="ob-bmr-val">— kcal</span>
+        </div>
+        <div class="ob-summary-row">
+          <span>🏃 Dépense journalière (TDEE)</span>
+          <span class="ob-summary-val" id="ob-tdee-val">— kcal</span>
+        </div>
+        <div class="ob-summary-divider"></div>
+        <div class="ob-summary-row highlight">
+          <span>🎯 Objectif quotidien</span>
+          <span class="ob-summary-val" id="ob-goal-kcal-val">— kcal</span>
+        </div>
+      </div>
       <div class="ob-field">
-        <label class="ob-field-label">Calories par repas (kcal)</label>
-        <input type="number" class="inp" id="ob-calories" placeholder="ex : 500" min="200" max="1500" step="50">
-        <div class="ob-hint" id="ob-cal-hint"></div>
+        <label class="ob-field-label">Nombre de repas par jour</label>
+        <div class="ob-meals-row">
+          <button class="ob-meal-btn" data-meals="2">2 repas</button>
+          <button class="ob-meal-btn active" data-meals="3">3 repas ✓</button>
+          <button class="ob-meal-btn" data-meals="4">4 repas</button>
+        </div>
+        <div class="ob-meal-result" id="ob-meal-result">— kcal par repas</div>
       </div>
       <div class="ob-field">
         <label class="ob-field-label">Temps de cuisine maximum</label>
@@ -775,8 +1053,8 @@ body {
         </select>
       </div>
       <div class="ob-footer">
-        <button class="ob-btn-back" id="ob-back-2">← Retour</button>
-        <button class="ob-btn-next" id="ob-next-2">C'est parti ! 🚀</button>
+        <button class="ob-btn-back" id="ob-back-4">← Retour</button>
+        <button class="ob-btn-next" id="ob-next-4">C'est parti ! 🚀</button>
       </div>
     </div>
   </div>
@@ -792,6 +1070,7 @@ let recipes = [];
 let filter  = 'all';
 let unsub   = null;
 let profile = null;
+let sharedFridgeCode = null;
 
 const GOAL_LABELS = {
   lose_weight:  'Perte de poids',
@@ -834,7 +1113,12 @@ function dlcStatus(dateStr) {
 }
 
 function saveFridge() {
-  if (user) window.__FC.saveFridge(user.uid, fridge);
+  if (!user) return;
+  if (sharedFridgeCode) {
+    window.__FC.saveSharedFridge(sharedFridgeCode, fridge);
+  } else {
+    window.__FC.saveFridge(user.uid, fridge);
+  }
 }
 
 /* ═══════════════════════════════════════════════════
@@ -843,7 +1127,9 @@ function saveFridge() {
 function renderFridge() {
   const el    = document.getElementById('fridge-list');
   const label = document.getElementById('fridge-count-label');
-  label.textContent = `🧊 Mon frigo · ${fridge.length} aliment${fridge.length > 1 ? 's' : ''}`;
+  label.textContent = sharedFridgeCode
+    ? `👥 Frigo partagé · ${fridge.length} aliment${fridge.length > 1 ? 's' : ''}`
+    : `🧊 Mon frigo · ${fridge.length} aliment${fridge.length > 1 ? 's' : ''}`;
 
   if (fridge.length === 0) {
     el.innerHTML = `<div class="fridge-empty"><div class="fridge-empty-icon">🧊</div>Votre frigo est vide.<br>Ajoutez des aliments !</div>`;
@@ -1067,31 +1353,40 @@ function closeModal() { document.getElementById('modal-overlay').classList.add('
 /* ═══════════════════════════════════════════════════
    ONBOARDING
    ═══════════════════════════════════════════════════ */
-let obData = { goal: null, diet: [], caloriesPerMeal: null, maxCookTime: 30 };
+let obData = { goal: null, genre: null, age: null, height: null, weight: null, activity: null, diet: [], dailyCalories: null, caloriesPerMeal: null, mealsPerDay: 3, maxCookTime: 30 };
 
 function obSetStep(step) {
   document.querySelectorAll('.ob-dot').forEach((dot, i) => {
-    dot.classList.toggle('active', i === step);
-    dot.classList.toggle('done',   i < step);
-    dot.classList.remove('active');
+    dot.classList.remove('active', 'done');
     if (i === step) dot.classList.add('active');
     else if (i < step) dot.classList.add('done');
   });
-  [0, 1, 2].forEach(i =>
+  [0, 1, 2, 3, 4].forEach(i =>
     document.getElementById(`ob-step-${i}`).classList.toggle('hidden', i !== step)
   );
 }
 
 function showOnboarding() {
-  obData = { goal: null, diet: [], caloriesPerMeal: null, maxCookTime: 30 };
+  obData = { goal: null, genre: null, age: null, height: null, weight: null, activity: null, diet: [], dailyCalories: null, caloriesPerMeal: null, mealsPerDay: 3, maxCookTime: 30 };
   // Reset UI
   document.querySelectorAll('.ob-choice').forEach(c => c.classList.remove('selected'));
+  document.querySelectorAll('.ob-genre-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('.ob-activity-item').forEach(a => a.classList.remove('selected'));
   document.querySelectorAll('.ob-check-item').forEach(c => {
     c.classList.remove('checked');
     c.querySelector('input').checked = false;
   });
-  document.getElementById('ob-calories').value = '';
-  document.getElementById('ob-cal-hint').textContent = '';
+  document.getElementById('ob-age').value    = '';
+  document.getElementById('ob-height').value = '';
+  document.getElementById('ob-weight').value = '';
+  // Reset meal buttons: 3 is default active
+  document.querySelectorAll('.ob-meal-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.meals === '3');
+  });
+  document.getElementById('ob-meal-result').textContent = '— kcal par repas';
+  document.getElementById('ob-bmr-val').textContent     = '— kcal';
+  document.getElementById('ob-tdee-val').textContent    = '— kcal';
+  document.getElementById('ob-goal-kcal-val').textContent = '— kcal';
   document.getElementById('ob-overlay').classList.remove('hidden');
   obSetStep(0);
 }
@@ -1100,9 +1395,23 @@ function hideOnboarding() {
   document.getElementById('ob-overlay').classList.add('hidden');
 }
 
+function updateShareBtn() {
+  const btn = document.getElementById('btn-share');
+  const lbl = document.getElementById('share-label');
+  if (!btn || !lbl) return;
+  if (sharedFridgeCode) {
+    btn.classList.add('active');
+    lbl.textContent = `Frigo partagé · ${sharedFridgeCode}`;
+  } else {
+    btn.classList.remove('active');
+    lbl.textContent = 'Partager mon frigo';
+  }
+}
+
 function applyProfileToUI() {
   if (!profile) return;
   document.getElementById('btn-profile').classList.remove('hidden');
+  updateShareBtn();
 }
 
 /* ═══════════════════════════════════════════════════
@@ -1125,13 +1434,22 @@ window.addEventListener('fc-ready', () => {
       document.getElementById('user-name').textContent = fbUser.displayName?.split(' ')[0] || 'Vous';
       document.getElementById('user-avatar').textContent = (fbUser.displayName || '?')[0].toUpperCase();
 
-      if (unsub) unsub();
-      unsub = window.__FC.loadFridge(fbUser.uid, items => {
-        fridge = items; renderFridge(); renderAlerts();
-      });
-
-      // Charger le profil — afficher l'onboarding si absent
+      // Charger le profil d'abord pour savoir quel frigo utiliser
       profile = await window.__FC.loadProfile(fbUser.uid);
+
+      if (unsub) unsub();
+      if (profile?.sharedFridgeCode) {
+        sharedFridgeCode = profile.sharedFridgeCode;
+        unsub = window.__FC.loadSharedFridge(sharedFridgeCode, items => {
+          fridge = items; renderFridge(); renderAlerts();
+        });
+      } else {
+        sharedFridgeCode = null;
+        unsub = window.__FC.loadFridge(fbUser.uid, items => {
+          fridge = items; renderFridge(); renderAlerts();
+        });
+      }
+
       if (!profile) {
         showOnboarding();
       } else {
@@ -1140,6 +1458,7 @@ window.addEventListener('fc-ready', () => {
     } else {
       user = null;
       profile = null;
+      sharedFridgeCode = null;
       document.getElementById('auth-screen').classList.remove('hidden');
       document.getElementById('app-screen').classList.add('hidden');
       document.getElementById('btn-profile').classList.add('hidden');
@@ -1160,16 +1479,51 @@ window.addEventListener('fc-ready', () => {
 
   // ── ONBOARDING EVENTS ──
 
+  // Helpers de calcul calorique
+  function calcCalories() {
+    const { genre, age, height, weight, activity, goal } = obData;
+    if (!age || !height || !weight || !activity) return null;
+    let bmr;
+    if (genre === 'homme') {
+      bmr = 10 * weight + 6.25 * height - 5 * age + 5;
+    } else if (genre === 'femme') {
+      bmr = 10 * weight + 6.25 * height - 5 * age - 161;
+    } else {
+      const male   = 10 * weight + 6.25 * height - 5 * age + 5;
+      const female = 10 * weight + 6.25 * height - 5 * age - 161;
+      bmr = (male + female) / 2;
+    }
+    const factors = { sedentary: 1.2, light: 1.375, moderate: 1.55, active: 1.725, very_active: 1.9 };
+    const tdee = Math.round(bmr * (factors[activity] || 1.375));
+    bmr = Math.round(bmr);
+    let goalKcal;
+    if (goal === 'lose_weight')   goalKcal = Math.max(tdee - 500, Math.round(tdee * 0.75));
+    else if (goal === 'maintain') goalKcal = tdee;
+    else if (goal === 'eat_healthy') goalKcal = tdee - 200;
+    else if (goal === 'build_muscle') goalKcal = tdee + 300;
+    else goalKcal = tdee;
+    return { bmr, tdee, goalKcal };
+  }
+
+  function updateObSummary() {
+    const result = calcCalories();
+    if (!result) return;
+    const { bmr, tdee, goalKcal } = result;
+    document.getElementById('ob-bmr-val').textContent      = `${bmr} kcal`;
+    document.getElementById('ob-tdee-val').textContent     = `${tdee} kcal`;
+    document.getElementById('ob-goal-kcal-val').textContent = `${goalKcal} kcal`;
+    obData.dailyCalories   = goalKcal;
+    obData.caloriesPerMeal = Math.round(goalKcal / obData.mealsPerDay);
+    document.getElementById('ob-meal-result').textContent =
+      `→ ${obData.caloriesPerMeal} kcal par repas`;
+  }
+
   // Étape 0 : sélection de l'objectif
   document.querySelectorAll('.ob-choice').forEach(choice => {
     choice.addEventListener('click', () => {
       document.querySelectorAll('.ob-choice').forEach(c => c.classList.remove('selected'));
       choice.classList.add('selected');
       obData.goal = choice.dataset.goal;
-      const cal = GOAL_CALORIES[obData.goal];
-      document.getElementById('ob-calories').value = cal;
-      document.getElementById('ob-cal-hint').textContent =
-        `Recommandé pour "${GOAL_LABELS[obData.goal]}" : ~${cal} kcal/repas`;
     });
   });
 
@@ -1178,27 +1532,82 @@ window.addEventListener('fc-ready', () => {
     obSetStep(1);
   });
 
-  // Étape 1 : régime alimentaire
-  document.querySelectorAll('.ob-check-item').forEach(item => {
-    item.addEventListener('click', () => item.classList.toggle('checked'));
+  // Étape 1 : profil physique
+  document.querySelectorAll('.ob-genre-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.ob-genre-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      obData.genre = btn.dataset.genre;
+    });
   });
 
   document.getElementById('ob-back-1').addEventListener('click', () => obSetStep(0));
   document.getElementById('ob-next-1').addEventListener('click', () => {
-    obData.diet = [...document.querySelectorAll('.ob-check-item.checked input')].map(i => i.value);
+    const age    = parseInt(document.getElementById('ob-age').value);
+    const height = parseInt(document.getElementById('ob-height').value);
+    const weight = parseInt(document.getElementById('ob-weight').value);
+    if (!obData.genre) { alert('Veuillez sélectionner votre genre.'); return; }
+    if (!age || age < 15 || age > 99) { alert('Entrez un âge valide (15-99).'); return; }
+    if (!height || height < 100 || height > 250) { alert('Entrez une taille valide (100-250 cm).'); return; }
+    if (!weight || weight < 30 || weight > 300) { alert('Entrez un poids valide (30-300 kg).'); return; }
+    obData.age    = age;
+    obData.height = height;
+    obData.weight = weight;
     obSetStep(2);
   });
 
-  // Étape 2 : calories + temps
+  // Étape 2 : activité physique
+  document.querySelectorAll('.ob-activity-item').forEach(item => {
+    item.addEventListener('click', () => {
+      document.querySelectorAll('.ob-activity-item').forEach(a => a.classList.remove('selected'));
+      item.classList.add('selected');
+      obData.activity = item.dataset.activity;
+    });
+  });
+
   document.getElementById('ob-back-2').addEventListener('click', () => obSetStep(1));
-  document.getElementById('ob-next-2').addEventListener('click', async () => {
-    const cal  = parseInt(document.getElementById('ob-calories').value);
+  document.getElementById('ob-next-2').addEventListener('click', () => {
+    if (!obData.activity) { alert('Veuillez sélectionner votre niveau d\'activité.'); return; }
+    obSetStep(3);
+  });
+
+  // Étape 3 : régime alimentaire
+  document.querySelectorAll('.ob-check-item').forEach(item => {
+    item.addEventListener('click', () => item.classList.toggle('checked'));
+  });
+
+  document.getElementById('ob-back-3').addEventListener('click', () => obSetStep(2));
+  document.getElementById('ob-next-3').addEventListener('click', () => {
+    obData.diet = [...document.querySelectorAll('.ob-check-item.checked input')].map(i => i.value);
+    updateObSummary();
+    obSetStep(4);
+  });
+
+  // Étape 4 : résumé + nombre de repas
+  document.querySelectorAll('.ob-meal-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.ob-meal-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      obData.mealsPerDay = parseInt(btn.dataset.meals);
+      const result = calcCalories();
+      if (result) {
+        obData.caloriesPerMeal = Math.round(result.goalKcal / obData.mealsPerDay);
+        document.getElementById('ob-meal-result').textContent =
+          `→ ${obData.caloriesPerMeal} kcal par repas`;
+      }
+    });
+  });
+
+  document.getElementById('ob-back-4').addEventListener('click', () => obSetStep(3));
+  document.getElementById('ob-next-4').addEventListener('click', async () => {
     const time = parseInt(document.getElementById('ob-cooktime').value);
-    if (!cal || cal < 200 || cal > 1500) {
-      alert('Entrez un objectif calorique entre 200 et 1500 kcal.'); return;
-    }
-    obData.caloriesPerMeal = cal;
     obData.maxCookTime = time;
+    // Recalculate to ensure caloriesPerMeal is up to date
+    const result = calcCalories();
+    if (result) {
+      obData.dailyCalories   = result.goalKcal;
+      obData.caloriesPerMeal = Math.round(result.goalKcal / obData.mealsPerDay);
+    }
     profile = { ...obData, createdAt: profile?.createdAt || Date.now() };
     await window.__FC.saveProfile(user.uid, profile);
     hideOnboarding();
@@ -1226,7 +1635,6 @@ window.addEventListener('fc-ready', () => {
     document.getElementById('inp-qty').value  = '';
     document.getElementById('inp-dlc').value  = '';
     document.getElementById('inp-name').focus();
-    document.getElementById('btn-gen').textContent = '✨ Générer des recettes';
   }
 
   // Tabs
@@ -1254,6 +1662,107 @@ window.addEventListener('fc-ready', () => {
   document.getElementById('modal-overlay').addEventListener('click', e => {
     if (e.target === document.getElementById('modal-overlay')) closeModal();
   });
+
+  // ── SHARE EVENTS ──
+
+  function openShareModal() {
+    document.getElementById('sv-choose').classList.remove('hidden');
+    document.getElementById('sv-created').classList.add('hidden');
+    document.getElementById('sv-join').classList.add('hidden');
+    document.getElementById('sv-manage').classList.add('hidden');
+
+    if (sharedFridgeCode) {
+      document.getElementById('sv-code-manage').textContent = sharedFridgeCode;
+      document.getElementById('sv-choose').classList.add('hidden');
+      document.getElementById('sv-manage').classList.remove('hidden');
+    }
+    document.getElementById('share-overlay').classList.remove('hidden');
+  }
+
+  function closeShareModal() {
+    document.getElementById('share-overlay').classList.add('hidden');
+  }
+
+  function updateShareBtn() {
+    const btn = document.getElementById('btn-share');
+    const lbl = document.getElementById('share-label');
+    if (sharedFridgeCode) {
+      btn.classList.add('active');
+      lbl.textContent = `Frigo partagé · ${sharedFridgeCode}`;
+    } else {
+      btn.classList.remove('active');
+      lbl.textContent = 'Partager mon frigo';
+    }
+  }
+
+  document.getElementById('btn-share').addEventListener('click', openShareModal);
+
+  document.getElementById('btn-close-choose').addEventListener('click', closeShareModal);
+  document.getElementById('btn-close-created').addEventListener('click', closeShareModal);
+  document.getElementById('btn-close-manage').addEventListener('click', closeShareModal);
+  document.getElementById('btn-cancel-join').addEventListener('click', () => {
+    document.getElementById('sv-join').classList.add('hidden');
+    document.getElementById('sv-choose').classList.remove('hidden');
+  });
+
+  document.getElementById('btn-create-share').addEventListener('click', async () => {
+    const code = await window.__FC.createSharedFridge(user.uid);
+    sharedFridgeCode = code;
+    profile = { ...profile, sharedFridgeCode: code };
+    await window.__FC.saveProfile(user.uid, profile);
+    // Migrer le frigo perso vers le frigo partagé
+    await window.__FC.saveSharedFridge(code, fridge);
+    if (unsub) unsub();
+    unsub = window.__FC.loadSharedFridge(code, items => {
+      fridge = items; renderFridge(); renderAlerts();
+    });
+    updateShareBtn();
+    document.getElementById('sv-choose').classList.add('hidden');
+    document.getElementById('sv-code-display').textContent = code;
+    document.getElementById('sv-created').classList.remove('hidden');
+  });
+
+  document.getElementById('btn-join-share').addEventListener('click', () => {
+    document.getElementById('sv-choose').classList.add('hidden');
+    document.getElementById('inp-share-code').value = '';
+    document.getElementById('sv-join').classList.remove('hidden');
+    document.getElementById('inp-share-code').focus();
+  });
+
+  document.getElementById('btn-confirm-join').addEventListener('click', async () => {
+    const code = document.getElementById('inp-share-code').value.trim().toUpperCase();
+    if (code.length < 4) { alert('Entrez un code valide.'); return; }
+    const result = await window.__FC.joinSharedFridge(code, user.uid);
+    if (!result) { alert('Code introuvable. Vérifiez le code partagé.'); return; }
+    sharedFridgeCode = code;
+    profile = { ...profile, sharedFridgeCode: code };
+    await window.__FC.saveProfile(user.uid, profile);
+    if (unsub) unsub();
+    unsub = window.__FC.loadSharedFridge(code, items => {
+      fridge = items; renderFridge(); renderAlerts();
+    });
+    updateShareBtn();
+    closeShareModal();
+  });
+
+  document.getElementById('btn-leave-share').addEventListener('click', async () => {
+    if (!confirm('Quitter le frigo partagé ? Vous reviendrez à votre frigo personnel.')) return;
+    sharedFridgeCode = null;
+    profile = { ...profile, sharedFridgeCode: null };
+    await window.__FC.saveProfile(user.uid, profile);
+    if (unsub) unsub();
+    unsub = window.__FC.loadFridge(user.uid, items => {
+      fridge = items; renderFridge(); renderAlerts();
+    });
+    updateShareBtn();
+    closeShareModal();
+  });
+
+  function copyCode(code) {
+    navigator.clipboard.writeText(code).then(() => alert(`Code "${code}" copié !`));
+  }
+  document.getElementById('btn-copy-created').addEventListener('click', () => copyCode(document.getElementById('sv-code-display').textContent));
+  document.getElementById('btn-copy-manage').addEventListener('click',  () => copyCode(document.getElementById('sv-code-manage').textContent));
 });
 </script>
 </body>
