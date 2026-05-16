@@ -711,17 +711,104 @@ body {
 
 /* ─── COURSES TAB ─── */
 .courses-card {
-  background: var(--surface); border: none;
-  border-radius: var(--r-lg); padding: 1.25rem 1.5rem; max-width: 480px;
+  background: transparent; border: none;
+  padding: 0; max-width: 480px;
+}
+
+/* Progress bar */
+.shop-progress-wrap {
+  background: var(--surface); border-radius: var(--r-lg);
+  padding: 14px 16px; margin-bottom: 10px;
   box-shadow: var(--shadow-sm);
 }
-.courses-recipe { margin-bottom: 1.25rem; }
-.courses-recipe-name {
-  font-size: 0.95rem; font-weight: 700; color: var(--ink);
-  margin-bottom: 0.5rem; display: flex; gap: 7px; align-items: center;
+.shop-progress-label {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 0.78rem; font-weight: 600; color: var(--ink3);
+  margin-bottom: 8px;
 }
-.shop-row { display: flex; align-items: center; gap: 9px; font-size: 0.85rem; padding: 5px 0; }
-.shop-row input[type=checkbox] { accent-color: var(--green); width: 15px; height: 15px; }
+.shop-progress-count { font-size: 1.1rem; font-weight: 800; color: var(--ink); letter-spacing: -0.02em; }
+.shop-progress-track {
+  height: 6px; border-radius: 3px;
+  background: var(--surface2); overflow: hidden;
+}
+.shop-progress-fill {
+  height: 100%; border-radius: 3px;
+  background: linear-gradient(90deg, #2ECC5A, #1A8035);
+  transition: width 0.5s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+/* Quick actions */
+.shop-actions-row {
+  display: flex; gap: 6px; margin-bottom: 10px;
+}
+.shop-action-btn {
+  flex: 1; padding: 8px 6px; border: 1px solid var(--border);
+  border-radius: 10px; background: var(--surface);
+  font-size: 0.72rem; font-weight: 600; color: var(--ink3);
+  cursor: pointer; text-align: center;
+  transition: all 0.18s cubic-bezier(0.34,1.56,0.64,1);
+  box-shadow: var(--shadow-sm);
+}
+.shop-action-btn:hover { background: var(--surface2); color: var(--ink); }
+.shop-action-btn:active { transform: scale(0.94); }
+.shop-action-btn.danger { color: var(--red); border-color: rgba(229,57,53,0.2); }
+.shop-action-btn.danger:hover { background: var(--red-l); }
+
+/* Category groups */
+.shop-cat-group { margin-bottom: 8px; }
+.shop-cat-head {
+  font-size: 0.60rem; text-transform: uppercase; letter-spacing: 0.08em;
+  font-weight: 700; padding: 0 4px; margin: 8px 0 4px;
+  display: flex; align-items: center; gap: 6px;
+}
+.shop-cat-head::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+
+/* Shop items */
+.shop-item-card {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 14px; border-radius: var(--r);
+  background: var(--surface); margin-bottom: 4px;
+  box-shadow: var(--shadow-sm);
+  transition: opacity 0.25s, transform 0.2s cubic-bezier(0.34,1.56,0.64,1);
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.shop-item-card:active { transform: scale(0.97); }
+.shop-item-card.bought {
+  opacity: 0.45;
+}
+.shop-custom-checkbox {
+  width: 22px; height: 22px; border-radius: 50%;
+  border: 2px solid var(--border2); background: transparent;
+  flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1);
+}
+.shop-item-card.bought .shop-custom-checkbox {
+  background: var(--green); border-color: var(--green);
+}
+.shop-custom-checkbox-check {
+  color: #fff; font-size: 0.75rem; opacity: 0;
+  transition: opacity 0.15s; line-height: 1;
+}
+.shop-item-card.bought .shop-custom-checkbox-check { opacity: 1; }
+.shop-item-name {
+  flex: 1; font-size: 0.86rem; font-weight: 500; color: var(--ink);
+  transition: color 0.2s;
+}
+.shop-item-card.bought .shop-item-name {
+  text-decoration: line-through; color: var(--ink3);
+}
+.shop-item-recipe {
+  font-size: 0.68rem; color: var(--ink3); margin-top: 1px;
+}
+.shop-item-del {
+  opacity: 0; background: none; border: none; color: var(--ink3);
+  font-size: 0.8rem; padding: 4px 6px; cursor: pointer;
+  transition: opacity 0.15s, color 0.15s; border-radius: 6px;
+}
+.shop-item-card:hover .shop-item-del { opacity: 1; }
+.shop-item-del:hover { color: var(--red); }
 
 /* ─── ONBOARDING ─── */
 .ob-overlay {
@@ -1336,19 +1423,17 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
   <!-- ── TAB: COURSES ── -->
   <div class="tab-page" id="tab-courses">
     <div class="tab-header">
-      <div class="tab-large-title">Courses</div>
-      <div class="tab-sub">Ingrédients manquants pour vos recettes</div>
+      <div class="tab-header-row">
+        <div class="tab-large-title">🛒 Courses</div>
+      </div>
+      <div class="tab-sub" id="courses-sub">Ajoutez des ingrédients ou cochez des recettes.</div>
     </div>
     <div class="tab-body">
       <div class="manual-shop-form">
-        <input class="manual-shop-inp" id="inp-manual-shop" type="text" placeholder="Ajouter un article manuellement…" autocomplete="off">
+        <input class="manual-shop-inp" id="inp-manual-shop" type="text" placeholder="Ajouter un article…" autocomplete="off">
         <button class="manual-shop-btn" id="btn-manual-shop">＋</button>
       </div>
-      <div id="courses-content" class="courses-card">
-        <div style="color:var(--ink3);font-size:0.88rem;text-align:center;padding:2rem 0">
-          Générez des recettes pour voir ce qui manque.
-        </div>
-      </div>
+      <div id="courses-content" class="courses-card"></div>
     </div>
   </div>
 
@@ -2251,57 +2336,119 @@ function toggleShoppingItem(name, recipeName) {
   renderCourses();
 }
 
+function shopItemCategory(name) {
+  const cat = foodCategory(name);
+  return cat;
+}
+
 function renderCourses() {
-  const el = document.getElementById('courses-content');
+  const el  = document.getElementById('courses-content');
+  const sub = document.getElementById('courses-sub');
+
   if (!shoppingList.length) {
-    el.innerHTML = `<div style="color:var(--ink3);font-size:0.88rem;text-align:center;padding:2.5rem 1rem">
-      <div style="font-size:2rem;margin-bottom:0.5rem;opacity:0.3">🛒</div>
-      Cochez des ingrédients dans une recette<br>pour les ajouter ici.
+    el.innerHTML = `<div style="text-align:center;padding:3rem 1rem;color:var(--ink3)">
+      <div style="font-size:3rem;opacity:0.20;margin-bottom:0.75rem">🛒</div>
+      <div style="font-size:0.94rem;font-weight:700;color:var(--ink);margin-bottom:0.3rem">Liste vide</div>
+      <div style="font-size:0.78rem;line-height:1.6">Cochez des ingrédients dans une recette<br>ou ajoutez un article manuellement.</div>
     </div>`;
+    if (sub) sub.textContent = 'Ajoutez des ingrédients ou cochez des recettes.';
     return;
   }
 
+  const total  = shoppingList.length;
+  const bought = shoppingList.filter(i => i.bought).length;
   const todo   = shoppingList.filter(i => !i.bought);
-  const bought = shoppingList.filter(i => i.bought);
-  const byRecipe = {};
-  todo.forEach(i => { (byRecipe[i.recipe] = byRecipe[i.recipe] || []).push(i); });
+  const pct    = Math.round((bought / total) * 100);
+  if (sub) sub.textContent = `${total} article${total > 1 ? 's' : ''} · ${bought} acheté${bought > 1 ? 's' : ''}`;
 
-  const todoHtml = Object.entries(byRecipe).map(([recipe, items]) => `
-    <div class="courses-recipe">
-      <div class="courses-recipe-name"><span>🍽️</span>${esc(recipe)}</div>
-      ${items.map(item => `
-        <div class="shop-row" data-shop-id="${item.id}">
-          <input type="checkbox" class="shop-cb shop-toggle" data-id="${item.id}">
-          <span>${esc(item.name)}</span>
-        </div>`).join('')}
-    </div>`).join('');
+  // Progress bar
+  const progressHtml = `
+    <div class="shop-progress-wrap">
+      <div class="shop-progress-label">
+        <span>Progression</span>
+        <span class="shop-progress-count">${bought}/${total}</span>
+      </div>
+      <div class="shop-progress-track">
+        <div class="shop-progress-fill" style="width:${pct}%"></div>
+      </div>
+    </div>`;
 
-  const boughtHtml = bought.length ? `
-    <div class="courses-recipe" style="opacity:0.5">
-      <div class="courses-recipe-name"><span>✅</span>Achetés</div>
-      ${bought.map(item => `
-        <div class="shop-row" style="text-decoration:line-through">
-          <input type="checkbox" class="shop-cb shop-toggle" data-id="${item.id}" checked>
-          <span>${esc(item.name)}</span>
-        </div>`).join('')}
-    </div>
-    <button id="btn-clear-bought" style="width:100%;margin-top:8px;padding:10px;border:1px solid var(--border);
-      border-radius:var(--r);background:none;color:var(--ink3);font-size:0.85rem;cursor:pointer">
-      🗑 Vider les achétés (${bought.length})
-    </button>` : '';
+  // Quick actions
+  const actionsHtml = `
+    <div class="shop-actions-row">
+      <button class="shop-action-btn" id="btn-check-all">✓ Tout cocher</button>
+      <button class="shop-action-btn" id="btn-copy-list">📋 Copier</button>
+      <button class="shop-action-btn danger" id="btn-clear-all">🗑 Vider</button>
+    </div>`;
 
-  el.innerHTML = todoHtml + boughtHtml;
+  // Group todo items by food category
+  const byCat = {};
+  shoppingList.forEach(item => {
+    const cat = shopItemCategory(item.name);
+    (byCat[cat.key] = byCat[cat.key] || { cat, items: [] }).items.push(item);
+  });
 
-  el.querySelectorAll('.shop-toggle').forEach(cb => {
-    cb.addEventListener('change', () => {
-      const id = cb.dataset.id;
-      shoppingList = shoppingList.map(i => i.id === id ? { ...i, bought: cb.checked } : i);
+  // Render each category group
+  const groupsHtml = Object.values(byCat).map(({ cat, items }) => {
+    const rows = items.map(item => `
+      <div class="shop-item-card ${item.bought ? 'bought' : ''}" data-shop-id="${item.id}">
+        <div class="shop-custom-checkbox">
+          <span class="shop-custom-checkbox-check">✓</span>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div class="shop-item-name">${esc(item.name)}</div>
+          ${item.recipe !== 'Manuel' ? `<div class="shop-item-recipe">${esc(item.recipe)}</div>` : ''}
+        </div>
+        <button class="shop-item-del" data-del="${item.id}" title="Supprimer">✕</button>
+      </div>`).join('');
+    const doneCount = items.filter(i => i.bought).length;
+    const badge = doneCount === items.length && items.length > 0
+      ? ' ✓' : doneCount > 0 ? ` ${doneCount}/${items.length}` : '';
+    return `
+      <div class="shop-cat-group">
+        <div class="shop-cat-head" style="color:${cat.color}">${cat.label}${badge}</div>
+        ${rows}
+      </div>`;
+  }).join('');
+
+  el.innerHTML = progressHtml + actionsHtml + groupsHtml;
+
+  // Toggle bought
+  el.querySelectorAll('.shop-item-card').forEach(card => {
+    card.addEventListener('click', e => {
+      if (e.target.classList.contains('shop-item-del')) return;
+      const id = card.dataset.shopId;
+      shoppingList = shoppingList.map(i => i.id === id ? { ...i, bought: !i.bought } : i);
       saveShoppingListDB(); renderCourses();
     });
   });
-  const clearBtn = document.getElementById('btn-clear-bought');
-  if (clearBtn) clearBtn.addEventListener('click', () => {
-    shoppingList = shoppingList.filter(i => !i.bought);
+
+  // Delete single
+  el.querySelectorAll('.shop-item-del').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      shoppingList = shoppingList.filter(i => i.id !== btn.dataset.del);
+      saveShoppingListDB(); renderCourses();
+    });
+  });
+
+  // Check all
+  document.getElementById('btn-check-all')?.addEventListener('click', () => {
+    const allBought = shoppingList.every(i => i.bought);
+    shoppingList = shoppingList.map(i => ({ ...i, bought: !allBought }));
+    saveShoppingListDB(); renderCourses();
+  });
+
+  // Copy list
+  document.getElementById('btn-copy-list')?.addEventListener('click', () => {
+    const lines = shoppingList.map(i => `${i.bought ? '✓' : '☐'} ${i.name}${i.recipe !== 'Manuel' ? ` (${i.recipe})` : ''}`);
+    navigator.clipboard?.writeText(lines.join('\n'));
+    toast('Liste copiée !', 'success');
+  });
+
+  // Clear all
+  document.getElementById('btn-clear-all')?.addEventListener('click', () => {
+    shoppingList = [];
     saveShoppingListDB(); renderCourses();
   });
 }
