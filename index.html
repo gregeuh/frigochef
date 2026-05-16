@@ -1572,8 +1572,14 @@ window.addEventListener('fc-ready', () => {
   });
 
   // Étape 3 : régime alimentaire
+  // e.preventDefault() empêche le double-toggle (label → checkbox → remonte → label)
   document.querySelectorAll('.ob-check-item').forEach(item => {
-    item.addEventListener('click', () => item.classList.toggle('checked'));
+    item.addEventListener('click', (e) => {
+      e.preventDefault();
+      item.classList.toggle('checked');
+      const cb = item.querySelector('input');
+      if (cb) cb.checked = item.classList.contains('checked');
+    });
   });
 
   document.getElementById('ob-back-3').addEventListener('click', () => obSetStep(2));
@@ -1602,17 +1608,21 @@ window.addEventListener('fc-ready', () => {
   document.getElementById('ob-next-4').addEventListener('click', async () => {
     const time = parseInt(document.getElementById('ob-cooktime').value);
     obData.maxCookTime = time;
-    // Recalculate to ensure caloriesPerMeal is up to date
     const result = calcCalories();
     if (result) {
       obData.dailyCalories   = result.goalKcal;
       obData.caloriesPerMeal = Math.round(result.goalKcal / obData.mealsPerDay);
     }
     profile = { ...obData, createdAt: profile?.createdAt || Date.now() };
-    await window.__FC.saveProfile(user.uid, profile);
+    // Fermer l'overlay immédiatement — même si Firestore échoue
     hideOnboarding();
     applyProfileToUI();
-    renderRecipes(); // recalcule le sous-titre
+    renderRecipes();
+    try {
+      await window.__FC.saveProfile(user.uid, profile);
+    } catch (err) {
+      console.error('Erreur sauvegarde profil:', err);
+    }
   });
 
   // Add food
