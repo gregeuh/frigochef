@@ -1943,7 +1943,13 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
     <div class="weight-card" id="weight-card">
       <div class="weight-card-header">
         <div class="weight-card-title">⚖️ Suivi du poids</div>
-        <button class="weight-log-btn" id="btn-log-weight">+ Peser</button>
+        <div style="display:flex;gap:6px;align-items:center">
+          <label class="weight-log-btn" id="btn-import-withings" style="cursor:pointer" title="Importer depuis Withings CSV">
+            📲 Withings
+            <input type="file" id="withings-file-input" accept=".csv" style="display:none">
+          </label>
+          <button class="weight-log-btn" id="btn-log-weight">+ Peser</button>
+        </div>
       </div>
       <div class="weight-progress-wrap" id="weight-progress-wrap" style="display:none">
         <div class="weight-progress-labels">
@@ -4009,6 +4015,54 @@ function exportWeightCSV() {
 }
 
 /* ═══════════════════════════════════════════════════
+   WITHINGS CSV IMPORT
+   ═══════════════════════════════════════════════════ */
+function parseWithingsCSV(text) {
+  const lines = text.trim().split('\n').filter(Boolean);
+  if (lines.length < 2) return [];
+  const headers = lines[0].toLowerCase().split(',').map(h => h.trim().replace(/"/g,''));
+  const idxDate   = headers.findIndex(h => h.includes('date'));
+  const idxWeight = headers.findIndex(h => h.includes('weight') || h.includes('poids'));
+  const idxFat    = headers.findIndex(h => h.includes('fat mass') || h.includes('masse grasse'));
+  const idxBone   = headers.findIndex(h => h.includes('bone') || h.includes('os'));
+  const idxMuscle = headers.findIndex(h => h.includes('muscle'));
+  const idxWater  = headers.findIndex(h => h.includes('hydration') || h.includes('eau'));
+  if (idxDate < 0 || idxWeight < 0) return null; // unrecognized format
+
+  return lines.slice(1).map(line => {
+    const cols = line.split(',').map(c => c.trim().replace(/"/g,''));
+    const weight = parseFloat(cols[idxWeight]);
+    if (!weight || isNaN(weight)) return null;
+    const rawDate = cols[idxDate] || '';
+    let date = rawDate.slice(0,10);
+    if (!date.match(/^\d{4}-\d{2}-\d{2}$/)) return null;
+    const entry = { date, weight };
+    if (idxFat >= 0 && cols[idxFat]) entry.fatKg = parseFloat(cols[idxFat]) || undefined;
+    if (idxBone >= 0 && cols[idxBone]) entry.boneKg = parseFloat(cols[idxBone]) || undefined;
+    if (idxMuscle >= 0 && cols[idxMuscle]) entry.muscleKg = parseFloat(cols[idxMuscle]) || undefined;
+    if (idxWater >= 0 && cols[idxWater]) entry.waterPct = parseFloat(cols[idxWater]) || undefined;
+    if (entry.fatKg && weight) entry.fatPct = Math.round(entry.fatKg / weight * 1000) / 10;
+    if (entry.muscleKg && weight) entry.musclePct = Math.round(entry.muscleKg / weight * 1000) / 10;
+    Object.keys(entry).forEach(k => entry[k] === undefined && delete entry[k]);
+    return entry;
+  }).filter(Boolean);
+}
+
+async function importWithingsFile(file) {
+  if (!file) return;
+  const text = await file.text();
+  const entries = parseWithingsCSV(text);
+  if (!entries) { toast('Format CSV non reconnu. Exportez depuis Withings Health Mate.', 'error'); return; }
+  if (!entries.length) { toast('Aucune donnée trouvée dans le fichier.', 'error'); return; }
+  const existing = weightLog.filter(e => !entries.find(n => n.date === e.date));
+  weightLog = [...existing, ...entries].sort((a,b) => a.date.localeCompare(b.date));
+  await window.__FC.saveWeightLog(user.uid, weightLog);
+  renderSante();
+  toast(`✓ ${entries.length} mesures importées depuis Withings`, 'success');
+  haptic(20);
+}
+
+/* ═══════════════════════════════════════════════════
    UTILS
    ═══════════════════════════════════════════════════ */
 function esc(str) {
@@ -4703,6 +4757,10 @@ window.addEventListener('fc-ready', () => {
 
   // ── WEIGHT LOG ──
   document.getElementById('btn-log-weight').addEventListener('click', openWeightModal);
+  document.getElementById('withings-file-input').addEventListener('change', e => {
+    importWithingsFile(e.target.files[0]);
+    e.target.value = '';
+  });
   document.getElementById('btn-toggle-withings').addEventListener('click', () => {
     const sec = document.getElementById('weight-withings-section');
     const btn = document.getElementById('btn-toggle-withings');
