@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FrigoChef</title>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <!-- ═══════════════════════════════════════════════════════════
      FRIGOCHEF — Configuration Firebase
@@ -81,7 +82,13 @@
     },
     saveSharedFridge: async (code, items) => {
       await setDoc(doc(db, 'sharedFridges', code), { items, updatedAt: Date.now() }, { merge: true });
-    }
+    },
+    saveUserRecipes: async (uid, recipes) => {
+      await setDoc(doc(db, 'userRecipes', uid), { recipes, updatedAt: Date.now() });
+    },
+    loadUserRecipes: (uid, cb) => onSnapshot(doc(db, 'userRecipes', uid),
+      snap => cb(snap.exists() ? snap.data().recipes || [] : [])
+    )
   };
 
   window.dispatchEvent(new Event('fc-ready'));
@@ -805,6 +812,95 @@ body {
 .ob-card { max-height: 90vh; overflow-y: auto; }
 .ob-card::-webkit-scrollbar { width: 3px; }
 .ob-card::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* ─── FAVORITES ─── */
+.card { position: relative; }
+.btn-fav {
+  position: absolute; top: 8px; left: 10px;
+  background: rgba(255,255,255,0.85); backdrop-filter: blur(8px);
+  border: none; border-radius: 50%; width: 30px; height: 30px;
+  font-size: 1rem; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: transform 0.18s; z-index: 2;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.10);
+}
+.btn-fav:hover { transform: scale(1.15); }
+.card.is-custom .card-thumb::after {
+  content: 'Mes recettes'; position: absolute; bottom: 8px; left: 10px;
+  background: rgba(0,122,255,0.12); color: #007AFF;
+  font-size: 0.62rem; font-weight: 600; padding: 2px 7px; border-radius: 8px;
+}
+
+/* ─── MODAL ACTION BTNS ─── */
+.modal-actions { display: flex; gap: 8px; margin-top: 0.75rem; }
+.btn-modal-action {
+  flex: 1; padding: 11px; border: none; border-radius: var(--r);
+  font-size: 0.88rem; font-weight: 500; cursor: pointer; transition: opacity 0.15s;
+}
+.btn-pdf  { background: var(--ink); color: #fff; }
+.btn-pdf:hover  { opacity: 0.85; }
+.btn-edit { background: rgba(0,122,255,0.12); color: #007AFF; }
+.btn-del  { background: var(--red-l); color: var(--red); }
+
+/* ─── RECIPE FORM MODAL ─── */
+.recipe-form-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+  display: flex; align-items: flex-end; justify-content: center;
+  z-index: 290; animation: fadeIn 0.15s ease;
+}
+.recipe-form-card {
+  background: var(--surface); border-radius: var(--r-lg) var(--r-lg) 0 0;
+  width: 100%; max-width: 600px; max-height: 92vh;
+  overflow-y: auto; padding: 1.5rem 1.5rem 2rem;
+  animation: slideUp 0.2s ease;
+}
+.recipe-form-card::-webkit-scrollbar { display: none; }
+.recipe-form-title { font-size: 1.2rem; font-weight: 700; color: var(--ink); margin-bottom: 1.25rem; }
+.rf-field { margin-bottom: 1rem; }
+.rf-label {
+  display: block; font-size: 0.73rem; font-weight: 600; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--ink3); margin-bottom: 5px;
+}
+.rf-row { display: flex; gap: 8px; }
+.rf-actions { display: flex; gap: 8px; margin-top: 1.25rem; }
+.btn-rf-save {
+  flex: 2; padding: 12px; background: var(--green-dk); color: #fff;
+  border: none; border-radius: var(--r); font-size: 0.92rem; font-weight: 600; cursor: pointer;
+}
+.btn-rf-cancel {
+  flex: 1; padding: 12px; background: none; border: 1px solid var(--border);
+  color: var(--ink3); border-radius: var(--r); font-size: 0.92rem; cursor: pointer;
+}
+textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
+
+/* ─── URL IMPORT MODAL ─── */
+.import-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 290; padding: 1rem; animation: fadeIn 0.15s ease;
+}
+.import-card {
+  background: var(--surface); border-radius: var(--r-xl);
+  width: 100%; max-width: 420px; padding: 1.75rem;
+  animation: slideUp 0.2s ease; box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+}
+.import-title { font-size: 1.1rem; font-weight: 700; color: var(--ink); margin-bottom: 0.4rem; }
+.import-sub { font-size: 0.82rem; color: var(--ink3); margin-bottom: 1.25rem; }
+.import-sites { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 1rem; }
+.import-site-tag {
+  font-size: 0.72rem; padding: 3px 9px; border-radius: 20px;
+  background: var(--surface2); color: var(--ink3);
+}
+.btn-import-go {
+  width: 100%; padding: 12px; background: var(--green-dk); color: #fff;
+  border: none; border-radius: var(--r); font-size: 0.92rem; font-weight: 600;
+  cursor: pointer; margin-top: 0.75rem; transition: opacity 0.15s;
+}
+.btn-import-go:hover { opacity: 0.88; }
+.btn-import-cancel {
+  width: 100%; padding: 9px; background: none; border: none;
+  color: var(--ink3); font-size: 0.85rem; cursor: pointer; margin-top: 4px;
+}
+.import-spinner { text-align: center; padding: 1rem; color: var(--ink3); font-size: 0.88rem; }
 </style>
 </head>
 <body>
@@ -858,13 +954,21 @@ body {
   <!-- ── TAB: RECETTES ── -->
   <div class="tab-page" id="tab-recettes">
     <div class="tab-header">
-      <div class="tab-large-title">Recettes</div>
+      <div class="tab-header-row">
+        <div class="tab-large-title">Recettes</div>
+        <div style="display:flex;gap:6px">
+          <button class="icon-btn" id="btn-import-url" title="Importer depuis une URL">🔗</button>
+          <button class="icon-btn" id="btn-new-recipe" title="Créer une recette">✏️</button>
+        </div>
+      </div>
       <div class="tab-sub" id="recipes-sub">Ajoutez des aliments pour découvrir des recettes.</div>
     </div>
     <div class="tab-body">
       <div id="alerts"></div>
       <div class="filters" id="filters">
         <button class="pill on" data-f="all">Toutes</button>
+        <button class="pill" data-f="fav">⭐ Favoris</button>
+        <button class="pill" data-f="mine">👤 Mes recettes</button>
         <button class="pill" data-f="top">≥ 70% match</button>
         <button class="pill" data-f="urgent">Priorité DLC</button>
         <button class="pill" data-f="fast">≤ 20 min</button>
@@ -956,6 +1060,83 @@ body {
     </button>
   </nav>
 
+</div>
+
+<!-- ═══════════════ URL IMPORT MODAL ═══════════════ -->
+<div id="import-overlay" class="import-overlay hidden">
+  <div class="import-card">
+    <div class="import-title">🔗 Importer une recette</div>
+    <div class="import-sub">Collez l'URL d'une recette — le site doit utiliser le format schema.org Recipe (Marmiton, 750g, Cuisine AZ, Allrecipes…)</div>
+    <div class="import-sites">
+      <span class="import-site-tag">Marmiton</span>
+      <span class="import-site-tag">750g</span>
+      <span class="import-site-tag">Cuisine AZ</span>
+      <span class="import-site-tag">Allrecipes</span>
+      <span class="import-site-tag">BBC Good Food</span>
+    </div>
+    <div class="rf-field">
+      <label class="rf-label" for="inp-import-url">URL de la recette</label>
+      <input id="inp-import-url" class="inp" type="url" placeholder="https://www.marmiton.org/recettes/...">
+    </div>
+    <div id="import-status"></div>
+    <button class="btn-import-go" id="btn-import-go">Importer la recette</button>
+    <button class="btn-import-cancel" id="btn-import-cancel">Annuler</button>
+  </div>
+</div>
+
+<!-- ═══════════════ RECIPE FORM MODAL ═══════════════ -->
+<div id="recipe-form-overlay" class="recipe-form-overlay hidden">
+  <div class="recipe-form-card">
+    <div class="recipe-form-title" id="recipe-form-title">Nouvelle recette</div>
+    <div class="rf-row">
+      <div class="rf-field" style="width:64px;flex-shrink:0">
+        <label class="rf-label">Emoji</label>
+        <input id="rf-emoji" class="inp" type="text" placeholder="🍳" maxlength="2" style="text-align:center;font-size:1.3rem">
+      </div>
+      <div class="rf-field" style="flex:1">
+        <label class="rf-label" for="rf-name">Nom de la recette *</label>
+        <input id="rf-name" class="inp" type="text" placeholder="ex : Poulet rôti au citron">
+      </div>
+    </div>
+    <div class="rf-row">
+      <div class="rf-field" style="flex:1">
+        <label class="rf-label" for="rf-time">Temps (min)</label>
+        <input id="rf-time" class="inp" type="number" placeholder="30" min="1">
+      </div>
+      <div class="rf-field" style="flex:1">
+        <label class="rf-label" for="rf-servings">Personnes</label>
+        <input id="rf-servings" class="inp" type="number" placeholder="4" min="1">
+      </div>
+      <div class="rf-field" style="flex:1">
+        <label class="rf-label" for="rf-difficulty">Difficulté</label>
+        <select id="rf-difficulty" class="inp">
+          <option value="Facile">Facile</option>
+          <option value="Moyen">Moyen</option>
+          <option value="Difficile">Difficile</option>
+        </select>
+      </div>
+    </div>
+    <div class="rf-field">
+      <label class="rf-label" for="rf-calories">Calories / portion (optionnel)</label>
+      <input id="rf-calories" class="inp" type="number" placeholder="ex : 450">
+    </div>
+    <div class="rf-field">
+      <label class="rf-label" for="rf-ingredients">Ingrédients (un par ligne) *</label>
+      <textarea id="rf-ingredients" class="inp" placeholder="500g poulet&#10;2 gousses d'ail&#10;1 citron&#10;Huile d'olive"></textarea>
+    </div>
+    <div class="rf-field">
+      <label class="rf-label" for="rf-steps">Étapes de préparation (une par ligne) *</label>
+      <textarea id="rf-steps" class="inp" placeholder="Préchauffer le four à 200°C.&#10;Assaisonner le poulet avec sel et poivre.&#10;Enfourner 45 minutes."></textarea>
+    </div>
+    <div id="rf-source-field" class="rf-field hidden">
+      <label class="rf-label">Source</label>
+      <input id="rf-source" class="inp" type="text" readonly style="color:var(--ink3)">
+    </div>
+    <div class="rf-actions">
+      <button class="btn-rf-cancel" id="btn-rf-cancel">Annuler</button>
+      <button class="btn-rf-save" id="btn-rf-save">Enregistrer</button>
+    </div>
+  </div>
 </div>
 
 <!-- ═══════════════ MODAL RECETTE ═══════════════ -->
@@ -1259,6 +1440,10 @@ let filter  = 'all';
 let unsub   = null;
 let profile = null;
 let sharedFridgeCode = null;
+let favorites    = [];   // recipe IDs marked as favorites
+let userRecipes  = [];   // custom/imported recipes
+let unsubRecipes = null;
+let editingRecipeId = null; // ID being edited in the form modal
 
 const GOAL_LABELS = {
   lose_weight:  'Perte de poids',
@@ -1391,60 +1576,72 @@ function renderAlerts() {
 /* ═══════════════════════════════════════════════════
    RENDER — RECIPES
    ═══════════════════════════════════════════════════ */
+function computeCustomMatchPct(r) {
+  if (!r.isCustom || !r.allIngredients?.length) return { matchPct: 100, matched: r.allIngredients || [], missing: [] };
+  const fridgeNames = fridge.map(f => f.name.toLowerCase());
+  const matched = [], missing = [];
+  r.allIngredients.forEach(ing => {
+    const ingLow = ing.toLowerCase();
+    if (fridgeNames.some(fn => ingLow.includes(fn) || fn.includes(ingLow.split(' ').pop()))) matched.push(ing);
+    else missing.push(ing);
+  });
+  return { matchPct: Math.round((matched.length / r.allIngredients.length) * 100), matched, missing };
+}
+
 function renderRecipes() {
   const grid = document.getElementById('recipe-grid');
   const sub  = document.getElementById('recipes-sub');
-
-  let list = [...recipes];
   const urgentNames = fridge.filter(f => f.dlc && dlcStatus(f.dlc)?.days >= 0 && dlcStatus(f.dlc)?.days <= 3).map(f => f.name.toLowerCase());
 
+  // Merge generated + custom recipes
+  const customFull = userRecipes.map(r => { const m = computeCustomMatchPct(r); return { ...r, ...m }; });
+  const allRecipes = [...recipes, ...customFull];
+
+  let list = [...allRecipes];
+  if (filter === 'fav')    list = list.filter(r => favorites.includes(String(r.id)));
+  if (filter === 'mine')   list = customFull;
   if (filter === 'top')    list = list.filter(r => r.matchPct >= 70);
   if (filter === 'fast')   list = list.filter(r => r.time <= 20);
   if (filter === 'urgent') list = list.filter(r =>
     (r.matched || []).some(m => urgentNames.some(u => m.toLowerCase().includes(u) || u.includes(m.toLowerCase())))
   );
 
-  const profileSub = profile
-    ? ` · ${GOAL_LABELS[profile.goal] || ''} · ${profile.caloriesPerMeal} kcal/repas`
-    : '';
-  sub.textContent = recipes.length
-    ? `${recipes.length} recette${recipes.length>1?'s':''} basée${recipes.length>1?'s':''} sur votre frigo${profileSub}`
+  const total = recipes.length + userRecipes.length;
+  const profileSub = profile ? ` · ${GOAL_LABELS[profile.goal] || ''} · ${profile.caloriesPerMeal} kcal/repas` : '';
+  sub.textContent = total
+    ? `${total} recette${total>1?'s':''} · ${favorites.length} favori${favorites.length>1?'s':''}${profileSub}`
     : profile
-      ? `Profil : ${GOAL_LABELS[profile.goal]} · ${profile.caloriesPerMeal} kcal/repas — Ajoutez des aliments et générez vos recettes.`
-      : 'Ajoutez des aliments et générez vos recettes.';
+      ? `${GOAL_LABELS[profile.goal]} · ${profile.caloriesPerMeal} kcal/repas — Ajoutez des aliments.`
+      : 'Ajoutez des aliments pour découvrir des recettes.';
 
   if (!list.length) {
-    grid.innerHTML = `<div class="empty">
-      <div class="empty-icon">🍽️</div>
-      <div class="empty-title">${recipes.length ? 'Aucune recette pour ce filtre' : 'Pas encore de recettes'}</div>
-      <div class="empty-sub">${recipes.length ? 'Essayez un autre filtre.' : 'La génération de recettes arrive bientôt.'}</div>
+    grid.innerHTML = `<div class="empty"><div class="empty-icon">🍽️</div>
+      <div class="empty-title">${total ? 'Aucune recette ici' : 'Pas encore de recettes'}</div>
+      <div class="empty-sub">${total ? 'Essayez un autre filtre ou créez votre recette ✏️' : 'Remplissez votre frigo ou créez une recette ✏️'}</div>
     </div>`;
     return;
   }
 
   grid.innerHTML = list.map(r => {
     const pctCls = r.matchPct >= 70 ? 'pct-hi' : r.matchPct >= 50 ? 'pct-mid' : 'pct-lo';
-    const bgCol  = r.matchPct >= 70 ? '#EAF3EC' : r.matchPct >= 50 ? '#FDF0DF' : '#F2EDE6';
+    const bgCol  = r.matchPct >= 70 ? 'rgba(52,199,89,0.10)' : r.matchPct >= 50 ? 'rgba(255,149,0,0.10)' : 'rgba(120,120,128,0.08)';
     const hasUrgent = (r.matched||[]).some(m => urgentNames.some(u => m.toLowerCase().includes(u) || u.includes(m.toLowerCase())));
+    const isFav = favorites.includes(String(r.id));
     const chips = [
       ...(r.matched||[]).slice(0,2).map(t=>`<span class="chip chip-has">✓ ${esc(t)}</span>`),
       ...(r.missing||[]).slice(0,1).map(t=>`<span class="chip chip-missing">+ ${esc(t)}</span>`),
       hasUrgent ? `<span class="chip chip-urgent">⏰ Urgent</span>` : ''
     ].join('');
-    const calBadge = r.calories
-      ? `<span class="cal-badge">🔥 ${r.calories} kcal</span>` : '';
-    return `<div class="card" data-id="${r.id}">
+    const calBadge = r.calories ? `<span class="cal-badge">🔥 ${r.calories} kcal</span>` : '';
+    return `<div class="card${r.isCustom ? ' is-custom' : ''}" data-id="${r.id}">
+      <button class="btn-fav" data-fav-id="${r.id}" title="${isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}">${isFav ? '⭐' : '☆'}</button>
       <div class="card-thumb" style="background:${bgCol}">
         <span>${r.emoji}</span>
         <span class="pct-badge ${pctCls}">${r.matchPct}% match</span>
       </div>
       <div class="card-body">
         <div class="card-name">${esc(r.name)}</div>
-        <div class="card-meta">
-          <span>⏱ ${r.time} min</span>
-          <span>👥 ${r.servings} pers.</span>
-          <span>📊 ${esc(r.difficulty||'')}</span>
-        </div>
+        <div class="card-meta"><span>⏱ ${r.time} min</span><span>👥 ${r.servings} pers.</span><span>📊 ${esc(r.difficulty||'')}</span></div>
         <div class="chip-row" style="margin-bottom:${calBadge ? '0.4rem' : '0'}">${chips}</div>
         ${calBadge}
       </div>
@@ -1452,10 +1649,15 @@ function renderRecipes() {
   }).join('');
 
   grid.querySelectorAll('.card').forEach(card => {
-    card.addEventListener('click', () => {
-      const r = recipes.find(r => r.id == card.dataset.id);
+    card.addEventListener('click', e => {
+      if (e.target.closest('.btn-fav')) return;
+      const id = card.dataset.id;
+      const r = allRecipes.find(r => String(r.id) === id);
       if (r) openModal(r);
     });
+  });
+  grid.querySelectorAll('.btn-fav').forEach(btn => {
+    btn.addEventListener('click', e => { e.stopPropagation(); toggleFavorite(btn.dataset.favId); });
   });
 }
 
@@ -1489,10 +1691,11 @@ function openModal(r) {
   const overlay = document.getElementById('modal-overlay');
   const body    = document.getElementById('modal-body');
 
+  const allIng = r.isCustom ? r.allIngredients || [] : [...(r.matched||[]), ...(r.missing||[])];
   const ings = [
     ...(r.matched||[]).map(i => `<div class="ing-row"><div class="dot dot-has"></div>${esc(i)}</div>`),
     ...(r.missing||[]).map(i => `<div class="ing-row"><div class="dot dot-missing"></div><span style="color:var(--ink3)">${esc(i)}</span></div>`)
-  ].join('');
+  ].join('') || allIng.map(i => `<div class="ing-row"><div class="dot dot-has"></div>${esc(i)}</div>`).join('');
 
   const steps = (r.steps||[]).map((s,i) =>
     `<li class="step"><div class="step-n">${i+1}</div><div class="step-t">${esc(s)}</div></li>`
@@ -1522,12 +1725,19 @@ function openModal(r) {
       })() : ''}
     </div>` : '';
 
+  const isFav = favorites.includes(String(r.id));
+  const customActions = r.isCustom
+    ? `<button class="btn-modal-action btn-edit" id="modal-edit">✏️ Modifier</button>
+       <button class="btn-modal-action btn-del"  id="modal-del">🗑 Supprimer</button>`
+    : '';
+  const sourceLink = r.source ? `<div style="font-size:0.75rem;color:var(--ink3);margin-top:0.5rem">Source : <a href="${esc(r.source)}" target="_blank" style="color:var(--green-dk)">${esc(r.source)}</a></div>` : '';
+
   body.innerHTML = `
     <div class="modal-hero">
       <div class="modal-emoji">${r.emoji}</div>
-      <div>
+      <div style="flex:1">
         <div class="modal-title">${esc(r.name)}</div>
-        <div class="modal-meta">⏱ ${r.time} min &nbsp;·&nbsp; 👥 ${r.servings} personnes &nbsp;·&nbsp; 📊 ${esc(r.difficulty||'')}</div>
+        <div class="modal-meta">⏱ ${r.time} min &nbsp;·&nbsp; 👥 ${r.servings} pers. &nbsp;·&nbsp; 📊 ${esc(r.difficulty||'')}</div>
       </div>
     </div>
     ${nutritionSection}
@@ -1540,15 +1750,237 @@ function openModal(r) {
       <ol class="steps">${steps}</ol>
     </div>
     ${shopping}
+    ${sourceLink}
     <div class="modal-foot">
-      <button class="btn-close" id="modal-close">Fermer</button>
+      <div class="modal-actions">
+        <button class="btn-modal-action btn-fav-modal" id="modal-fav">${isFav ? '⭐ Favori' : '☆ Favori'}</button>
+        <button class="btn-modal-action btn-pdf" id="modal-pdf">⬇ PDF</button>
+        ${customActions}
+      </div>
+      <button class="btn-close" id="modal-close" style="margin-top:8px">Fermer</button>
     </div>
   `;
   overlay.classList.remove('hidden');
   document.getElementById('modal-close').addEventListener('click', closeModal);
+  document.getElementById('modal-fav').addEventListener('click', () => {
+    toggleFavorite(String(r.id));
+    const btn = document.getElementById('modal-fav');
+    if (btn) btn.textContent = favorites.includes(String(r.id)) ? '⭐ Favori' : '☆ Favori';
+  });
+  document.getElementById('modal-pdf').addEventListener('click', () => exportPDF(r));
+  if (r.isCustom) {
+    document.getElementById('modal-edit').addEventListener('click', () => { closeModal(); openRecipeForm(r); });
+    document.getElementById('modal-del').addEventListener('click', () => {
+      if (confirm(`Supprimer "${r.name}" ?`)) {
+        userRecipes = userRecipes.filter(x => x.id !== r.id);
+        saveUserRecipesDB(); renderRecipes(); closeModal();
+        toast(`${r.emoji} ${r.name} supprimé`);
+      }
+    });
+  }
 }
 
 function closeModal() { document.getElementById('modal-overlay').classList.add('hidden'); }
+
+/* ── Favorites ── */
+function toggleFavorite(id) {
+  id = String(id);
+  if (favorites.includes(id)) favorites = favorites.filter(f => f !== id);
+  else favorites = [...favorites, id];
+  if (user) {
+    window.__FC.saveProfile(user.uid, { ...profile, favorites })
+      .catch(e => console.error('Erreur sauvegarde favoris:', e));
+  }
+  renderRecipes();
+}
+
+/* ── Save user recipes to Firebase ── */
+function saveUserRecipesDB() {
+  if (!user) return;
+  window.__FC.saveUserRecipes(user.uid, userRecipes)
+    .catch(e => { console.error('Erreur sauvegarde recettes:', e); toast('Erreur de sauvegarde', 'error'); });
+}
+
+/* ── Export PDF ── */
+function exportPDF(r) {
+  if (!window.jspdf) { toast('Chargement du générateur PDF…'); setTimeout(() => exportPDF(r), 800); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const W = 210, M = 18, CW = W - M * 2;
+  let y = 18;
+
+  // Header band
+  doc.setFillColor(245, 245, 247);
+  doc.rect(0, 0, W, 38, 'F');
+  doc.setFontSize(9); doc.setTextColor(140);
+  doc.text('FrigoChef', M, 13);
+  doc.setFontSize(20); doc.setFont('helvetica', 'bold'); doc.setTextColor(0);
+  const titleLines = doc.splitTextToSize(r.name, CW);
+  doc.text(titleLines, M, 26);
+  y = 38 + titleLines.length * 7 + 4;
+
+  // Meta line
+  doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(100);
+  const meta = [`Temps : ${r.time} min`, `Personnes : ${r.servings}`, `Difficulte : ${r.difficulty || ''}`, r.calories ? `Calories : ${r.calories} kcal` : ''].filter(Boolean).join('   ·   ');
+  doc.text(meta, M, y); y += 10;
+
+  // Separator
+  doc.setDrawColor(220); doc.line(M, y, W - M, y); y += 7;
+
+  // Ingredients
+  doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(0);
+  doc.text('Ingrédients', M, y); y += 6;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5);
+
+  const allIng = r.isCustom ? (r.allIngredients || []) : [...(r.matched||[]), ...(r.missing||[])];
+  const col1 = allIng.slice(0, Math.ceil(allIng.length / 2));
+  const col2 = allIng.slice(Math.ceil(allIng.length / 2));
+  const colW = (CW - 6) / 2;
+  const yIng = y;
+  col1.forEach((ing, i) => {
+    doc.setTextColor(r.missing?.includes(ing) ? 150 : 40);
+    doc.text(`${r.missing?.includes(ing) ? '-' : '+'} ${ing}`, M, y + i * 5.5);
+  });
+  col2.forEach((ing, i) => {
+    doc.setTextColor(r.missing?.includes(ing) ? 150 : 40);
+    doc.text(`${r.missing?.includes(ing) ? '-' : '+'} ${ing}`, M + colW + 6, yIng + i * 5.5);
+  });
+  y = yIng + Math.ceil(allIng.length / 2) * 5.5 + 8;
+
+  doc.setDrawColor(220); doc.line(M, y, W - M, y); y += 7;
+
+  // Steps
+  doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(0);
+  doc.text('Préparation', M, y); y += 6;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5);
+  (r.steps || []).forEach((step, i) => {
+    doc.setFont('helvetica', 'bold'); doc.setTextColor(60);
+    doc.text(`${i + 1}.`, M, y);
+    doc.setFont('helvetica', 'normal'); doc.setTextColor(30);
+    const lines = doc.splitTextToSize(step, CW - 8);
+    doc.text(lines, M + 7, y);
+    y += lines.length * 5 + 3;
+    if (y > 272) { doc.addPage(); y = 20; }
+  });
+
+  // Footer
+  doc.setFontSize(8); doc.setTextColor(180);
+  doc.text('Généré par FrigoChef', M, 290);
+
+  doc.save(`${r.name.replace(/[^a-z0-9]/gi, '_').substring(0, 40)}.pdf`);
+  toast('PDF téléchargé !');
+}
+
+/* ── Recipe form (create / edit) ── */
+function openRecipeForm(existing = null) {
+  editingRecipeId = existing?.id || null;
+  document.getElementById('recipe-form-title').textContent = existing ? 'Modifier la recette' : 'Nouvelle recette';
+  document.getElementById('rf-emoji').value       = existing?.emoji || '🍳';
+  document.getElementById('rf-name').value        = existing?.name || '';
+  document.getElementById('rf-time').value        = existing?.time || '';
+  document.getElementById('rf-servings').value    = existing?.servings || '';
+  document.getElementById('rf-difficulty').value  = existing?.difficulty || 'Facile';
+  document.getElementById('rf-calories').value    = existing?.calories || '';
+  document.getElementById('rf-ingredients').value = (existing?.allIngredients || []).join('\n');
+  document.getElementById('rf-steps').value       = (existing?.steps || []).join('\n');
+  const srcField = document.getElementById('rf-source-field');
+  if (existing?.source) {
+    srcField.classList.remove('hidden');
+    document.getElementById('rf-source').value = existing.source;
+  } else { srcField.classList.add('hidden'); }
+  document.getElementById('recipe-form-overlay').classList.remove('hidden');
+  setTimeout(() => document.getElementById('rf-name').focus(), 80);
+}
+
+function closeRecipeForm() { document.getElementById('recipe-form-overlay').classList.add('hidden'); }
+
+function saveRecipeForm() {
+  const name = document.getElementById('rf-name').value.trim();
+  if (!name) { document.getElementById('rf-name').style.borderColor = 'var(--red)'; return; }
+  const ingsRaw = document.getElementById('rf-ingredients').value.trim();
+  if (!ingsRaw) { document.getElementById('rf-ingredients').style.borderColor = 'var(--red)'; return; }
+  const stepsRaw = document.getElementById('rf-steps').value.trim();
+  if (!stepsRaw) { document.getElementById('rf-steps').style.borderColor = 'var(--red)'; return; }
+
+  const recipe = {
+    id:             editingRecipeId || 'custom_' + Date.now(),
+    name,
+    emoji:          document.getElementById('rf-emoji').value.trim() || '🍳',
+    time:           parseInt(document.getElementById('rf-time').value) || 30,
+    servings:       parseInt(document.getElementById('rf-servings').value) || 4,
+    difficulty:     document.getElementById('rf-difficulty').value,
+    calories:       parseInt(document.getElementById('rf-calories').value) || null,
+    allIngredients: ingsRaw.split('\n').map(l => l.trim()).filter(Boolean),
+    steps:          stepsRaw.split('\n').map(l => l.trim()).filter(Boolean),
+    isCustom:       true,
+    source:         document.getElementById('rf-source').value || null,
+    createdAt:      editingRecipeId ? (userRecipes.find(r => r.id === editingRecipeId)?.createdAt || Date.now()) : Date.now()
+  };
+
+  if (editingRecipeId) userRecipes = userRecipes.map(r => r.id === editingRecipeId ? recipe : r);
+  else userRecipes = [recipe, ...userRecipes];
+
+  saveUserRecipesDB(); renderRecipes(); closeRecipeForm();
+  toast(`${recipe.emoji} ${recipe.name} ${editingRecipeId ? 'mis à jour' : 'ajouté'} !`);
+}
+
+/* ── URL import ── */
+function openImportModal() {
+  document.getElementById('inp-import-url').value = '';
+  document.getElementById('import-status').innerHTML = '';
+  document.getElementById('import-overlay').classList.remove('hidden');
+  setTimeout(() => document.getElementById('inp-import-url').focus(), 80);
+}
+function closeImportModal() { document.getElementById('import-overlay').classList.add('hidden'); }
+
+async function importFromUrl() {
+  const rawUrl = document.getElementById('inp-import-url').value.trim();
+  if (!rawUrl) return;
+  const status = document.getElementById('import-status');
+  status.innerHTML = '<div class="import-spinner">🔍 Récupération de la recette…</div>';
+  document.getElementById('btn-import-go').disabled = true;
+  try {
+    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(rawUrl)}`;
+    const res = await fetch(proxyUrl);
+    if (!res.ok) throw new Error('Impossible de récupérer la page');
+    const html = await res.text();
+
+    // Parse JSON-LD schema.org Recipe
+    const parser = new DOMParser();
+    const dom = parser.parseFromString(html, 'text/html');
+    let recipeData = null;
+    dom.querySelectorAll('script[type="application/ld+json"]').forEach(el => {
+      try {
+        const obj = JSON.parse(el.textContent);
+        const candidates = Array.isArray(obj) ? obj : (obj['@graph'] ? obj['@graph'] : [obj]);
+        candidates.forEach(c => { if (c['@type'] === 'Recipe' || c['@type']?.includes('Recipe')) recipeData = recipeData || c; });
+      } catch (_) {}
+    });
+
+    if (!recipeData) throw new Error('Aucune recette schema.org trouvée sur cette page');
+
+    const name = recipeData.name || '';
+    const rawIngs = (recipeData.recipeIngredient || []);
+    const rawSteps = (recipeData.recipeInstructions || []).map(s =>
+      typeof s === 'string' ? s : (s.text || s.name || '')
+    ).filter(Boolean);
+    const timeStr = recipeData.totalTime || recipeData.cookTime || '';
+    const timeMin = timeStr ? (parseInt(timeStr.replace(/\D/g, '')) || 30) : 30;
+    const servings = parseInt(String(recipeData.recipeYield || '4').replace(/\D/g, '')) || 4;
+    const calories = parseInt(String((recipeData.nutrition?.calories || '0')).replace(/\D/g, '')) || null;
+
+    closeImportModal();
+    openRecipeForm({
+      name, emoji: '🍽️', time: timeMin, servings, difficulty: 'Moyen',
+      calories, allIngredients: rawIngs, steps: rawSteps,
+      isCustom: true, source: rawUrl
+    });
+  } catch (err) {
+    status.innerHTML = `<div style="color:var(--red);font-size:0.82rem;padding:0.5rem 0">⚠️ ${err.message}</div>`;
+  } finally {
+    document.getElementById('btn-import-go').disabled = false;
+  }
+}
 
 
 /* ═══════════════════════════════════════════════════
@@ -1644,6 +2076,7 @@ window.addEventListener('fc-ready', () => {
 
       // Charger le profil d'abord pour savoir quel frigo utiliser
       profile = await window.__FC.loadProfile(fbUser.uid);
+      favorites = profile?.favorites || [];
 
       if (unsub) unsub();
       if (profile?.sharedFridgeCode) {
@@ -1658,18 +2091,23 @@ window.addEventListener('fc-ready', () => {
         });
       }
 
+      if (unsubRecipes) unsubRecipes();
+      unsubRecipes = window.__FC.loadUserRecipes(fbUser.uid, items => {
+        userRecipes = items; renderRecipes();
+      });
+
       if (!profile) {
         showOnboarding();
       } else {
         applyProfileToUI();
       }
     } else {
-      user = null;
-      profile = null;
-      sharedFridgeCode = null;
+      user = null; profile = null; sharedFridgeCode = null;
+      favorites = []; userRecipes = [];
       document.getElementById('auth-screen').classList.remove('hidden');
       document.getElementById('app-screen').classList.add('hidden');
       if (unsub) { unsub(); unsub = null; }
+      if (unsubRecipes) { unsubRecipes(); unsubRecipes = null; }
     }
   });
 
@@ -1977,6 +2415,23 @@ window.addEventListener('fc-ready', () => {
   // Modal close on overlay click
   document.getElementById('modal-overlay').addEventListener('click', e => {
     if (e.target === document.getElementById('modal-overlay')) closeModal();
+  });
+
+  // ── RECIPE FORM ──
+  document.getElementById('btn-new-recipe').addEventListener('click', () => openRecipeForm());
+  document.getElementById('btn-rf-cancel').addEventListener('click', closeRecipeForm);
+  document.getElementById('btn-rf-save').addEventListener('click', saveRecipeForm);
+  document.getElementById('recipe-form-overlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('recipe-form-overlay')) closeRecipeForm();
+  });
+
+  // ── URL IMPORT ──
+  document.getElementById('btn-import-url').addEventListener('click', openImportModal);
+  document.getElementById('btn-import-cancel').addEventListener('click', closeImportModal);
+  document.getElementById('btn-import-go').addEventListener('click', importFromUrl);
+  document.getElementById('inp-import-url').addEventListener('keydown', e => { if (e.key === 'Enter') importFromUrl(); });
+  document.getElementById('import-overlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('import-overlay')) closeImportModal();
   });
 
   // ── SHARE EVENTS ──
