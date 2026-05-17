@@ -255,3 +255,4 @@ function parseMeasurements(groups) {
 function tsToDate(ts) {
   return new Date(ts * 1000).toISOString().slice(0, 10);
 }
+
