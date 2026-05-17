@@ -1711,6 +1711,74 @@ body {
 .voice-shop-btn.listening { background: var(--red-l); color: var(--red); animation: pulse 1s infinite; }
 @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.08); } }
 
+/* ─── SHOP ADD MODAL (bottom sheet) ─── */
+.shop-add-overlay {
+  position: fixed; inset: 0; z-index: 280;
+  background: rgba(10,14,12,0.55);
+  display: flex; align-items: flex-end;
+  animation: fadeIn 0.15s ease;
+}
+.shop-add-overlay.hidden { display: none; }
+.shop-add-sheet {
+  width: 100%; max-width: 430px; margin: 0 auto;
+  background: var(--surface); border-radius: 24px 24px 0 0;
+  padding: 0 0 calc(20px + env(safe-area-inset-bottom, 0px));
+  box-shadow: var(--shadow-lg);
+  animation: slideUp 0.32s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.shop-add-handle {
+  width: 36px; height: 4px; background: var(--border2);
+  border-radius: 2px; margin: 10px auto 0;
+}
+.shop-add-title {
+  font-size: 1.05rem; font-weight: 700; color: var(--ink);
+  padding: 14px 20px 0; margin-bottom: 12px;
+}
+.shop-add-tabs {
+  display: flex; gap: 0; margin: 0 20px 16px;
+  background: var(--surface2); border-radius: 10px; padding: 3px;
+}
+.shop-add-tab {
+  flex: 1; padding: 7px 0; border: none; background: transparent;
+  font-size: 0.80rem; font-weight: 600; color: var(--ink3);
+  border-radius: 8px; cursor: pointer; transition: all 0.18s;
+}
+.shop-add-tab.active {
+  background: var(--surface); color: var(--ink);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.10);
+}
+.shop-add-pane { display: none; padding: 0 20px; }
+.shop-add-pane.active { display: block; }
+.shop-add-inp {
+  width: 100%; padding: 12px 14px; border-radius: var(--r);
+  border: 1.5px solid var(--border2); background: var(--bg);
+  font-size: 0.95rem; color: var(--ink); outline: none;
+  box-sizing: border-box; margin-bottom: 10px;
+  font-family: inherit;
+}
+.shop-add-inp:focus { border-color: var(--green); box-shadow: 0 0 0 3px var(--green-l); }
+.shop-add-confirm {
+  width: 100%; padding: 13px; border: none; border-radius: var(--r);
+  background: var(--green); color: #fff; font-size: 0.95rem; font-weight: 700;
+  cursor: pointer; transition: background 0.15s, transform 0.15s;
+  font-family: inherit; margin-top: 4px;
+}
+.shop-add-confirm:active { transform: scale(0.97); background: var(--green-dk); }
+.shop-scanner-view { margin-bottom: 10px; }
+.shop-scanner-box { border-radius: 12px; overflow: hidden; background: #000; }
+#scanner-reader-shop video { width: 100% !important; border-radius: 12px; }
+.shop-scanner-hint {
+  text-align: center; font-size: 0.74rem; color: var(--ink3);
+  margin: 8px 0 10px;
+}
+.shop-scan-result {
+  display: none; align-items: center; gap: 10px;
+  background: var(--green-l); border: 1px solid var(--green);
+  border-radius: var(--r); padding: 10px 12px; margin-bottom: 10px;
+}
+.shop-scan-result.visible { display: flex; }
+.shop-scan-result-name { font-size: 0.84rem; font-weight: 600; color: var(--ink); }
 /* ─── SHARE MODAL ─── */
 .share-overlay {
   position: fixed; inset: 0; background: rgba(10,10,14,0.60);
@@ -2121,6 +2189,41 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
       </div>
       <div id="manual-shop-cat-row" style="display:none;gap:5px;flex-wrap:wrap;margin-bottom:10px"></div>
       <div id="courses-content" class="courses-card"></div>
+    </div>
+  </div>
+
+  <!-- ── SHOP ADD MODAL ── -->
+  <div class="shop-add-overlay hidden" id="shop-add-overlay">
+    <div class="shop-add-sheet" id="shop-add-sheet">
+      <div class="shop-add-handle"></div>
+      <div class="shop-add-title">Ajouter un article</div>
+      <div class="shop-add-tabs">
+        <button class="shop-add-tab active" id="shop-tab-manual">✏️ Nom</button>
+        <button class="shop-add-tab" id="shop-tab-scan">📷 Code-barres</button>
+      </div>
+
+      <!-- Pane manuel -->
+      <div class="shop-add-pane active" id="shop-pane-manual">
+        <input class="shop-add-inp" id="shop-inp-name" type="text" placeholder="Nom de l'article…" autocomplete="off">
+        <div id="shop-cat-row-modal" style="display:none;gap:5px;flex-wrap:wrap;margin-bottom:10px"></div>
+        <button class="shop-add-confirm" id="shop-btn-confirm">＋ Ajouter</button>
+      </div>
+
+      <!-- Pane scanner -->
+      <div class="shop-add-pane" id="shop-pane-scan">
+        <div class="shop-scanner-view">
+          <div class="shop-scanner-box"><div id="scanner-reader-shop"></div></div>
+          <div class="shop-scanner-hint">Pointez la caméra vers le code-barres</div>
+        </div>
+        <div class="shop-scan-result" id="shop-scan-result">
+          <span style="font-size:1.3rem">✅</span>
+          <div>
+            <div class="shop-scan-result-name" id="shop-scan-name">—</div>
+            <div style="font-size:0.70rem;color:var(--ink3)" id="shop-scan-kcal"></div>
+          </div>
+        </div>
+        <button class="shop-add-confirm" id="shop-btn-scan-add" style="display:none">＋ Ajouter ce produit</button>
+      </div>
     </div>
   </div>
 
@@ -5539,7 +5642,7 @@ window.addEventListener('fc-ready', () => {
     document.getElementById('fab-courses').addEventListener('click', () => {
       closeFab();
       if (window.switchTabPublic) window.switchTabPublic('courses');
-      setTimeout(() => { const el = document.getElementById('inp-manual-shop'); if (el) el.focus(); }, 120);
+      setTimeout(() => window.openShopAddModal && window.openShopAddModal(), 150);
     });
   })();
   document.getElementById('btn-add-cancel').addEventListener('click', closeAddModal);
@@ -5626,7 +5729,117 @@ window.addEventListener('fc-ready', () => {
   document.getElementById('inp-manual-shop').addEventListener('input', e => {
     renderManualCatPicker(e.target.value);
   });
-  document.getElementById('btn-manual-shop').addEventListener('click', addManualShopItem);
+  document.getElementById('btn-manual-shop').addEventListener('click', openShopAddModal);
+
+  // ── Shop Add Modal ──
+  let shopScanner = null;
+  let shopModalCatKey = null;
+  let shopScannedName = '';
+
+  function openShopAddModal(prefillName = '') {
+    const overlay = document.getElementById('shop-add-overlay');
+    overlay.classList.remove('hidden');
+    document.getElementById('shop-inp-name').value = prefillName;
+    document.getElementById('shop-scan-result').classList.remove('visible');
+    document.getElementById('shop-btn-scan-add').style.display = 'none';
+    shopScannedName = '';
+    shopModalCatKey = null;
+    document.getElementById('shop-cat-row-modal').style.display = 'none';
+    document.getElementById('shop-cat-row-modal').innerHTML = '';
+    switchShopTab('manual');
+    setTimeout(() => document.getElementById('shop-inp-name').focus(), 80);
+  }
+  window.openShopAddModal = openShopAddModal;
+
+  function closeShopAddModal() {
+    stopShopScanner();
+    document.getElementById('shop-add-overlay').classList.add('hidden');
+  }
+
+  function switchShopTab(tab) {
+    document.getElementById('shop-tab-manual').classList.toggle('active', tab === 'manual');
+    document.getElementById('shop-tab-scan').classList.toggle('active', tab === 'scan');
+    document.getElementById('shop-pane-manual').classList.toggle('active', tab === 'manual');
+    document.getElementById('shop-pane-scan').classList.toggle('active', tab === 'scan');
+    if (tab === 'scan') startShopScanner();
+    else stopShopScanner();
+  }
+
+  async function startShopScanner() {
+    if (shopScanner) return;
+    try {
+      shopScanner = new Html5Qrcode('scanner-reader-shop');
+      await shopScanner.start(
+        { facingMode: 'environment' },
+        { fps: 10, qrbox: { width: 240, height: 110 } },
+        onShopBarcodeDetected,
+        () => {}
+      );
+    } catch (err) {
+      toast('Impossible d\'accéder à la caméra', 'error');
+      stopShopScanner();
+    }
+  }
+
+  async function stopShopScanner() {
+    if (shopScanner) {
+      try { await shopScanner.stop(); } catch (_) {}
+      try { shopScanner.clear(); } catch (_) {}
+      shopScanner = null;
+    }
+  }
+
+  async function onShopBarcodeDetected(barcode) {
+    await stopShopScanner();
+    toast('Code-barres détecté…');
+    try {
+      const res  = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
+      const data = await res.json();
+      if (data.status !== 1) { toast('Produit non trouvé', 'error'); return; }
+      const p    = data.product;
+      const name = p.product_name_fr || p.product_name || p.generic_name_fr || p.generic_name || '';
+      const kcal = p.nutriments?.['energy-kcal_100g'];
+      shopScannedName = name || barcode;
+      document.getElementById('shop-scan-name').textContent = shopScannedName;
+      document.getElementById('shop-scan-kcal').textContent = kcal ? `${Math.round(kcal)} kcal / 100g` : '';
+      document.getElementById('shop-scan-result').classList.add('visible');
+      document.getElementById('shop-btn-scan-add').style.display = 'block';
+    } catch {
+      toast('Erreur lors de la recherche', 'error');
+    }
+  }
+
+  function addShopModalItem(name) {
+    if (!name?.trim()) return;
+    const catKey = shopModalCatKey || foodCategory(name).key;
+    shoppingList = [...shoppingList, { id: Date.now().toString(), name: name.trim(), recipe: 'Manuel', bought: false, catKey }];
+    renderCourses(); saveShoppingListDB();
+    toast(`✓ ${name.trim()} ajouté`, 'success');
+    haptic(10);
+    closeShopAddModal();
+  }
+
+  // Tab switches
+  document.getElementById('shop-tab-manual').addEventListener('click', () => switchShopTab('manual'));
+  document.getElementById('shop-tab-scan').addEventListener('click', () => switchShopTab('scan'));
+
+  // Manual confirm
+  document.getElementById('shop-btn-confirm').addEventListener('click', () => {
+    addShopModalItem(document.getElementById('shop-inp-name').value);
+  });
+  document.getElementById('shop-inp-name').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); addShopModalItem(document.getElementById('shop-inp-name').value); }
+  });
+
+  // Scan confirm
+  document.getElementById('shop-btn-scan-add').addEventListener('click', () => {
+    addShopModalItem(shopScannedName);
+  });
+
+  // Close on backdrop tap
+  document.getElementById('shop-add-overlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('shop-add-overlay')) closeShopAddModal();
+  });
   document.getElementById('inp-manual-shop').addEventListener('keydown', e => {
     if (e.key === 'Enter') { e.preventDefault(); addManualShopItem(); }
   });
