@@ -139,6 +139,12 @@
     loadWeightLog: (uid, cb) => onSnapshot(doc(db, 'weightLog', uid),
       snap => cb(snap.exists() ? snap.data().entries || [] : [])
     ),
+    saveWithingsData: async (uid, data) => {
+      await setDoc(doc(db, 'withingsData', uid), { ...data, updatedAt: Date.now() });
+    },
+    loadWithingsData: (uid, cb) => onSnapshot(doc(db, 'withingsData', uid),
+      snap => cb(snap.exists() ? snap.data() : null)
+    ),
   };
 
   window.dispatchEvent(new Event('fc-ready'));
@@ -1496,6 +1502,34 @@ body {
 .weight-withings-toggle { text-align: center; }
 .withings-section-label { font-size: 0.72rem; font-weight: 700; color: var(--ink3); text-transform: uppercase; letter-spacing: 0.06em; padding-top: 2px; }
 
+/* ─── WITHINGS TDEE & SLEEP ─── */
+.withings-tdee-card, .withings-sleep-card {
+  background: var(--surface); border-radius: var(--r-lg);
+  padding: 14px 14px 10px; border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+.withings-card-title { font-size: 0.78rem; font-weight: 700; color: var(--ink); margin-bottom: 12px; }
+.tdee-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.tdee-stat { background: var(--surface2); border-radius: var(--r); padding: 10px 8px; text-align: center; }
+.tdee-stat.tdee-highlight { background: var(--green-l); }
+.tdee-val { font-size: 1.05rem; font-weight: 800; color: var(--ink); }
+.tdee-stat.tdee-highlight .tdee-val { color: var(--green-dk); }
+.tdee-lbl { font-size: 0.65rem; color: var(--ink3); margin-top: 2px; }
+.tdee-date { font-size: 0.64rem; color: var(--ink3); text-align: right; margin-top: 8px; }
+.sleep-summary { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+.sleep-duration { font-size: 1.6rem; font-weight: 800; color: var(--ink); }
+.sleep-stages { font-size: 0.72rem; color: var(--ink3); display: flex; flex-wrap: wrap; gap: 6px; }
+.sleep-stage-pill { background: var(--surface2); border-radius: 20px; padding: 2px 8px; font-size: 0.68rem; }
+.sleep-stage-pill.deep { background: var(--accent-l); color: var(--accent); }
+.sleep-stage-pill.rem  { background: var(--green-l);   color: var(--green-dk); }
+.sleep-stage-pill.wake { background: var(--orange-l);  color: var(--orange); }
+.sleep-bars { display: flex; gap: 3px; height: 8px; border-radius: 4px; overflow: hidden; margin: 4px 0 8px; }
+.sleep-bar-seg { height: 100%; }
+.sleep-bar-seg.light { background: var(--ink3); }
+.sleep-bar-seg.deep  { background: var(--accent); }
+.sleep-bar-seg.rem   { background: var(--green); }
+.sleep-bar-seg.wake  { background: var(--orange); }
+
 /* ─── PLANNING ─── */
 .planning-overlay {
   position: fixed; inset: 0; background: rgba(10,10,14,0.60);
@@ -2390,7 +2424,7 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
         <div style="display:flex;gap:6px;align-items:center">
           <label class="weight-log-btn" id="btn-import-withings" style="cursor:pointer" title="Importer depuis Withings CSV">
             📲 Withings
-            <input type="file" id="withings-file-input" accept=".csv" style="display:none">
+            <input type="file" id="withings-file-input" accept=".csv" multiple style="display:none">
           </label>
           <button class="weight-log-btn" id="btn-log-weight">+ Peser</button>
         </div>
@@ -2408,6 +2442,41 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
       <div class="weight-chart" id="weight-chart" style="display:none"></div>
       <div class="w-metrics-grid" id="weight-metrics" style="display:none"></div>
       <div class="weight-empty" id="weight-empty">Pesez-vous pour commencer le suivi</div>
+    </div>
+
+    <!-- TDEE widget -->
+    <div class="withings-tdee-card" id="tdee-card" style="display:none">
+      <div class="withings-card-title">⚡ Dépense énergétique — Withings</div>
+      <div class="tdee-grid">
+        <div class="tdee-stat">
+          <div class="tdee-val" id="tdee-passive-val">—</div>
+          <div class="tdee-lbl">Métabolisme de base</div>
+        </div>
+        <div class="tdee-stat">
+          <div class="tdee-val" id="tdee-earned-val">—</div>
+          <div class="tdee-lbl">Activité physique</div>
+        </div>
+        <div class="tdee-stat tdee-highlight">
+          <div class="tdee-val" id="tdee-total-val">—</div>
+          <div class="tdee-lbl">TDEE total</div>
+        </div>
+        <div class="tdee-stat" id="tdee-net-stat">
+          <div class="tdee-val" id="tdee-net-val">—</div>
+          <div class="tdee-lbl">Balance calorique</div>
+        </div>
+      </div>
+      <div class="tdee-date" id="tdee-date"></div>
+    </div>
+
+    <!-- Sleep widget -->
+    <div class="withings-sleep-card" id="sleep-card" style="display:none">
+      <div class="withings-card-title">🌙 Sommeil — Withings</div>
+      <div class="sleep-summary" id="sleep-summary">
+        <div class="sleep-duration" id="sleep-duration">—</div>
+        <div class="sleep-stages" id="sleep-stages"></div>
+      </div>
+      <div class="sleep-bars" id="sleep-bars"></div>
+      <div class="tdee-date" id="sleep-date"></div>
     </div>
 
     <!-- Today's journal -->
@@ -3125,8 +3194,11 @@ let userCategories = []; // { key, label, color, bg, words }
 let unsubCategories = null;
 let dailyLog = [];
 let weightLog = [];
+let withingsActivity = [];
+let withingsSleep = [];
 let unsubDailyLog = null;
 let unsubWeightLog = null;
+let unsubWithingsData = null;
 const todayDate = () => new Date().toISOString().slice(0, 10);
 
 const GOAL_LABELS = {
@@ -4581,6 +4653,60 @@ function renderSante() {
     document.getElementById('weight-metrics').style.display = 'none';
   }
 
+  // ── TDEE (Withings activity) ──
+  const tdeeCard = document.getElementById('tdee-card');
+  if (withingsActivity && withingsActivity.length) {
+    tdeeCard.style.display = 'block';
+    const today = todayDate();
+    let act = withingsActivity.find(e => e.date === today);
+    if (!act) act = withingsActivity[withingsActivity.length - 1];
+    document.getElementById('tdee-passive-val').textContent = act.passive ? `${Math.round(act.passive)} kcal` : '—';
+    document.getElementById('tdee-earned-val').textContent  = act.earned  ? `${Math.round(act.earned)} kcal`  : '—';
+    document.getElementById('tdee-total-val').textContent   = act.tdee    ? `${Math.round(act.tdee)} kcal`    : '—';
+    const netStat = document.getElementById('tdee-net-stat');
+    if (act.tdee && totalKcal > 0) {
+      const net = totalKcal - act.tdee;
+      const netEl = document.getElementById('tdee-net-val');
+      netEl.textContent = (net >= 0 ? '+' : '') + Math.round(net) + ' kcal';
+      netEl.style.color = net > 0 ? 'var(--red)' : 'var(--green-dk)';
+      netStat.style.display = 'block';
+    } else {
+      netStat.style.display = 'none';
+    }
+    document.getElementById('tdee-date').textContent = act.date !== today ? `Dernière donnée : ${act.date}` : "Aujourd'hui";
+  } else {
+    tdeeCard.style.display = 'none';
+  }
+
+  // ── Sleep (Withings) ──
+  const sleepCard = document.getElementById('sleep-card');
+  if (withingsSleep && withingsSleep.length) {
+    sleepCard.style.display = 'block';
+    const today = todayDate();
+    let sl = withingsSleep.find(e => e.date === today);
+    if (!sl) sl = withingsSleep[withingsSleep.length - 1];
+    const h = Math.floor(sl.totalMin / 60);
+    const m = sl.totalMin % 60;
+    document.getElementById('sleep-duration').textContent = `${h}h${m.toString().padStart(2,'0')}`;
+    const stages = [];
+    if (sl.deepMin)  stages.push(`<span class="sleep-stage-pill deep">🔵 Profond ${sl.deepPct}%</span>`);
+    if (sl.remMin)   stages.push(`<span class="sleep-stage-pill rem">🟢 REM ${sl.remPct}%</span>`);
+    if (sl.awakeMin) stages.push(`<span class="sleep-stage-pill wake">Éveillé ${sl.awakeMin} min</span>`);
+    if (sl.hrAvg)    stages.push(`<span class="sleep-stage-pill">❤️ ${sl.hrAvg} bpm</span>`);
+    document.getElementById('sleep-stages').innerHTML = stages.join('');
+    const totalBar = sl.lightMin + sl.deepMin + sl.remMin + sl.awakeMin || 1;
+    document.getElementById('sleep-bars').innerHTML = [
+      { cls: 'light', w: sl.lightMin / totalBar * 100 },
+      { cls: 'deep',  w: sl.deepMin  / totalBar * 100 },
+      { cls: 'rem',   w: sl.remMin   / totalBar * 100 },
+      { cls: 'wake',  w: sl.awakeMin / totalBar * 100 },
+    ].filter(s => s.w > 0)
+     .map(s => `<div class="sleep-bar-seg ${s.cls}" style="width:${s.w.toFixed(1)}%"></div>`).join('');
+    document.getElementById('sleep-date').textContent = sl.date !== today ? `Dernière nuit : ${sl.date}` : "Cette nuit";
+  } else {
+    sleepCard.style.display = 'none';
+  }
+
   // ── Journal ──
   const jList = document.getElementById('journal-list');
   if (dailyLog.length === 0) {
@@ -5064,10 +5190,10 @@ function parseWithingsCSV(text) {
   const headers = lines[0].toLowerCase().split(',').map(h => h.trim().replace(/"/g,''));
   const idxDate   = headers.findIndex(h => h.includes('date'));
   const idxWeight = headers.findIndex(h => h.includes('weight') || h.includes('poids'));
-  const idxFat    = headers.findIndex(h => h.includes('fat mass') || h.includes('masse grasse'));
-  const idxBone   = headers.findIndex(h => h.includes('bone') || h.includes('os'));
+  const idxFat    = headers.findIndex(h => h.includes('fat mass') || h.includes('masse grasse') || h.includes('gras'));
+  const idxBone   = headers.findIndex(h => h.includes('bone') || h.includes('os') || h.includes('oss'));
   const idxMuscle = headers.findIndex(h => h.includes('muscle'));
-  const idxWater  = headers.findIndex(h => h.includes('hydration') || h.includes('eau'));
+  const idxWater  = headers.findIndex(h => h.includes('hydrat') || h.includes('eau'));
   if (idxDate < 0 || idxWeight < 0) return null; // unrecognized format
 
   return lines.slice(1).map(line => {
@@ -5081,7 +5207,13 @@ function parseWithingsCSV(text) {
     if (idxFat >= 0 && cols[idxFat]) entry.fatKg = parseFloat(cols[idxFat]) || undefined;
     if (idxBone >= 0 && cols[idxBone]) entry.boneKg = parseFloat(cols[idxBone]) || undefined;
     if (idxMuscle >= 0 && cols[idxMuscle]) entry.muscleKg = parseFloat(cols[idxMuscle]) || undefined;
-    if (idxWater >= 0 && cols[idxWater]) entry.waterPct = parseFloat(cols[idxWater]) || undefined;
+    if (idxWater >= 0 && cols[idxWater]) {
+      const waterVal = parseFloat(cols[idxWater]);
+      if (waterVal && weight) {
+        // Withings exports water in kg — convert to %
+        entry.waterPct = waterVal > 1 ? Math.round(waterVal / weight * 1000) / 10 : Math.round(waterVal * 1000) / 10;
+      }
+    }
     if (entry.fatKg && weight) entry.fatPct = Math.round(entry.fatKg / weight * 1000) / 10;
     if (entry.muscleKg && weight) entry.musclePct = Math.round(entry.muscleKg / weight * 1000) / 10;
     Object.keys(entry).forEach(k => entry[k] === undefined && delete entry[k]);
@@ -5089,18 +5221,177 @@ function parseWithingsCSV(text) {
   }).filter(Boolean);
 }
 
-async function importWithingsFile(file) {
-  if (!file) return;
-  const text = await file.text();
-  const entries = parseWithingsCSV(text);
-  if (!entries) { toast('Format CSV non reconnu. Exportez depuis Withings Health Mate.', 'error'); return; }
-  if (!entries.length) { toast('Aucune donnée trouvée dans le fichier.', 'error'); return; }
-  const existing = weightLog.filter(e => !entries.find(n => n.date === e.date));
-  weightLog = [...existing, ...entries].sort((a,b) => a.date.localeCompare(b.date));
-  await window.__FC.saveWeightLog(user.uid, weightLog);
+function parseWithingsActivityCSV(earnedText, passiveText) {
+  function parseCsv(text) {
+    const lines = text.trim().split('\n').filter(Boolean);
+    if (lines.length < 2) return {};
+    const headers = lines[0].toLowerCase().split(',').map(h => h.trim().replace(/"/g,''));
+    const idxDate = headers.findIndex(h => h.includes('date'));
+    const idxVal  = headers.findIndex(h => h.includes('value'));
+    if (idxDate < 0 || idxVal < 0) return {};
+    const result = {};
+    lines.slice(1).forEach(line => {
+      const cols = line.split(',').map(c => c.trim().replace(/"/g,''));
+      const date = (cols[idxDate] || '').slice(0, 10);
+      const val  = parseFloat(cols[idxVal]);
+      if (date.match(/^\d{4}-\d{2}-\d{2}$/) && !isNaN(val)) result[date] = val;
+    });
+    return result;
+  }
+  const earned  = earnedText  ? parseCsv(earnedText)  : {};
+  const passive = passiveText ? parseCsv(passiveText) : {};
+  const dates = new Set([...Object.keys(earned), ...Object.keys(passive)]);
+  const entries = [];
+  dates.forEach(date => {
+    const p = passive[date] || 0;
+    const e = earned[date]  || 0;
+    if (p > 0 || e > 0) entries.push({ date, passive: p, earned: e, tdee: p + e });
+  });
+  return entries.sort((a, b) => a.date.localeCompare(b.date));
+}
+
+function parseWithingsHeightCSV(text) {
+  const lines = text.trim().split('\n').filter(Boolean);
+  if (lines.length < 2) return null;
+  const headers = lines[0].toLowerCase().split(',').map(h => h.trim().replace(/"/g,''));
+  const idxDate = headers.findIndex(h => h.includes('date'));
+  const idxH    = headers.findIndex(h => h.includes('taille') || h.includes('height'));
+  if (idxDate < 0 || idxH < 0) return null;
+  let latest = null;
+  lines.slice(1).forEach(line => {
+    const cols = line.split(',').map(c => c.trim().replace(/"/g,''));
+    const date = (cols[idxDate] || '').slice(0, 10);
+    const h = parseFloat(cols[idxH]);
+    if (!date.match(/^\d{4}-\d{2}-\d{2}$/) || isNaN(h)) return;
+    if (!latest || date > latest.date) latest = { date, height: h };
+  });
+  return latest;
+}
+
+function parseWithingsSleepCSV(text) {
+  const lines = text.trim().split('\n').filter(Boolean);
+  if (lines.length < 2) return [];
+  const raw = lines[0];
+  const headers = raw.toLowerCase().split(',').map(h => h.trim().replace(/"/g,''));
+  const idxStart = headers.findIndex(h => h.includes('début') || h.includes('debut') || h.includes('start') || h === 'begin');
+  const idxLight = headers.findIndex(h => h.includes('léger') || h.includes('leger') || h.includes('light'));
+  const idxDeep  = headers.findIndex(h => h.includes('profond') || h.includes('deep'));
+  const idxRem   = headers.findIndex(h => h.includes('rem'));
+  const idxAwake = headers.findIndex(h => h.includes('éveillé') || h.includes('eveille') || h.includes('awake'));
+  const idxHR    = headers.findIndex(h => h.includes('fc moy') || h.includes('hr avg') || h.includes('heart rate avg'));
+  if (idxStart < 0) return [];
+  return lines.slice(1).map(line => {
+    const cols = line.split(',').map(c => c.trim().replace(/"/g,''));
+    const date = (cols[idxStart] || '').slice(0, 10);
+    if (!date.match(/^\d{4}-\d{2}-\d{2}$/)) return null;
+    const lightS = idxLight >= 0 ? parseInt(cols[idxLight]) || 0 : 0;
+    const deepS  = idxDeep  >= 0 ? parseInt(cols[idxDeep])  || 0 : 0;
+    const remS   = idxRem   >= 0 ? parseInt(cols[idxRem])   || 0 : 0;
+    const awakeS = idxAwake >= 0 ? parseInt(cols[idxAwake]) || 0 : 0;
+    const totalS = lightS + deepS + remS;
+    const hrAvg  = idxHR >= 0 ? parseInt(cols[idxHR]) || null : null;
+    return {
+      date,
+      totalMin: Math.round(totalS / 60),
+      lightMin: Math.round(lightS / 60),
+      deepMin:  Math.round(deepS  / 60),
+      remMin:   Math.round(remS   / 60),
+      awakeMin: Math.round(awakeS / 60),
+      deepPct:  totalS > 0 ? Math.round(deepS / totalS * 100) : 0,
+      remPct:   totalS > 0 ? Math.round(remS  / totalS * 100) : 0,
+      hrAvg
+    };
+  }).filter(Boolean);
+}
+
+async function importWithingsFiles(files) {
+  if (!files || !files.length) return;
+  let weightCount = 0, actEarned = null, actPassive = null, heightResult = null, sleepEntries = null;
+  const fileTexts = await Promise.all(Array.from(files).map(f => f.text().then(t => ({ name: f.name.toLowerCase(), text: t }))));
+
+  for (const { name, text } of fileTexts) {
+    if (name.includes('weight') || name.includes('poids')) {
+      const entries = parseWithingsCSV(text);
+      if (entries && entries.length) {
+        const existing = weightLog.filter(e => !entries.find(n => n.date === e.date));
+        weightLog = [...existing, ...entries].sort((a,b) => a.date.localeCompare(b.date));
+        weightCount = entries.length;
+      }
+    } else if (name.includes('calories_earned') || name.includes('calories_actives')) {
+      actEarned = text;
+    } else if (name.includes('calories_passive') || name.includes('passif')) {
+      actPassive = text;
+    } else if (name.includes('height') || name.includes('taille')) {
+      heightResult = parseWithingsHeightCSV(text);
+    } else if (name.includes('sleep') || name.includes('sommeil')) {
+      sleepEntries = parseWithingsSleepCSV(text);
+    } else {
+      // Detect by headers
+      const firstLine = text.trim().split('\n')[0]?.toLowerCase() || '';
+      if (firstLine.includes('poids') || firstLine.includes('weight')) {
+        const entries = parseWithingsCSV(text);
+        if (entries && entries.length) {
+          const existing = weightLog.filter(e => !entries.find(n => n.date === e.date));
+          weightLog = [...existing, ...entries].sort((a,b) => a.date.localeCompare(b.date));
+          weightCount = entries.length;
+        }
+      } else if (firstLine.includes('taille') || firstLine.includes('height')) {
+        heightResult = parseWithingsHeightCSV(text);
+      } else if (firstLine.includes('début') || firstLine.includes('debut') || firstLine.includes('profond')) {
+        sleepEntries = parseWithingsSleepCSV(text);
+      } else if (firstLine.includes('value') || firstLine.includes('valeur')) {
+        // Could be activity — store for paired processing
+        if (!actEarned) actEarned = text; else actPassive = text;
+      }
+    }
+  }
+
+  // Save weight
+  if (weightCount > 0) await window.__FC.saveWeightLog(user.uid, weightLog);
+
+  // Height auto-fill
+  if (heightResult) {
+    profile = { ...profile, height: Math.round(heightResult.height * 100) };
+    await window.__FC.saveProfile(user.uid, profile);
+    applyProfileToUI();
+  }
+
+  // Activity (TDEE)
+  let activityEntries = [];
+  if (actEarned || actPassive) {
+    activityEntries = parseWithingsActivityCSV(actEarned, actPassive);
+    withingsActivity = activityEntries;
+  }
+
+  // Sleep
+  if (sleepEntries) withingsSleep = sleepEntries;
+
+  // Save all withings extras
+  const withingsData = {};
+  if (activityEntries.length) withingsData.activity = activityEntries;
+  if (sleepEntries && sleepEntries.length) withingsData.sleep = sleepEntries;
+  if (Object.keys(withingsData).length) {
+    await window.__FC.saveWithingsData(user.uid, withingsData);
+  }
+
   renderSante();
-  toast(`✓ ${entries.length} mesures importées depuis Withings`, 'success');
-  haptic(20);
+
+  const parts = [];
+  if (weightCount) parts.push(`${weightCount} mesures de poids`);
+  if (heightResult) parts.push(`taille ${(heightResult.height * 100).toFixed(0)} cm`);
+  if (activityEntries.length) parts.push(`${activityEntries.length} jours d'activité`);
+  if (sleepEntries && sleepEntries.length) parts.push(`${sleepEntries.length} nuits de sommeil`);
+
+  if (parts.length) {
+    toast(`✓ Withings importé : ${parts.join(', ')}`, 'success');
+    haptic(20);
+  } else {
+    toast('Aucune donnée reconnue dans ces fichiers.', 'error');
+  }
+}
+
+async function importWithingsFile(file) {
+  return importWithingsFiles([file]);
 }
 
 /* ═══════════════════════════════════════════════════
@@ -5172,6 +5463,13 @@ window.addEventListener('fc-ready', () => {
         weightLog = entries; renderSante();
       });
 
+      if (unsubWithingsData) unsubWithingsData();
+      unsubWithingsData = window.__FC.loadWithingsData(fbUser.uid, data => {
+        withingsActivity = data?.activity || [];
+        withingsSleep    = data?.sleep    || [];
+        renderSante();
+      });
+
       if (!profile) {
         showOnboarding();
       } else {
@@ -5191,6 +5489,8 @@ window.addEventListener('fc-ready', () => {
       userCategories = []; if (unsubCategories) { unsubCategories(); unsubCategories = null; }
       dailyLog = []; if (unsubDailyLog) { unsubDailyLog(); unsubDailyLog = null; }
       weightLog = []; if (unsubWeightLog) { unsubWeightLog(); unsubWeightLog = null; }
+      withingsActivity = []; withingsSleep = [];
+      if (unsubWithingsData) { unsubWithingsData(); unsubWithingsData = null; }
     }
   });
 
@@ -5988,7 +6288,7 @@ window.addEventListener('fc-ready', () => {
   // ── WEIGHT LOG ──
   document.getElementById('btn-log-weight').addEventListener('click', openWeightModal);
   document.getElementById('withings-file-input').addEventListener('change', e => {
-    importWithingsFile(e.target.files[0]);
+    importWithingsFiles(e.target.files);
     e.target.value = '';
   });
   document.getElementById('btn-toggle-withings').addEventListener('click', () => {
