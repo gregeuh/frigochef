@@ -8,6 +8,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="NutriHome">
 <link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800&display=swap" rel="stylesheet">
 <title>NutriHome</title>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -171,32 +174,36 @@ input  { font-family: inherit; }
   --glass:        rgba(248,250,252,0.90);
   --glass-border: rgba(255,255,255,0.80);
   --nav-bg:    rgba(244,246,248,0.92);
-  --header-bg: rgba(244,246,248,0.96);
+  --header-bg: rgba(244,246,248,0.72);
+  --header-bg-solid: rgba(244,246,248,0.98);
   --shadow-sm: 0 1px 3px rgba(15,31,46,0.07), 0 1px 2px rgba(15,31,46,0.04);
   --shadow-md: 0 4px 16px rgba(15,31,46,0.09), 0 1px 4px rgba(15,31,46,0.05);
   --shadow-lg: 0 12px 40px rgba(15,31,46,0.13), 0 4px 12px rgba(15,31,46,0.07);
 }
 [data-theme="dark"] {
-  --bg:        #0A0E0C;
-  --surface:   #131A16;
-  --surface2:  rgba(255,255,255,0.07);
-  --border:    rgba(255,255,255,0.09);
-  --border2:   rgba(255,255,255,0.18);
-  --ink:       #E8F4EF;
-  --ink2:      #C8DDD6;
+  --bg:        #080C0A;
+  --surface:   #111714;
+  --surface2:  rgba(255,255,255,0.06);
+  --surface3:  #1A2320;
+  --surface4:  #222E28;
+  --border:    rgba(255,255,255,0.08);
+  --border2:   rgba(255,255,255,0.16);
+  --ink:       #ECF5F0;
+  --ink2:      #C4D9D0;
   --ink3:      #6B8B7A;
-  --green-l:   rgba(0,135,90,0.20);
-  --red-l:     rgba(229,57,53,0.16);
-  --orange-l:  rgba(245,124,0,0.16);
-  --amber-l:   rgba(217,119,6,0.16);
-  --accent-l:  rgba(45,107,228,0.18);
-  --glass:        rgba(19,26,22,0.94);
-  --glass-border: rgba(255,255,255,0.10);
-  --nav-bg:    rgba(10,14,12,0.96);
-  --header-bg: rgba(10,14,12,0.98);
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.35);
-  --shadow-md: 0 4px 16px rgba(0,0,0,0.45);
-  --shadow-lg: 0 12px 40px rgba(0,0,0,0.55);
+  --green-l:   rgba(0,135,90,0.22);
+  --red-l:     rgba(229,57,53,0.18);
+  --orange-l:  rgba(245,124,0,0.18);
+  --amber-l:   rgba(217,119,6,0.18);
+  --accent-l:  rgba(45,107,228,0.20);
+  --glass:        rgba(17,23,20,0.96);
+  --glass-border: rgba(255,255,255,0.09);
+  --nav-bg:    rgba(11,16,13,0.97);
+  --header-bg: rgba(8,12,10,0.80);
+  --header-bg-solid: rgba(8,12,10,0.98);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.40);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.50);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,0.60);
 }
 
 html, body {
@@ -204,7 +211,7 @@ html, body {
   max-width: 100vw;
 }
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
   background: var(--bg);
   color: var(--ink);
   min-height: 100vh;
@@ -319,10 +326,17 @@ body {
 .tab-header {
   position: sticky; top: 0; z-index: 50;
   background: var(--header-bg);
-  backdrop-filter: blur(28px) saturate(200%);
-  -webkit-backdrop-filter: blur(28px) saturate(200%);
-  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border-bottom: 1px solid transparent;
   padding: 14px 16px 10px;
+  transition: background 0.28s ease, border-color 0.28s ease, backdrop-filter 0.28s ease;
+}
+.tab-header.hdr-solid {
+  background: var(--header-bg-solid);
+  border-bottom-color: var(--border);
+  backdrop-filter: blur(40px) saturate(220%);
+  -webkit-backdrop-filter: blur(40px) saturate(220%);
 }
 .tab-header-row {
   display: flex; align-items: center; justify-content: space-between;
@@ -447,15 +461,25 @@ body {
   cursor: pointer; min-width: 56px;
   -webkit-tap-highlight-color: transparent;
 }
+.tab-item { position: relative; z-index: 1; }
 .tab-item.active {
-  background: rgba(255,255,255,0.98);
   color: var(--green-dk);
-  box-shadow: 0 2px 10px rgba(0,0,0,0.10), 0 0 0 0.5px rgba(0,0,0,0.04);
   transform: scale(1.05);
+  background: transparent;
+  box-shadow: none;
 }
+.tab-pill {
+  position: absolute; top: 6px;
+  height: calc(100% - 12px);
+  border-radius: 18px;
+  background: rgba(255,255,255,0.98);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.10), 0 0 0 0.5px rgba(0,0,0,0.04);
+  transition: left 0.36s cubic-bezier(0.34,1.56,0.64,1), width 0.36s cubic-bezier(0.34,1.56,0.64,1);
+  pointer-events: none; z-index: 0;
+}
+[data-theme="dark"] .tab-pill { background: rgba(44,58,50,0.98); }
 .tab-item-icon { font-size: 1.4rem; line-height: 1; }
 .tab-item-label { font-size: 0.62rem; font-weight: 600; letter-spacing: -0.01em; }
-[data-theme="dark"] .tab-item.active { background: rgba(60,60,68,0.95); }
 
 /* ─── SHARE ICON BTN (in frigo header) ─── */
 .icon-btn {
@@ -574,15 +598,66 @@ body {
 }
 .food-row::before {
   content: ''; position: absolute; left: 0; top: 0; bottom: 0;
-  width: 3.5px; border-radius: 2px 0 0 2px;
+  width: 4px; border-radius: 2px 0 0 2px;
   background: var(--row-accent, var(--border2));
 }
 .food-row:hover { background: var(--surface2); box-shadow: var(--shadow-md); }
 .food-row:active { transform: scale(0.97); }
-.f-emoji { font-size: 1.05rem; flex-shrink: 0; }
+.f-emoji {
+  font-size: 1.25rem; flex-shrink: 0;
+  width: 38px; height: 38px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface2); border-radius: 50%;
+}
 .f-info { flex: 1; min-width: 0; }
-.f-name { font-size: 0.84rem; font-weight: 500; color: var(--ink); }
-.f-qty  { font-size: 0.70rem; color: var(--ink3); }
+.f-name { font-size: 0.85rem; font-weight: 600; color: var(--ink); }
+.f-qty  { font-size: 0.71rem; color: var(--ink3); }
+@keyframes rowIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+/* ── Cook tonight suggestions ── */
+.cook-tonight {
+  margin: 12px 0 6px;
+  background: var(--surface); border-radius: var(--r-lg);
+  border: 1px solid var(--border); box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.cook-tonight-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 14px 8px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.78rem; font-weight: 700; color: var(--ink2);
+  text-transform: uppercase; letter-spacing: 0.06em;
+}
+.cook-tonight-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; cursor: pointer;
+  transition: background 0.13s;
+  border-bottom: 1px solid var(--border);
+}
+.cook-tonight-item:last-child { border-bottom: none; }
+.cook-tonight-item:active { background: var(--surface2); }
+.cook-tonight-emoji { font-size: 1.4rem; flex-shrink: 0; }
+.cook-tonight-info { flex: 1; min-width: 0; }
+.cook-tonight-name { font-size: 0.84rem; font-weight: 600; color: var(--ink); }
+.cook-tonight-meta { font-size: 0.70rem; color: var(--ink3); margin-top: 1px; }
+.cook-tonight-pct {
+  font-size: 0.72rem; font-weight: 700;
+  padding: 3px 8px; border-radius: 10px;
+  background: var(--green-l); color: var(--green-dk);
+  flex-shrink: 0;
+}
+/* ── Calorie progress bar in santé header ── */
+.cal-header-progress { padding: 8px 0 2px; }
+.cal-hp-bar { height: 5px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+.cal-hp-fill {
+  height: 100%; border-radius: 3px;
+  background: linear-gradient(90deg, var(--green-m), var(--green-dk));
+  transition: width 0.6s cubic-bezier(0.34,1.56,0.64,1);
+}
+.cal-hp-fill.over { background: linear-gradient(90deg, #E07800, #E85D75); }
+.cal-hp-text { font-size: 0.66rem; color: var(--ink3); margin-top: 4px; display: flex; justify-content: space-between; }
 .dlc-tag {
   font-size: 0.68rem; font-weight: 600; padding: 2px 7px;
   border-radius: 9px; white-space: nowrap; flex-shrink: 0;
@@ -1966,6 +2041,7 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
         <button class="store-btn" id="btn-view-placard">🗄 Placard</button>
       </div>
       <div id="frigo-widget" class="frigo-widget hidden"></div>
+      <div id="cook-tonight" class="cook-tonight" style="display:none"></div>
       <div id="fridge-list">
         <div class="fridge-empty">
           <div class="fridge-empty-icon">🧊</div>
@@ -2137,6 +2213,10 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
       <button class="icon-btn" id="btn-add-meal" title="Ajouter un repas">＋</button>
     </div>
     <div class="tab-sub" id="sante-sub">Suivez vos calories et votre progression.</div>
+    <div class="cal-header-progress" id="cal-header-progress" style="display:none">
+      <div class="cal-hp-bar"><div class="cal-hp-fill" id="cal-hp-fill" style="width:0%"></div></div>
+      <div class="cal-hp-text"><span id="cal-hp-eaten">0 kcal mangés</span><span id="cal-hp-remain">— restants</span></div>
+    </div>
     <div id="nutri-score-wrap" style="display:none;margin-top:6px">
       <span class="nutri-score-badge" id="nutri-score-badge">A</span>
       <span class="nutri-score-label" id="nutri-score-label">Score nutritionnel du jour</span>
@@ -2260,7 +2340,8 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
   </div>
 
   <!-- BOTTOM TAB BAR -->
-  <nav class="bottom-tab-bar">
+  <nav class="bottom-tab-bar" style="position:relative">
+    <div class="tab-pill" id="tab-pill"></div>
     <button class="tab-item active" data-tab="frigo">
       <span class="tab-item-icon">🍽️</span>
       <span class="tab-item-label">Cuisine</span>
@@ -3135,10 +3216,10 @@ function renderFridge() {
   const urgent  = visible.filter(f => f.dlc && dlcStatus(f.dlc)?.days >= 0 && dlcStatus(f.dlc)?.days <= 2).sort(byDlc);
   const fresh   = visible.filter(f => !f.dlc || !dlcStatus(f.dlc) || dlcStatus(f.dlc)?.days > 2).sort(byDlc);
 
-  let html = '';
-  if (expired.length) html += group('⛔ Expirés', expired);
-  if (urgent.length)  html += group('🔴 À utiliser vite', urgent);
-  if (fresh.length)   html += group('✅ En stock', fresh);
+  let html = '', idx = 0;
+  if (expired.length) { html += group('⛔ Expirés', expired, idx); idx += expired.length; }
+  if (urgent.length)  { html += group('🔴 À utiliser vite', urgent, idx); idx += urgent.length; }
+  if (fresh.length)   { html += group('✅ En stock', fresh, idx); }
   el.innerHTML = html;
 
   el.querySelectorAll('[data-del]').forEach(btn => {
@@ -3155,16 +3236,59 @@ function renderFridge() {
       if (item) openEditModal(item, 'fridge');
     });
   });
+  renderCookTonight();
+}
+
+function renderCookTonight() {
+  const el = document.getElementById('cook-tonight');
+  if (!el || pantryView) { if (el) el.style.display = 'none'; return; }
+
+  const urgentNames = fridge
+    .filter(f => f.dlc && dlcStatus(f.dlc)?.days >= 0 && dlcStatus(f.dlc)?.days <= 4)
+    .map(f => f.name.toLowerCase());
+
+  if (!urgentNames.length || !recipes.length) { el.style.display = 'none'; return; }
+
+  const allR = [...recipes, ...userRecipes];
+  const scored = allR.map(r => {
+    const ingredients = [...(r.matched || []), ...(r.missing || []), ...(r.allIngredients || [])].map(s => s.toLowerCase());
+    const hits = urgentNames.filter(u => ingredients.some(ing => ing.includes(u) || u.includes(ing)));
+    return { ...r, urgentHits: hits.length };
+  }).filter(r => r.urgentHits > 0)
+    .sort((a, b) => b.urgentHits - a.urgentHits || (b.matchPct || 0) - (a.matchPct || 0))
+    .slice(0, 3);
+
+  if (!scored.length) { el.style.display = 'none'; return; }
+
+  el.style.display = 'block';
+  el.innerHTML = `
+    <div class="cook-tonight-head">🌙 À cuisiner ce soir</div>
+    ${scored.map(r => `
+      <div class="cook-tonight-item" data-recipe-id="${r.id}">
+        <span class="cook-tonight-emoji">${r.emoji || '🍽️'}</span>
+        <div class="cook-tonight-info">
+          <div class="cook-tonight-name">${esc(r.name)}</div>
+          <div class="cook-tonight-meta">${r.time ? `⏱ ${r.time} min` : ''}${r.calories ? ` · ${r.calories} kcal` : ''}</div>
+        </div>
+        <span class="cook-tonight-pct">${r.matchPct != null ? r.matchPct + '%' : '✓'}</span>
+      </div>`).join('')}`;
+
+  el.querySelectorAll('[data-recipe-id]').forEach(row => {
+    row.addEventListener('click', () => {
+      if (window.switchTabPublic) window.switchTabPublic('recettes');
+    });
+  });
 }
 
 const LEVEL_LABELS = { '100': null, '75': ['¾', 'level-75'], '50': ['½', 'level-50'], '25': ['¼', 'level-25'], '10': ['⚠️', 'level-10'] };
-function group(title, items) {
-  const rows = items.map(item => {
+function group(title, items, offset = 0) {
+  const rows = items.map((item, i) => {
     const s   = item.dlc ? dlcStatus(item.dlc) : null;
     const cat = foodCategory(item.name);
     const lv  = LEVEL_LABELS[item.level || '100'];
     const lvBadge = lv ? `<span class="level-badge ${lv[1]}">${lv[0]}</span>` : '';
-    return `<div class="food-row" data-item-id="${item.id}" style="--row-accent:${cat.color}">
+    const delay = Math.min((offset + i) * 0.035, 0.28);
+    return `<div class="food-row" data-item-id="${item.id}" style="--row-accent:${cat.color};animation:rowIn 0.30s cubic-bezier(0.34,1.56,0.64,1) ${delay}s both">
       <span class="f-emoji">${item.emoji}</span>
       <div class="f-info">
         <div class="f-name">${esc(item.name)}${lvBadge}</div>
@@ -4175,6 +4299,23 @@ function renderSante() {
   const totalKcal = dailyLog.reduce((s, e) => s + (e.kcal || 0), 0);
   const goal = profile?.dailyCalories || 0;
   document.getElementById('cal-ring-val').textContent = totalKcal;
+
+  // ── Header calorie progress bar ──
+  const hpWrap = document.getElementById('cal-header-progress');
+  const hpFill = document.getElementById('cal-hp-fill');
+  const hpEaten = document.getElementById('cal-hp-eaten');
+  const hpRemain = document.getElementById('cal-hp-remain');
+  if (goal && hpWrap) {
+    hpWrap.style.display = 'block';
+    const pctBar = Math.min(totalKcal / goal * 100, 100);
+    hpFill.style.width = pctBar + '%';
+    hpFill.classList.toggle('over', totalKcal > goal);
+    hpEaten.textContent = `${totalKcal} kcal`;
+    const rem = goal - totalKcal;
+    hpRemain.textContent = rem >= 0 ? `${rem} restants / ${goal}` : `+${Math.abs(rem)} kcal de trop`;
+  } else if (hpWrap) {
+    hpWrap.style.display = 'none';
+  }
   if (goal) {
     const pct = Math.min(totalKcal / goal, 1);
     const circumference = 2 * Math.PI * 50; // r=50
@@ -5504,6 +5645,13 @@ window.addEventListener('fc-ready', () => {
 
   // Bottom nav tabs
   const TAB_ORDER = ['frigo', 'recettes', 'courses', 'sante', 'profil'];
+  function movePill(tabName) {
+    const pill = document.getElementById('tab-pill');
+    const item = document.querySelector(`.tab-item[data-tab="${tabName}"]`);
+    if (!pill || !item) return;
+    pill.style.left  = item.offsetLeft + 'px';
+    pill.style.width = item.offsetWidth + 'px';
+  }
   function switchTab(tabName) {
     document.querySelectorAll('.tab-item').forEach(i => i.classList.remove('active'));
     document.querySelectorAll('.tab-page').forEach(p => p.classList.remove('active'));
@@ -5512,12 +5660,21 @@ window.addEventListener('fc-ready', () => {
     if (item) item.classList.add('active');
     if (page) { window.scrollTo(0, 0); page.classList.add('active'); }
     document.getElementById('fab-wrap').style.display = tabName === 'profil' ? 'none' : '';
+    movePill(tabName);
     haptic(6);
   }
   window.switchTabPublic = switchTab;
   document.querySelectorAll('.tab-item').forEach(item => {
     item.addEventListener('click', () => switchTab(item.dataset.tab));
   });
+  // init pill on first render
+  requestAnimationFrame(() => movePill('frigo'));
+
+  // Glassmorphism header on scroll
+  window.addEventListener('scroll', () => {
+    const scrolled = window.scrollY > 12;
+    document.querySelectorAll('.tab-header').forEach(h => h.classList.toggle('hdr-solid', scrolled));
+  }, { passive: true });
 
   // ── Swipe horizontal entre onglets ──
   let _tx = 0, _ty = 0;
