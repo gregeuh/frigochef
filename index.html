@@ -2426,7 +2426,7 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
           <button class="weight-log-btn" id="btn-import-withings" title="Importer CSV Withings" onclick="document.getElementById('withings-file-input').click()">📲 CSV</button>
           <input type="file" id="withings-file-input" accept=".csv" multiple style="display:none">
           <button class="weight-log-btn withings-connect-btn" id="btn-connect-withings" title="Synchronisation automatique Withings" onclick="(function(){var u=window.__FC&&window.__FC.getUser&&window.__FC.getUser();if(!u)return;window.location.href='https://us-central1-frigochef-95045.cloudfunctions.net/withingsAuth?uid='+u.uid;})()">🔗 Withings auto</button>
-          <button class="weight-log-btn" id="btn-log-weight" onclick="openWeightModal()">+ Peser</button>
+          <button class="weight-log-btn" id="btn-log-weight" onclick="alert('click reçu'); openWeightModal()">+ Peser</button>
         </div>
       </div>
       <div class="weight-progress-wrap" id="weight-progress-wrap" style="display:none">
