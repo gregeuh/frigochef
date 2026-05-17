@@ -334,7 +334,7 @@ body {
   backdrop-filter: blur(20px) saturate(160%);
   -webkit-backdrop-filter: blur(20px) saturate(160%);
   border-bottom: 1px solid transparent;
-  padding: 14px 16px 10px;
+  padding: calc(14px + env(safe-area-inset-top, 0px)) 16px 10px;
   transition: background 0.28s ease, border-color 0.28s ease, backdrop-filter 0.28s ease;
 }
 .tab-header.hdr-solid {
