@@ -5465,6 +5465,7 @@ window.addEventListener('fc-ready', () => {
     const page = document.getElementById('tab-' + tabName);
     if (item) item.classList.add('active');
     if (page) { window.scrollTo(0, 0); page.classList.add('active'); }
+    document.getElementById('fab-wrap').style.display = tabName === 'profil' ? 'none' : '';
     haptic(6);
   }
   window.switchTabPublic = switchTab;
