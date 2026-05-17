@@ -146,6 +146,9 @@
     loadWithingsData: (uid, cb) => onSnapshot(doc(db, 'withingsData', uid),
       snap => cb(snap.exists() ? snap.data() : null)
     ),
+    loadWithingsConnected: (uid, cb) => onSnapshot(doc(db, 'withingsTokens', uid),
+      snap => cb(snap.exists())
+    ),
   };
 
   window.dispatchEvent(new Event('fc-ready'));
@@ -3205,7 +3208,8 @@ let withingsSyncedAt    = null;
 let withingsIsConnected = false;
 let unsubDailyLog = null;
 let unsubWeightLog = null;
-let unsubWithingsData = null;
+let unsubWithingsData      = null;
+let unsubWithingsConnected = null;
 const todayDate = () => new Date().toISOString().slice(0, 10);
 
 const GOAL_LABELS = {
@@ -5493,10 +5497,15 @@ window.addEventListener('fc-ready', () => {
 
       if (unsubWithingsData) unsubWithingsData();
       unsubWithingsData = window.__FC.loadWithingsData(fbUser.uid, data => {
-        withingsActivity    = data?.activity || [];
-        withingsSleep       = data?.sleep    || [];
-        withingsSyncedAt    = data?.updatedAt || null;
-        withingsIsConnected = !!data;
+        withingsActivity = data?.activity || [];
+        withingsSleep    = data?.sleep    || [];
+        withingsSyncedAt = data?.updatedAt || null;
+        renderSante();
+      });
+
+      if (unsubWithingsConnected) unsubWithingsConnected();
+      unsubWithingsConnected = window.__FC.loadWithingsConnected(fbUser.uid, connected => {
+        withingsIsConnected = connected;
         renderSante();
       });
 
@@ -5519,8 +5528,9 @@ window.addEventListener('fc-ready', () => {
       userCategories = []; if (unsubCategories) { unsubCategories(); unsubCategories = null; }
       dailyLog = []; if (unsubDailyLog) { unsubDailyLog(); unsubDailyLog = null; }
       weightLog = []; if (unsubWeightLog) { unsubWeightLog(); unsubWeightLog = null; }
-      withingsActivity = []; withingsSleep = [];
+      withingsActivity = []; withingsSleep = []; withingsIsConnected = false; withingsSyncedAt = null;
       if (unsubWithingsData) { unsubWithingsData(); unsubWithingsData = null; }
+      if (unsubWithingsConnected) { unsubWithingsConnected(); unsubWithingsConnected = null; }
     }
   });
 
@@ -6335,7 +6345,7 @@ window.addEventListener('fc-ready', () => {
   });
 
   // Afficher le bouton Withings auto quand connecté
-  function updateWithingsBtn() {
+  window.updateWithingsBtn = function updateWithingsBtn() {
     if (!withingsConnectBtn || !user) return;
     withingsConnectBtn.style.display = 'inline-flex';
     const isConnected = withingsIsConnected;
