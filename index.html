@@ -55,6 +55,7 @@
     signIn:  () => signInWithPopup(auth, provider),
     signOut: () => signOut(auth),
     onAuth:  (cb) => onAuthStateChanged(auth, cb),
+    getUser: () => auth.currentUser,
     saveFridge: async (uid, items) => {
       await setDoc(doc(db, 'fridges', uid), { items, updatedAt: Date.now() });
     },
@@ -6300,8 +6301,9 @@ window.addEventListener('fc-ready', () => {
   const withingsConnectBtn = document.getElementById('btn-connect-withings');
   if (withingsConnectBtn) {
     withingsConnectBtn.addEventListener('click', () => {
-      if (!user) return;
-      const authUrl = `https://us-central1-frigochef-95045.cloudfunctions.net/withingsAuth?uid=${user.uid}`;
+      const currentUser = user || window.__FC.getUser();
+      if (!currentUser) { alert('Connectez-vous d\'abord'); return; }
+      const authUrl = `https://us-central1-frigochef-95045.cloudfunctions.net/withingsAuth?uid=${currentUser.uid}`;
       window.location.href = authUrl;
     });
   }
