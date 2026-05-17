@@ -6299,14 +6299,12 @@ window.addEventListener('fc-ready', () => {
 
   // ── WITHINGS AUTO-SYNC ──
   const withingsConnectBtn = document.getElementById('btn-connect-withings');
-  if (withingsConnectBtn) {
-    withingsConnectBtn.addEventListener('click', () => {
-      const currentUser = user || window.__FC.getUser();
-      if (!currentUser) { alert('Connectez-vous d\'abord'); return; }
-      const authUrl = `https://us-central1-frigochef-95045.cloudfunctions.net/withingsAuth?uid=${currentUser.uid}`;
-      window.location.href = authUrl;
-    });
-  }
+  document.addEventListener('click', e => {
+    if (!e.target.closest('#btn-connect-withings')) return;
+    const currentUser = user || window.__FC.getUser();
+    if (!currentUser) { alert('Connectez-vous d\'abord'); return; }
+    window.location.href = `https://us-central1-frigochef-95045.cloudfunctions.net/withingsAuth?uid=${currentUser.uid}`;
+  });
 
   // Afficher le bouton Withings auto quand connecté
   function updateWithingsBtn() {
