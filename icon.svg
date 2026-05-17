@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <!-- Background rounded rect -->
+  <rect width="1024" height="1024" rx="230" fill="#00875A"/>
+
+  <!-- Subtle radial glow -->
+  <radialGradient id="glow" cx="50%" cy="38%" r="60%">
+    <stop offset="0%" stop-color="#00C47A" stop-opacity="0.55"/>
+    <stop offset="100%" stop-color="#00875A" stop-opacity="0"/>
+  </radialGradient>
+  <rect width="1024" height="1024" rx="230" fill="url(#glow)"/>
+
+  <!-- House body -->
+  <path d="M512 260 L720 430 L720 730 L304 730 L304 430 Z" fill="white" opacity="0.97"/>
+
+  <!-- Roof -->
+  <path d="M260 450 L512 232 L764 450" stroke="white" stroke-width="56" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+
+  <!-- Door -->
+  <rect x="444" y="560" width="136" height="170" rx="68" fill="#00875A" opacity="0.90"/>
+
+  <!-- Leaf / plant in window -->
+  <circle cx="368" cy="510" r="48" fill="#00A36C" opacity="0.25"/>
+  <!-- leaf shape -->
+  <path d="M368 540 C368 540 335 510 350 478 C365 446 400 452 400 452 C400 452 400 485 385 505 C376 516 368 540 368 540Z" fill="#00C47A"/>
+  <path d="M368 540 C368 540 400 513 393 480 C386 448 352 448 352 448 C352 448 349 482 362 503 C370 517 368 540 368 540Z" fill="#00875A" opacity="0.7"/>
+  <!-- stem -->
+  <line x1="368" y1="540" x2="368" y2="558" stroke="#006644" stroke-width="5" stroke-linecap="round"/>
+</svg>
