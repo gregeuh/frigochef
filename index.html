@@ -2430,6 +2430,10 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
           <button class="weight-log-btn" id="btn-log-weight" onclick="openWeightModal()">+ Peser</button>
         </div>
       </div>
+      <div id="withings-status-bar" style="display:none;align-items:center;gap:6px;margin-bottom:10px;font-size:0.72rem;color:var(--green-dk)">
+        <span style="font-size:0.85rem">🔄</span>
+        <span id="withings-status-text">Synchro Withings active</span>
+      </div>
       <div class="weight-progress-wrap" id="weight-progress-wrap" style="display:none">
         <div class="weight-progress-labels">
           <span id="weight-start-lbl">— kg</span>
@@ -3195,8 +3199,10 @@ let userCategories = []; // { key, label, color, bg, words }
 let unsubCategories = null;
 let dailyLog = [];
 let weightLog = [];
-let withingsActivity = [];
-let withingsSleep = [];
+let withingsActivity    = [];
+let withingsSleep       = [];
+let withingsSyncedAt    = null;
+let withingsIsConnected = false;
 let unsubDailyLog = null;
 let unsubWeightLog = null;
 let unsubWithingsData = null;
@@ -4656,6 +4662,25 @@ function renderSante() {
 
   updateWithingsBtn?.();
 
+  // ── Withings status bar ──
+  const statusBar  = document.getElementById('withings-status-bar');
+  const statusText = document.getElementById('withings-status-text');
+  if (statusBar && statusText) {
+    if (withingsIsConnected) {
+      statusBar.style.display = 'flex';
+      if (withingsSyncedAt) {
+        const mins = Math.round((Date.now() - withingsSyncedAt) / 60000);
+        const ago  = mins < 2 ? 'à l\'instant' : mins < 60 ? `il y a ${mins} min` :
+                     mins < 1440 ? `il y a ${Math.round(mins/60)}h` : `il y a ${Math.round(mins/1440)}j`;
+        statusText.textContent = `Synchro active · dernière mise à jour ${ago}`;
+      } else {
+        statusText.textContent = 'Withings connecté · synchro active';
+      }
+    } else {
+      statusBar.style.display = 'none';
+    }
+  }
+
   // ── TDEE (Withings activity) ──
   const tdeeCard = document.getElementById('tdee-card');
   if (withingsActivity && withingsActivity.length) {
@@ -5468,8 +5493,10 @@ window.addEventListener('fc-ready', () => {
 
       if (unsubWithingsData) unsubWithingsData();
       unsubWithingsData = window.__FC.loadWithingsData(fbUser.uid, data => {
-        withingsActivity = data?.activity || [];
-        withingsSleep    = data?.sleep    || [];
+        withingsActivity    = data?.activity || [];
+        withingsSleep       = data?.sleep    || [];
+        withingsSyncedAt    = data?.updatedAt || null;
+        withingsIsConnected = !!data;
         renderSante();
       });
 
@@ -6311,7 +6338,7 @@ window.addEventListener('fc-ready', () => {
   function updateWithingsBtn() {
     if (!withingsConnectBtn || !user) return;
     withingsConnectBtn.style.display = 'inline-flex';
-    const isConnected = withingsActivity.length > 0 || withingsSleep.length > 0;
+    const isConnected = withingsIsConnected;
     withingsConnectBtn.textContent = isConnected ? '✅ Withings' : '🔗 Withings auto';
     withingsConnectBtn.title = isConnected
       ? 'Withings connecté — cliquez pour reconnecter'
