@@ -2422,8 +2422,9 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
       <div class="weight-card-header">
         <div class="weight-card-title">⚖️ Suivi du poids</div>
         <div style="display:flex;gap:6px;align-items:center">
-          <button class="weight-log-btn" id="btn-import-withings" title="Importer depuis Withings CSV">📲 Withings</button>
+          <button class="weight-log-btn" id="btn-import-withings" title="Importer CSV Withings">📲 CSV</button>
           <input type="file" id="withings-file-input" accept=".csv" multiple style="display:none">
+          <button class="weight-log-btn withings-connect-btn" id="btn-connect-withings" title="Synchronisation automatique Withings" style="display:none">🔗 Withings auto</button>
           <button class="weight-log-btn" id="btn-log-weight">+ Peser</button>
         </div>
       </div>
@@ -4651,6 +4652,8 @@ function renderSante() {
     document.getElementById('weight-metrics').style.display = 'none';
   }
 
+  updateWithingsBtn?.();
+
   // ── TDEE (Withings activity) ──
   const tdeeCard = document.getElementById('tdee-card');
   if (withingsActivity && withingsActivity.length) {
@@ -6292,6 +6295,27 @@ window.addEventListener('fc-ready', () => {
     importWithingsFiles(e.target.files);
     e.target.value = '';
   });
+
+  // ── WITHINGS AUTO-SYNC ──
+  const withingsConnectBtn = document.getElementById('btn-connect-withings');
+  if (withingsConnectBtn) {
+    withingsConnectBtn.addEventListener('click', () => {
+      if (!user) return;
+      const authUrl = `https://us-central1-frigochef-95045.cloudfunctions.net/withingsAuth?uid=${user.uid}`;
+      window.open(authUrl, '_blank', 'width=500,height=700');
+    });
+  }
+
+  // Afficher le bouton Withings auto quand connecté
+  function updateWithingsBtn() {
+    if (!withingsConnectBtn || !user) return;
+    withingsConnectBtn.style.display = 'inline-flex';
+    const isConnected = withingsActivity.length > 0 || withingsSleep.length > 0;
+    withingsConnectBtn.textContent = isConnected ? '✅ Withings' : '🔗 Withings auto';
+    withingsConnectBtn.title = isConnected
+      ? 'Withings connecté — cliquez pour reconnecter'
+      : 'Connecter Withings pour la synchronisation automatique';
+  }
   document.getElementById('btn-toggle-withings').addEventListener('click', () => {
     const sec = document.getElementById('weight-withings-section');
     const btn = document.getElementById('btn-toggle-withings');
