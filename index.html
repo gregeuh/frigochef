@@ -3503,7 +3503,7 @@ function renderCourses() {
   const actionsHtml = `
     <div class="shop-actions-row">
       <button class="shop-action-btn" id="btn-check-all">✓ Tout cocher</button>
-      <button class="shop-action-btn" id="btn-copy-list">📋 Copier</button>
+      <button class="shop-action-btn" id="btn-share-list">↑ Partager</button>
       <button class="shop-action-btn danger" id="btn-clear-all">🗑 Vider</button>
     </div>`;
 
@@ -3570,11 +3570,23 @@ function renderCourses() {
     saveShoppingListDB(); renderCourses();
   });
 
-  // Copy list
-  document.getElementById('btn-copy-list')?.addEventListener('click', () => {
-    const lines = shoppingList.map(i => `${i.bought ? '✓' : '☐'} ${i.name}${i.recipe !== 'Manuel' ? ` (${i.recipe})` : ''}`);
-    navigator.clipboard?.writeText(lines.join('\n'));
-    toast('Liste copiée !', 'success');
+  // Share list
+  document.getElementById('btn-share-list')?.addEventListener('click', async () => {
+    const todo = shoppingList.filter(i => !i.bought);
+    const done = shoppingList.filter(i => i.bought);
+    const lines = [
+      '🛒 Liste de courses NutriHome\n',
+      ...todo.map(i => `☐ ${i.name}${i.recipe && i.recipe !== 'Manuel' ? ` (${i.recipe})` : ''}`),
+      ...(done.length ? ['\n✅ Déjà achetés', ...done.map(i => `✓ ${i.name}`)] : []),
+    ].join('\n');
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'Liste de courses', text: lines });
+      } catch (e) { /* annulé par l'utilisateur */ }
+    } else {
+      await navigator.clipboard?.writeText(lines);
+      toast('Liste copiée !', 'success');
+    }
   });
 
   // Clear all
