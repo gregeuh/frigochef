@@ -5406,6 +5406,15 @@ function esc(str) {
 /* ═══════════════════════════════════════════════════
    AUTH + EVENTS (after fc-ready)
    ═══════════════════════════════════════════════════ */
+// DEBUG: detect click interception
+document.addEventListener('click', e => {
+  const santeActive = document.getElementById('tab-sante')?.classList.contains('active');
+  if (!santeActive) return;
+  const top = document.elementFromPoint(e.clientX, e.clientY);
+  const path = e.composedPath().map(el => el.id || el.className || el.tagName).filter(Boolean).slice(0,5).join(' > ');
+  alert('Élément cliqué: ' + (top?.id || top?.className || top?.tagName) + '\nChemin: ' + path);
+}, true);
+
 window.addEventListener('fc-ready', () => {
 
   window.__FC.onAuth(async (fbUser) => {
