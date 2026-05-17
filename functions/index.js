@@ -11,8 +11,8 @@ const BASE_URL     = `https://${REGION}-${PROJECT_ID}.cloudfunctions.net`;
 const CALLBACK_URL = `${BASE_URL}/withingsCallback`;
 const NOTIFY_URL   = `${BASE_URL}/withingsNotify`;
 
-const CLIENT_ID     = functions.config().withings.client_id;
-const CLIENT_SECRET = functions.config().withings.client_secret;
+const CLIENT_ID     = process.env.WITHINGS_CLIENT_ID;
+const CLIENT_SECRET = process.env.WITHINGS_CLIENT_SECRET;
 
 /* ═══════════════════════════════════════════════
    1. withingsAuth — redirige vers la page Withings
