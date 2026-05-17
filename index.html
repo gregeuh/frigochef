@@ -366,8 +366,9 @@ body {
 .fab-wrap {
   position: fixed; bottom: calc(90px + env(safe-area-inset-bottom, 0px)); right: 18px;
   display: flex; flex-direction: column; align-items: flex-end;
-  gap: 10px; z-index: 150;
+  gap: 10px; z-index: 150; pointer-events: none;
 }
+.fab-wrap .fab, .fab-wrap.open .fab-actions { pointer-events: all; }
 .fab-backdrop {
   position: fixed; inset: 0; z-index: 149;
   background: rgba(10,14,12,0.45);
@@ -2426,7 +2427,7 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
           <button class="weight-log-btn" id="btn-import-withings" title="Importer CSV Withings" onclick="document.getElementById('withings-file-input').click()">📲 CSV</button>
           <input type="file" id="withings-file-input" accept=".csv" multiple style="display:none">
           <button class="weight-log-btn withings-connect-btn" id="btn-connect-withings" title="Synchronisation automatique Withings" onclick="(function(){var u=window.__FC&&window.__FC.getUser&&window.__FC.getUser();if(!u)return;window.location.href='https://us-central1-frigochef-95045.cloudfunctions.net/withingsAuth?uid='+u.uid;})()">🔗 Withings auto</button>
-          <button class="weight-log-btn" id="btn-log-weight" onclick="alert('click reçu'); openWeightModal()">+ Peser</button>
+          <button class="weight-log-btn" id="btn-log-weight" onclick="openWeightModal()">+ Peser</button>
         </div>
       </div>
       <div class="weight-progress-wrap" id="weight-progress-wrap" style="display:none">
@@ -5406,15 +5407,6 @@ function esc(str) {
 /* ═══════════════════════════════════════════════════
    AUTH + EVENTS (after fc-ready)
    ═══════════════════════════════════════════════════ */
-// DEBUG: detect click interception
-document.addEventListener('click', e => {
-  const santeActive = document.getElementById('tab-sante')?.classList.contains('active');
-  if (!santeActive) return;
-  const top = document.elementFromPoint(e.clientX, e.clientY);
-  const path = e.composedPath().map(el => el.id || el.className || el.tagName).filter(Boolean).slice(0,5).join(' > ');
-  alert('Élément cliqué: ' + (top?.id || top?.className || top?.tagName) + '\nChemin: ' + path);
-}, true);
-
 window.addEventListener('fc-ready', () => {
 
   window.__FC.onAuth(async (fbUser) => {
