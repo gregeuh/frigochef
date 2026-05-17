@@ -30,3 +30,13 @@ jobs:
 
       - name: Deploy to Firebase
         run: npx firebase-tools@latest deploy --only functions --project frigochef-95045 --force
+
+      - name: Allow public access to functions
+        run: |
+          for fn in withingsAuth withingsCallback withingsNotify; do
+            gcloud functions add-iam-policy-binding $fn \
+              --region=us-central1 \
+              --member="allUsers" \
+              --role="roles/cloudfunctions.invoker" \
+              --project=frigochef-95045 || true
+          done
