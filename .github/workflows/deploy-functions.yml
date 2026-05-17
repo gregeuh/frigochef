@@ -3,10 +3,6 @@ name: Deploy Firebase Functions
 on:
   push:
     branches: [main]
-    paths:
-      - 'functions/**'
-      - 'firebase.json'
-      - '.firebaserc'
 
 jobs:
   deploy:
