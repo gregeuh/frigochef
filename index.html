@@ -700,13 +700,11 @@ body {
 .alert-soon   { background: var(--orange-l); color: var(--orange); }
 
 .filters {
-  display: flex; gap: 5px; flex-wrap: nowrap;
-  overflow-x: auto; -webkit-overflow-scrolling: touch;
-  scrollbar-width: none; margin-bottom: 0.9rem;
-  padding-bottom: 2px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px; margin-bottom: 0.9rem;
 }
-.filters::-webkit-scrollbar { display: none; }
-.filters .pill { flex-shrink: 0; }
+.filters .pill { text-align: center; }
 .pill {
   padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border);
   background: var(--surface); font-size: 0.74rem; font-weight: 500;
