@@ -14,6 +14,11 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+
       - name: Install dependencies
         run: npm install
         working-directory: functions
@@ -24,8 +29,4 @@ jobs:
           echo "WITHINGS_CLIENT_SECRET=${{ secrets.WITHINGS_CLIENT_SECRET }}" >> functions/.env
 
       - name: Deploy to Firebase
-        uses: w9jds/firebase-action@master
-        with:
-          args: deploy --only functions
-        env:
-          GCP_SA_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: npx firebase-tools@latest deploy --only functions --project frigochef-95045 --force
