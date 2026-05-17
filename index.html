@@ -6302,7 +6302,7 @@ window.addEventListener('fc-ready', () => {
     withingsConnectBtn.addEventListener('click', () => {
       if (!user) return;
       const authUrl = `https://us-central1-frigochef-95045.cloudfunctions.net/withingsAuth?uid=${user.uid}`;
-      window.open(authUrl, '_blank', 'width=500,height=700');
+      window.location.href = authUrl;
     });
   }
 
