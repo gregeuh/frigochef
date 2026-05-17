@@ -1876,6 +1876,30 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
   background: var(--surface); color: var(--ink);
   box-shadow: 0 2px 8px rgba(0,0,0,0.08), 0 0 0 0.5px rgba(0,0,0,0.04);
 }
+/* ── Frigo Widget ── */
+.frigo-widget {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 8px; margin: 10px 0 2px;
+}
+.frigo-widget.hidden { display: none; }
+.fw-card {
+  background: var(--surface); border-radius: var(--r);
+  box-shadow: var(--shadow-sm); border: 1px solid var(--border);
+  padding: 10px 8px 8px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  transition: transform 0.15s;
+}
+.fw-card:active { transform: scale(0.95); }
+.fw-val {
+  font-size: 1.30rem; font-weight: 700; line-height: 1;
+  color: var(--ink);
+}
+.fw-val.danger { color: #E85D75; }
+.fw-val.warn   { color: #E07800; }
+.fw-lbl {
+  font-size: 0.60rem; font-weight: 600; color: var(--ink3);
+  text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px;
+}
+.fw-icon { font-size: 0.95rem; }
 .pantry-row {
   display: flex; align-items: center; gap: 8px;
   padding: 8px 12px 8px 14px; border-radius: var(--r); margin-bottom: 4px;
@@ -1941,6 +1965,7 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
         <button class="store-btn active" id="btn-view-frigo">🧊 Frigo</button>
         <button class="store-btn" id="btn-view-placard">🗄 Placard</button>
       </div>
+      <div id="frigo-widget" class="frigo-widget hidden"></div>
       <div id="fridge-list">
         <div class="fridge-empty">
           <div class="fridge-empty-icon">🧊</div>
@@ -3073,6 +3098,22 @@ function renderFridge() {
     label.innerHTML = txt;
   }
 
+  // ── Widget résumé ──
+  const widget = document.getElementById('frigo-widget');
+  if (!pantryView && fridge.length > 0) {
+    const expiredAll = fridge.filter(f => f.dlc && dlcStatus(f.dlc)?.days < 0).length;
+    const urgentAll  = fridge.filter(f => f.dlc && dlcStatus(f.dlc)?.days >= 0 && dlcStatus(f.dlc)?.days <= 2).length;
+    const noDlc      = fridge.filter(f => !f.dlc).length;
+    widget.innerHTML = `
+      <div class="fw-card"><span class="fw-icon">🧊</span><span class="fw-val">${fridge.length}</span><span class="fw-lbl">aliments</span></div>
+      <div class="fw-card"><span class="fw-icon">⛔</span><span class="fw-val ${expiredAll > 0 ? 'danger' : ''}">${expiredAll}</span><span class="fw-lbl">expirés</span></div>
+      <div class="fw-card"><span class="fw-icon">🔴</span><span class="fw-val ${urgentAll > 0 ? 'warn' : ''}">${urgentAll}</span><span class="fw-lbl">urgents</span></div>
+      <div class="fw-card"><span class="fw-icon">📅</span><span class="fw-val">${noDlc}</span><span class="fw-lbl">sans DLC</span></div>`;
+    widget.classList.remove('hidden');
+  } else {
+    widget.classList.add('hidden');
+  }
+
   if (fridge.length === 0) {
     el.innerHTML = `<div class="fridge-empty"><div class="fridge-empty-icon">🧊</div>Votre frigo est vide.<br>Ajoutez des aliments !</div>`;
     return;
@@ -3085,9 +3126,14 @@ function renderFridge() {
     return;
   }
 
-  const expired = visible.filter(f => f.dlc && dlcStatus(f.dlc)?.days < 0);
-  const urgent  = visible.filter(f => f.dlc && dlcStatus(f.dlc)?.days >= 0 && dlcStatus(f.dlc)?.days <= 2);
-  const fresh   = visible.filter(f => !f.dlc || !dlcStatus(f.dlc) || dlcStatus(f.dlc)?.days > 2);
+  const byDlc = (a, b) => {
+    const da = a.dlc ? dlcStatus(a.dlc)?.days : 9999;
+    const db = b.dlc ? dlcStatus(b.dlc)?.days : 9999;
+    return da - db;
+  };
+  const expired = visible.filter(f => f.dlc && dlcStatus(f.dlc)?.days < 0).sort(byDlc);
+  const urgent  = visible.filter(f => f.dlc && dlcStatus(f.dlc)?.days >= 0 && dlcStatus(f.dlc)?.days <= 2).sort(byDlc);
+  const fresh   = visible.filter(f => !f.dlc || !dlcStatus(f.dlc) || dlcStatus(f.dlc)?.days > 2).sort(byDlc);
 
   let html = '';
   if (expired.length) html += group('⛔ Expirés', expired);
