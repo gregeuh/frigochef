@@ -1,0 +1,16 @@
+{
+  "name": "frigochef-functions",
+  "description": "NutriHome Firebase Cloud Functions",
+  "scripts": {
+    "deploy": "firebase deploy --only functions"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "firebase-admin": "^12.0.0",
+    "firebase-functions": "^4.0.0",
+    "axios": "^1.6.0"
+  }
+}
