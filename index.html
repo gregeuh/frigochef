@@ -363,10 +363,11 @@ body {
 }
 .fab-wrap.open .fab-actions { pointer-events: all; }
 .fab-wrap.open .fab-action { opacity: 1; transform: translateY(0) scale(1); pointer-events: all; }
-.fab-wrap.open .fab-action:nth-child(1) { transition-delay: 0.06s; }
-.fab-wrap.open .fab-action:nth-child(2) { transition-delay: 0.04s; }
-.fab-wrap.open .fab-action:nth-child(3) { transition-delay: 0.02s; }
-.fab-wrap.open .fab-action:nth-child(4) { transition-delay: 0s; }
+.fab-wrap.open .fab-action:nth-child(1) { transition-delay: 0.08s; }
+.fab-wrap.open .fab-action:nth-child(2) { transition-delay: 0.06s; }
+.fab-wrap.open .fab-action:nth-child(3) { transition-delay: 0.04s; }
+.fab-wrap.open .fab-action:nth-child(4) { transition-delay: 0.02s; }
+.fab-wrap.open .fab-action:nth-child(5) { transition-delay: 0s; }
 .fab-action-label {
   background: var(--surface); color: var(--ink);
   font-size: 0.80rem; font-weight: 600;
@@ -387,6 +388,7 @@ body {
 .fab-action-btn.placard{ background: #E07800; }
 .fab-action-btn.repas  { background: #00875A; }
 .fab-action-btn.courses{ background: #9775FA; }
+.fab-action-btn.poids  { background: #E85D75; }
 .fab {
   width: 52px; height: 52px; border-radius: 50%;
   background: linear-gradient(145deg, #00A36C 0%, #006644 100%);
@@ -2211,6 +2213,10 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
       <div class="fab-action">
         <span class="fab-action-label">Ajouter un repas</span>
         <button class="fab-action-btn repas" id="fab-repas">🍽️</button>
+      </div>
+      <div class="fab-action">
+        <span class="fab-action-label">Saisir mon poids</span>
+        <button class="fab-action-btn poids" id="fab-poids">⚖️</button>
       </div>
       <div class="fab-action">
         <span class="fab-action-label">Liste de courses</span>
@@ -5320,6 +5326,7 @@ window.addEventListener('fc-ready', () => {
     document.getElementById('fab-frigo').addEventListener('click', () => { closeFab(); openAddModal('frigo'); });
     document.getElementById('fab-placard').addEventListener('click', () => { closeFab(); openAddModal('placard'); });
     document.getElementById('fab-repas').addEventListener('click', () => { closeFab(); openAddMealModal(); });
+    document.getElementById('fab-poids').addEventListener('click', () => { closeFab(); openWeightModal(); });
     document.getElementById('fab-courses').addEventListener('click', () => {
       closeFab();
       if (window.switchTabPublic) window.switchTabPublic('courses');
