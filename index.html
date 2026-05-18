@@ -2699,8 +2699,19 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
       <!-- Portion adjuster (shown after barcode scan) -->
       <div id="meal-portion-section" style="display:none">
         <div class="meal-portion-row">
-          <label>Portion (g) :</label>
-          <input id="meal-inp-portion" class="inp" type="number" value="100" min="1" max="2000">
+          <label id="meal-portion-label" style="font-size:0.73rem;color:var(--ink3);flex:1">Portion (g)</label>
+          <input id="meal-inp-portion" class="inp" type="number" value="100" min="1" max="2000" style="width:90px;flex:none">
+        </div>
+        <div id="meal-serving-count" style="display:none;align-items:center;gap:8px;margin-top:6px">
+          <span style="font-size:0.73rem;color:var(--ink3)">Nb de portions :</span>
+          <div style="display:flex;gap:4px">
+            <button class="meal-serving-btn" data-n="0.5" style="padding:3px 8px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface2);font-size:0.72rem;font-weight:600;cursor:pointer">½</button>
+            <button class="meal-serving-btn" data-n="1"   style="padding:3px 8px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface2);font-size:0.72rem;font-weight:600;cursor:pointer">1</button>
+            <button class="meal-serving-btn" data-n="2"   style="padding:3px 8px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface2);font-size:0.72rem;font-weight:600;cursor:pointer">2</button>
+            <button class="meal-serving-btn" data-n="3"   style="padding:3px 8px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface2);font-size:0.72rem;font-weight:600;cursor:pointer">3</button>
+            <button class="meal-serving-btn" data-n="4"   style="padding:3px 8px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface2);font-size:0.72rem;font-weight:600;cursor:pointer">4</button>
+          </div>
+          <span id="meal-serving-info" style="font-size:0.68rem;color:var(--ink3)"></span>
         </div>
       </div>
 
@@ -5085,8 +5096,10 @@ async function startMealScanner() {
           const protPer100 = p.nutriments?.proteins_100g || 0;
           const carbPer100 = p.nutriments?.carbohydrates_100g || 0;
           const fatPer100  = p.nutriments?.fat_100g || 0;
-          window._mealScannerNutrients = { kcalPer100, protPer100, carbPer100, fatPer100 };
-          const portion = 100;
+          const servingQty = parseFloat(p.serving_quantity) || null;
+          const servingTxt = p.serving_size || (servingQty ? `${servingQty}g` : '');
+          window._mealScannerNutrients = { kcalPer100, protPer100, carbPer100, fatPer100, servingQty };
+          const portion = servingQty || 100;
           document.getElementById('meal-inp-name').value = name;
           document.getElementById('meal-inp-kcal').value = Math.round(kcalPer100 * portion / 100);
           document.getElementById('meal-inp-prot').value = Math.round(protPer100 * portion / 100) || '';
@@ -5098,6 +5111,20 @@ async function startMealScanner() {
           }
           document.getElementById('meal-inp-portion').value = portion;
           document.getElementById('meal-portion-section').style.display = '';
+          // Update portion label
+          const portLbl = document.getElementById('meal-portion-label');
+          if (portLbl) portLbl.textContent = servingQty
+            ? `Portion (g) — 1 portion = ${servingQty}g${servingTxt && !servingTxt.match(/^\d/) ? ' · '+servingTxt : ''}`
+            : 'Portion (g)';
+          // Show serving count helper if serving size known
+          const servCount = document.getElementById('meal-serving-count');
+          const servInfo  = document.getElementById('meal-serving-info');
+          if (servCount && servingQty) {
+            servCount.style.display = 'flex';
+            if (servInfo) servInfo.textContent = `1 portion = ${servingQty}g`;
+          } else if (servCount) {
+            servCount.style.display = 'none';
+          }
           const src = document.getElementById('meal-kcal-source');
           src.textContent = '📷 Open Food Facts'; src.classList.remove('hidden');
           document.getElementById('meal-kcal-hint').style.display = 'none';
@@ -6570,14 +6597,24 @@ window.addEventListener('fc-ready', () => {
   document.getElementById('meal-scanner-stop').addEventListener('click', stopMealScanner);
 
   // ── Portion adjuster (recalculates kcal after barcode scan) ──
-  document.getElementById('meal-inp-portion').addEventListener('input', () => {
+  function applyPortion(grams) {
     const n = window._mealScannerNutrients;
     if (!n) return;
-    const portion = parseFloat(document.getElementById('meal-inp-portion').value) || 100;
-    document.getElementById('meal-inp-kcal').value = Math.round(n.kcalPer100 * portion / 100);
-    document.getElementById('meal-inp-prot').value = Math.round(n.protPer100 * portion / 100) || '';
-    document.getElementById('meal-inp-carb').value = Math.round(n.carbPer100 * portion / 100) || '';
-    document.getElementById('meal-inp-fat').value  = Math.round(n.fatPer100  * portion / 100) || '';
+    document.getElementById('meal-inp-portion').value = grams;
+    document.getElementById('meal-inp-kcal').value = Math.round(n.kcalPer100 * grams / 100);
+    document.getElementById('meal-inp-prot').value = Math.round(n.protPer100 * grams / 100) || '';
+    document.getElementById('meal-inp-carb').value = Math.round(n.carbPer100 * grams / 100) || '';
+    document.getElementById('meal-inp-fat').value  = Math.round(n.fatPer100  * grams / 100) || '';
+  }
+  document.getElementById('meal-inp-portion').addEventListener('input', e => applyPortion(parseFloat(e.target.value) || 100));
+  document.getElementById('meal-serving-count').addEventListener('click', e => {
+    const btn = e.target.closest('.meal-serving-btn');
+    if (!btn) return;
+    const n = window._mealScannerNutrients;
+    if (!n?.servingQty) return;
+    document.querySelectorAll('.meal-serving-btn').forEach(b => b.style.borderColor = '');
+    btn.style.borderColor = 'var(--green)';
+    applyPortion(Math.round(parseFloat(btn.dataset.n) * n.servingQty));
   });
 
   // ── WEIGHT LOG ──
