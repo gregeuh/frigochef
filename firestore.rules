@@ -1,0 +1,80 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Frigo personnel ──
+    match /fridges/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // ── Placard ──
+    match /pantry/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // ── Profil utilisateur ──
+    match /profiles/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // ── Recettes ──
+    match /userRecipes/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // ── Catégories personnalisées ──
+    match /userCategories/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // ── Liste de courses ──
+    match /shoppingList/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // ── Journal alimentaire quotidien (docId = uid_date) ──
+    match /dailyLog/{docId} {
+      allow read, write: if request.auth != null
+        && docId.matches(request.auth.uid + '_.*');
+    }
+
+    // ── Planning de repas (docId = uid_weekKey) ──
+    match /mealPlan/{docId} {
+      allow read, write: if request.auth != null
+        && docId.matches(request.auth.uid + '_.*');
+    }
+
+    // ── Historique de poids ──
+    match /weightLog/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // ── Données Withings (écrites uniquement par Cloud Functions via admin SDK) ──
+    match /withingsData/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    // ── Tokens Withings (jamais lisibles ni écrivables par le client) ──
+    match /withingsTokens/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    // ── Frigo partagé ──
+    match /sharedFridges/{code} {
+      allow read: if request.auth != null
+        && request.auth.uid in resource.data.members;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null
+        && request.auth.uid in resource.data.members;
+      allow delete: if request.auth != null
+        && request.auth.uid == resource.data.createdBy;
+    }
+
+    // ── Tout le reste est refusé ──
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

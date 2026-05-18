@@ -17,6 +17,24 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800&display=swap" rel="stylesheet">
 <title>NutriHome</title>
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  script-src 'self' 'unsafe-inline' https://unpkg.com https://www.gstatic.com https://apis.google.com;
+  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+  font-src https://fonts.gstatic.com;
+  img-src 'self' data: https: blob:;
+  connect-src 'self'
+    https://*.googleapis.com
+    https://*.firebaseio.com
+    https://*.cloudfunctions.net
+    https://wbsapi.withings.net
+    https://world.openfoodfacts.org
+    https://api.allorigins.win
+    wss://*.firebaseio.com;
+  frame-src 'none';
+  object-src 'none';
+  base-uri 'self';
+">
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
@@ -3456,7 +3474,7 @@ function renderPantry() {
     <div class="cat-head" style="color:${cat.color}">${cat.label}</div>
     ${items.map(item => `
     <div class="pantry-row" data-item-id="${item.id}" style="--row-accent:${cat.color}">
-      <span class="f-emoji">${item.emoji}</span>
+      <span class="f-emoji">${esc(item.emoji || '')}</span>
       <div class="f-info">
         <div class="f-name">${esc(item.name)}</div>
         <div class="f-qty">${esc(item.qty || '')}${item.note ? ` · <em>${esc(item.note)}</em>` : ''}</div>
@@ -3647,7 +3665,7 @@ function group(title, items, offset = 0) {
     const lvBadge = lv ? `<span class="level-badge ${lv[1]}">${lv[0]}</span>` : '';
     const delay = Math.min((offset + i) * 0.035, 0.28);
     return `<div class="food-row" data-item-id="${item.id}" style="--row-accent:${cat.color};animation:rowIn 0.30s cubic-bezier(0.34,1.56,0.64,1) ${delay}s both">
-      <span class="f-emoji">${item.emoji}</span>
+      <span class="f-emoji">${esc(item.emoji || '')}</span>
       <div class="f-info">
         <div class="f-name">${esc(item.name)}${lvBadge}</div>
         <div class="f-qty">${esc(item.qty || '')}${item.note ? ` · <em>${esc(item.note)}</em>` : ''}</div>
@@ -4001,7 +4019,8 @@ function openModal(r) {
     ? `<button class="btn-modal-action btn-edit" id="modal-edit">✏️ Modifier</button>
        <button class="btn-modal-action btn-del"  id="modal-del">🗑 Supprimer</button>`
     : '';
-  const sourceLink = r.source ? `<div style="font-size:0.75rem;color:var(--ink3);margin-top:0.5rem">Source : <a href="${esc(r.source)}" target="_blank" style="color:var(--green-dk)">${esc(r.source)}</a></div>` : '';
+  const _srcSafe = (() => { try { const u = new URL(r.source); return (u.protocol === 'https:' || u.protocol === 'http:') ? u.href : null; } catch { return null; } })();
+  const sourceLink = _srcSafe ? `<div style="font-size:0.75rem;color:var(--ink3);margin-top:0.5rem">Source : <a href="${esc(_srcSafe)}" target="_blank" rel="noopener noreferrer" style="color:var(--green-dk)">${esc(r.source)}</a></div>` : '';
 
   body.innerHTML = `
     <div class="modal-hero">
@@ -4256,7 +4275,11 @@ async function importFromUrl() {
       isCustom: true, source: rawUrl
     });
   } catch (err) {
-    status.innerHTML = `<div style="color:var(--red);font-size:0.82rem;padding:0.5rem 0">⚠️ ${err.message}</div>`;
+    const errDiv = document.createElement('div');
+    errDiv.style.cssText = 'color:var(--red);font-size:0.82rem;padding:0.5rem 0';
+    errDiv.textContent = '⚠️ ' + err.message;
+    status.innerHTML = '';
+    status.appendChild(errDiv);
   } finally {
     document.getElementById('btn-import-go').disabled = false;
   }

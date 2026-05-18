@@ -1,6 +1,7 @@
 const functions = require('firebase-functions');
 const admin     = require('firebase-admin');
 const axios     = require('axios');
+const crypto    = require('crypto');
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -14,17 +15,50 @@ const NOTIFY_URL   = `${BASE_URL}/withingsNotify`;
 const CLIENT_ID     = process.env.WITHINGS_CLIENT_ID;
 const CLIENT_SECRET = process.env.WITHINGS_CLIENT_SECRET;
 
+// ── State token helpers (CSRF protection) ─────────────────────────────────
+// State = uid + '.' + hmac(uid + ':' + timeWindow, CLIENT_SECRET)
+// timeWindow rotates every 10 minutes — valid across one rotation boundary.
+function makeStateToken(uid) {
+  const win = Math.floor(Date.now() / 600000); // 10-min window
+  const sig = crypto.createHmac('sha256', CLIENT_SECRET)
+    .update(`${uid}:${win}`)
+    .digest('hex')
+    .slice(0, 24);
+  return `${uid}.${sig}`;
+}
+
+function verifyStateToken(state) {
+  if (!state || !state.includes('.')) return null;
+  const dotIdx = state.lastIndexOf('.');
+  const uid = state.slice(0, dotIdx);
+  const sig = state.slice(dotIdx + 1);
+  if (!uid) return null;
+  // Accept current window and the previous one (covers clock skew / near-boundary requests)
+  const win = Math.floor(Date.now() / 600000);
+  for (const w of [win, win - 1]) {
+    const expected = crypto.createHmac('sha256', CLIENT_SECRET)
+      .update(`${uid}:${w}`)
+      .digest('hex')
+      .slice(0, 24);
+    if (crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return uid;
+  }
+  return null;
+}
+
 /* ═══════════════════════════════════════════════
    1. withingsAuth — redirige vers la page Withings
    ═══════════════════════════════════════════════ */
 exports.withingsAuth = functions.https.onRequest((req, res) => {
   const uid = req.query.uid;
-  if (!uid) return res.status(400).send('Paramètre uid manquant');
+  if (!uid || typeof uid !== 'string' || uid.length > 128) {
+    return res.status(400).send('Paramètre uid manquant ou invalide');
+  }
 
+  const state = makeStateToken(uid);
   const params = new URLSearchParams({
     response_type: 'code',
     client_id:     CLIENT_ID,
-    state:         uid,
+    state,
     scope:         'user.metrics,user.sleepevents,user.activity',
     redirect_uri:  CALLBACK_URL,
   });
@@ -36,8 +70,15 @@ exports.withingsAuth = functions.https.onRequest((req, res) => {
    2. withingsCallback — échange le code OAuth2
    ═══════════════════════════════════════════════ */
 exports.withingsCallback = functions.https.onRequest(async (req, res) => {
-  const { code, state: uid } = req.query;
-  if (!code || !uid) return res.status(400).send('Paramètres manquants');
+  const { code, state } = req.query;
+  if (!code || !state) return res.status(400).send('Paramètres manquants');
+
+  // Verify CSRF state token
+  const uid = verifyStateToken(state);
+  if (!uid) {
+    console.warn('withingsCallback: invalid state token');
+    return res.status(403).send('Requête invalide ou expirée. Veuillez relancer la connexion depuis l\'application.');
+  }
 
   try {
     const tokenRes = await axios.post(
@@ -53,9 +94,14 @@ exports.withingsCallback = functions.https.onRequest(async (req, res) => {
       { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
     );
 
-    if (tokenRes.data.status !== 0) throw new Error(JSON.stringify(tokenRes.data));
+    if (tokenRes.data.status !== 0) throw new Error('Withings token error: ' + tokenRes.data.status);
 
-    const { access_token, refresh_token, userid } = tokenRes.data.body;
+    const { access_token, refresh_token, userid } = tokenRes.data.body || {};
+
+    // Schema validation — ensure expected fields are present and correct types
+    if (typeof access_token !== 'string' || !access_token) throw new Error('Réponse Withings invalide : access_token manquant');
+    if (typeof refresh_token !== 'string' || !refresh_token) throw new Error('Réponse Withings invalide : refresh_token manquant');
+    if (!userid) throw new Error('Réponse Withings invalide : userid manquant');
 
     await db.collection('withingsTokens').doc(uid).set({
       access_token, refresh_token,
@@ -81,7 +127,7 @@ exports.withingsCallback = functions.https.onRequest(async (req, res) => {
 
   } catch (err) {
     console.error('withingsCallback error:', err.message);
-    res.status(500).send(`Erreur : ${err.message}`);
+    res.status(500).send('Une erreur est survenue lors de la connexion. Veuillez réessayer.');
   }
 });
 
@@ -126,8 +172,9 @@ async function refreshToken(uid, tokenData) {
     }).toString(),
     { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
   );
-  if (r.data.status !== 0) throw new Error('refresh failed: ' + JSON.stringify(r.data));
-  const { access_token, refresh_token } = r.data.body;
+  if (r.data.status !== 0) throw new Error('refresh failed: ' + r.data.status);
+  const { access_token, refresh_token } = r.data.body || {};
+  if (!access_token || !refresh_token) throw new Error('refresh: tokens manquants dans la réponse');
   await db.collection('withingsTokens').doc(uid).update({
     access_token, refresh_token, updatedAt: Date.now(),
   });
@@ -255,4 +302,3 @@ function parseMeasurements(groups) {
 function tsToDate(ts) {
   return new Date(ts * 1000).toISOString().slice(0, 10);
 }
-

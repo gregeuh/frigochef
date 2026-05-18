@@ -29,7 +29,7 @@ jobs:
           echo "WITHINGS_CLIENT_SECRET=${{ secrets.WITHINGS_CLIENT_SECRET }}" >> functions/.env
 
       - name: Deploy to Firebase
-        run: npx firebase-tools@latest deploy --only functions --project frigochef-95045 --force
+        run: npx firebase-tools@latest deploy --only functions,firestore:rules --project frigochef-95045 --force
 
       - name: Allow public access to functions
         run: |
