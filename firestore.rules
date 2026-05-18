@@ -78,6 +78,17 @@ service cloud.firestore {
         && request.auth.uid == resource.data.createdBy;
     }
 
+    // ── Liste de courses partagée ──
+    match /sharedShoppingList/{code} {
+      allow read: if request.auth != null
+        && request.auth.uid in resource.data.members;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null
+        && request.auth.uid in resource.data.members;
+      allow delete: if request.auth != null
+        && request.auth.uid == resource.data.createdBy;
+    }
+
     // ── Tout le reste est refusé ──
     match /{document=**} {
       allow read, write: if false;

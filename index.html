@@ -51,7 +51,7 @@
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js';
   import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged }
     from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js';
-  import { getFirestore, doc, setDoc, getDoc, onSnapshot }
+  import { getFirestore, doc, setDoc, getDoc, deleteDoc, onSnapshot }
     from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js';
 
   const firebaseConfig = {
@@ -127,12 +127,47 @@
     loadPantry: (uid, cb) => onSnapshot(doc(db, 'pantry', uid),
       snap => cb(snap.exists() ? snap.data().items || [] : [])
     ),
-    saveShoppingList: async (uid, items, overrides) => {
-      await setDoc(doc(db, 'shoppingList', uid), { items, overrides: overrides || {}, updatedAt: Date.now() });
+    saveShoppingList: async (uid, items, overrides, history) => {
+      await setDoc(doc(db, 'shoppingList', uid), { items, overrides: overrides || {}, history: history || [], updatedAt: Date.now() });
     },
     loadShoppingList: (uid, cb) => onSnapshot(doc(db, 'shoppingList', uid),
-      snap => cb(snap.exists() ? { items: snap.data().items || [], overrides: snap.data().overrides || {} } : { items: [], overrides: {} })
+      snap => cb(snap.exists() ? { items: snap.data().items || [], overrides: snap.data().overrides || {}, history: snap.data().history || [] } : { items: [], overrides: {}, history: [] })
     ),
+    createSharedList: async (uid, items, overrides, history) => {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      let code = '';
+      for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+      await setDoc(doc(db, 'sharedShoppingList', code), {
+        items: items || [], overrides: overrides || {}, history: history || [],
+        members: [uid], createdBy: uid, updatedAt: Date.now()
+      });
+      return code;
+    },
+    joinSharedList: async (code, uid) => {
+      const snap = await getDoc(doc(db, 'sharedShoppingList', code));
+      if (!snap.exists()) return null;
+      const data = snap.data();
+      if (!data.members.includes(uid)) {
+        await setDoc(doc(db, 'sharedShoppingList', code), { members: [...data.members, uid] }, { merge: true });
+      }
+      return code;
+    },
+    loadSharedList: (code, cb) => onSnapshot(doc(db, 'sharedShoppingList', code),
+      snap => cb(snap.exists() ? { items: snap.data().items || [], overrides: snap.data().overrides || {}, history: snap.data().history || [] } : { items: [], overrides: {}, history: [] })
+    ),
+    saveSharedList: async (code, items, overrides, history) => {
+      await setDoc(doc(db, 'sharedShoppingList', code), { items, overrides: overrides || {}, history: history || [], updatedAt: Date.now() }, { merge: true });
+    },
+    leaveSharedList: async (uid, code) => {
+      const snap = await getDoc(doc(db, 'sharedShoppingList', code));
+      if (!snap.exists()) return;
+      const data = snap.data();
+      if (data.createdBy === uid) {
+        await deleteDoc(doc(db, 'sharedShoppingList', code));
+      } else {
+        await setDoc(doc(db, 'sharedShoppingList', code), { members: data.members.filter(m => m !== uid) }, { merge: true });
+      }
+    },
     saveCategories: async (uid, cats) => {
       await setDoc(doc(db, 'userCategories', uid), { cats, updatedAt: Date.now() });
     },
@@ -2022,7 +2057,7 @@ body {
 .dest-btn:not(.active):hover { background: var(--surface2); }
 
 /* ─── MANUAL SHOPPING FORM ─── */
-.manual-shop-form { display: flex; gap: 6px; margin-bottom: 10px; }
+.manual-shop-form { display: flex; gap: 6px; margin-bottom: 10px; position: relative; }
 .manual-shop-inp {
   flex: 1; padding: 7px 10px; border: 1px solid var(--border);
   border-radius: 9px; background: var(--surface); color: var(--ink);
@@ -2037,6 +2072,158 @@ body {
   transition: transform 0.15s, box-shadow 0.15s;
 }
 .manual-shop-btn:active { transform: scale(0.94); }
+
+/* ─── SHOP AUTOCOMPLETE ─── */
+#shop-suggest-list {
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+  background: var(--surface); border: 1.5px solid var(--border2);
+  border-radius: 12px; box-shadow: var(--shadow-md);
+  z-index: 200; overflow: hidden; display: none;
+}
+#shop-suggest-list.visible { display: block; }
+.shop-suggest-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 9px 12px; cursor: pointer; font-size: 0.85rem; color: var(--ink);
+  border-bottom: 1px solid var(--border); transition: background 0.12s;
+}
+.shop-suggest-item:last-child { border-bottom: none; }
+.shop-suggest-item:hover { background: var(--surface2); }
+.shop-suggest-item .suggest-name { font-weight: 600; }
+.shop-suggest-item .suggest-qty { font-size: 0.75rem; color: var(--ink3); }
+
+/* ─── MARKET MODE OVERLAY ─── */
+#market-overlay {
+  position: fixed; inset: 0; z-index: 3500;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px);
+  transition: background 0.3s;
+}
+#market-overlay.hidden { display: none; }
+.market-header {
+  position: absolute; top: max(env(safe-area-inset-top, 0px), 16px); left: 0; right: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px;
+}
+.market-counter {
+  font-size: 0.85rem; font-weight: 700; color: rgba(255,255,255,0.85);
+  background: rgba(0,0,0,0.18); border-radius: 20px; padding: 5px 13px;
+}
+.market-close-btn {
+  width: 38px; height: 38px; border-radius: 50%; border: none;
+  background: rgba(0,0,0,0.22); color: #fff; font-size: 1.1rem;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s;
+}
+.market-close-btn:hover { background: rgba(0,0,0,0.38); }
+.market-body {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 14px; padding: 0 32px; text-align: center; max-width: 400px; width: 100%;
+}
+.market-cat-emoji { font-size: 4.5rem; line-height: 1; }
+.market-item-name {
+  font-size: clamp(1.8rem, 8vw, 2.8rem); font-weight: 800; color: #fff;
+  line-height: 1.15; text-shadow: 0 2px 8px rgba(0,0,0,0.18);
+}
+.market-item-qty {
+  font-size: 1.2rem; font-weight: 600; color: rgba(255,255,255,0.85);
+  background: rgba(0,0,0,0.18); border-radius: 20px; padding: 4px 16px;
+}
+.market-footer {
+  position: absolute; bottom: max(env(safe-area-inset-bottom, 0px), 28px); left: 0; right: 0;
+  display: flex; align-items: center; justify-content: center; gap: 16px;
+  padding: 0 24px;
+}
+.market-nav-btn {
+  width: 52px; height: 52px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.5);
+  background: rgba(255,255,255,0.15); color: #fff; font-size: 1.4rem;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s; flex-shrink: 0;
+}
+.market-nav-btn:hover { background: rgba(255,255,255,0.28); }
+.market-nav-btn:disabled { opacity: 0.3; cursor: default; }
+.market-buy-btn {
+  flex: 1; max-width: 220px; padding: 16px 24px; border: none; border-radius: 50px;
+  background: #fff; color: #00875A; font-size: 1.05rem; font-weight: 800;
+  cursor: pointer; box-shadow: 0 4px 20px rgba(0,0,0,0.22);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.market-buy-btn:active { transform: scale(0.95); box-shadow: 0 2px 10px rgba(0,0,0,0.18); }
+.market-done-screen {
+  display: flex; flex-direction: column; align-items: center; gap: 18px;
+  color: #fff; text-align: center; padding: 32px;
+}
+.market-done-emoji { font-size: 5rem; }
+.market-done-title { font-size: 2rem; font-weight: 800; }
+.market-done-sub { font-size: 1rem; opacity: 0.85; }
+
+/* ─── SHARED LIST BADGE ─── */
+.shared-list-bar {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+  padding: 8px 12px; background: var(--accent-l); border: 1.5px solid var(--accent);
+  border-radius: 12px; flex-wrap: wrap;
+}
+.shared-list-badge {
+  font-size: 0.82rem; font-weight: 700; color: var(--accent); flex: 1;
+}
+.shared-list-quit-btn {
+  padding: 4px 10px; border-radius: 8px; border: 1.5px solid var(--accent);
+  background: transparent; color: var(--accent); font-size: 0.75rem; font-weight: 700;
+  cursor: pointer; transition: all 0.15s;
+}
+.shared-list-quit-btn:hover { background: var(--accent); color: #fff; }
+
+/* ─── SHARE SHEET ─── */
+#share-list-overlay {
+  position: fixed; inset: 0; z-index: 3200; background: rgba(10,14,12,0.55);
+  display: flex; align-items: flex-end; animation: fadeIn 0.15s ease;
+}
+#share-list-overlay.hidden { display: none; }
+#share-list-sheet {
+  width: 100%; max-width: 430px; margin: 0 auto;
+  background: var(--surface); border-radius: 24px 24px 0 0;
+  padding: 0 0 calc(24px + env(safe-area-inset-bottom, 0px));
+  box-shadow: var(--shadow-lg);
+  animation: slideUp 0.28s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.share-sheet-handle {
+  width: 36px; height: 4px; background: var(--border2);
+  border-radius: 2px; margin: 10px auto 0;
+}
+.share-sheet-title {
+  font-size: 1.05rem; font-weight: 700; color: var(--ink);
+  padding: 14px 20px 12px;
+}
+.share-sheet-section { padding: 0 20px 14px; }
+.share-sheet-btn {
+  width: 100%; padding: 13px; border: none; border-radius: var(--r);
+  background: var(--green); color: #fff; font-size: 0.95rem; font-weight: 700;
+  cursor: pointer; transition: background 0.15s, transform 0.15s;
+  font-family: inherit; margin-bottom: 10px;
+}
+.share-sheet-btn:active { transform: scale(0.97); background: var(--green-dk); }
+.share-sheet-divider {
+  text-align: center; font-size: 0.78rem; color: var(--ink3);
+  margin: 4px 0 12px; font-weight: 600;
+}
+.share-code-display {
+  background: var(--surface2); border-radius: 12px; padding: 12px 16px;
+  text-align: center; font-size: 1.6rem; font-weight: 800; color: var(--ink);
+  letter-spacing: 0.15em; margin-bottom: 8px;
+}
+.share-code-hint { font-size: 0.78rem; color: var(--ink3); text-align: center; margin-bottom: 10px; }
+.share-join-row { display: flex; gap: 8px; }
+.share-join-inp {
+  flex: 1; padding: 11px 12px; border-radius: 10px; border: 1.5px solid var(--border2);
+  background: var(--surface2); color: var(--ink); font-size: 0.95rem;
+  outline: none; font-family: inherit; text-transform: uppercase; letter-spacing: 0.1em;
+}
+.share-join-inp:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-l); }
+.share-join-btn {
+  padding: 11px 18px; border: none; border-radius: 10px;
+  background: var(--accent); color: #fff; font-size: 0.88rem; font-weight: 700;
+  cursor: pointer; transition: background 0.15s; white-space: nowrap;
+}
+.share-join-btn:active { background: #1a50c0; }
 
 /* ─── VOICE INPUT ─── */
 .voice-shop-btn {
@@ -2565,6 +2752,8 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
         <button class="manual-shop-btn" id="btn-manual-shop">＋</button>
       </div>
       <div id="manual-shop-cat-badge" style="display:none;margin-bottom:8px;align-items:center;gap:6px;flex-wrap:wrap"></div>
+      <div id="shop-suggest-list"></div>
+      <div id="shared-list-bar" style="display:none"></div>
       <div id="courses-content" class="courses-card"></div>
     </div>
   </div>
@@ -3705,6 +3894,9 @@ const RESTRICTION_KEYWORDS = {
 };
 let shoppingList = []; // { id, name, recipe, bought }
 let shopCatOverrides = {}; // { 'coca-cola': 'boissons', ... } — nom en minuscules → catKey
+let shopHistory = []; // [{ name, qty, catKey }] — historique autocomplétion, max 80
+let sharedListCode = null;  // code liste partagée active
+let unsubSharedList = null; // listener liste partagée
 let unsubShopping = null;
 let userCategories = []; // { key, label, color, bg, words }
 let unsubCategories = null;
@@ -4148,8 +4340,10 @@ function renderRecipes() {
    ═══════════════════════════════════════════════════ */
 function saveShoppingListDB() {
   if (!user) return;
-  window.__FC.saveShoppingList(user.uid, shoppingList, shopCatOverrides)
-    .catch(e => console.error('Erreur liste de courses:', e));
+  const p = sharedListCode
+    ? window.__FC.saveSharedList(sharedListCode, shoppingList, shopCatOverrides, shopHistory)
+    : window.__FC.saveShoppingList(user.uid, shoppingList, shopCatOverrides, shopHistory);
+  p.catch(e => console.error('Erreur liste de courses:', e));
 }
 
 function toggleShoppingItem(name, recipeName) {
@@ -4232,6 +4426,237 @@ function resolvedShopCategory(name) {
   return foodCategory(name);
 }
 
+/* ═══════════════════════════════════════════════════
+   AUTOCOMPLÉTION
+   ═══════════════════════════════════════════════════ */
+function updateShopHistory(name, qty, catKey) {
+  const key = name.toLowerCase().trim();
+  shopHistory = [{ name, qty: qty||null, catKey }, ...shopHistory.filter(h => h.name.toLowerCase().trim() !== key)].slice(0, 80);
+}
+
+function renderShopSuggestions(value) {
+  const el = document.getElementById('shop-suggest-list');
+  if (!el) return;
+  const v = value.trim();
+  if (v.length < 2 || !shopHistory.length) { el.classList.remove('visible'); el.innerHTML = ''; return; }
+  const matches = shopHistory.filter(h => h.name.toLowerCase().includes(v.toLowerCase())).slice(0, 5);
+  if (!matches.length) { el.classList.remove('visible'); el.innerHTML = ''; return; }
+  el.innerHTML = matches.map(h => `
+    <div class="shop-suggest-item" data-name="${esc(h.name)}" data-qty="${esc(h.qty||'')}">
+      <span class="suggest-name">${esc(h.name)}</span>
+      ${h.qty ? `<span class="suggest-qty">${esc(h.qty)}</span>` : ''}
+    </div>`).join('');
+  el.classList.add('visible');
+  el.querySelectorAll('.shop-suggest-item').forEach(item => {
+    item.addEventListener('mousedown', e => {
+      e.preventDefault();
+      const name = item.dataset.name, qty = item.dataset.qty;
+      const inp = document.getElementById('inp-manual-shop');
+      const qtyInp = document.getElementById('inp-manual-shop-qty');
+      inp.value = name;
+      if (qtyInp && qty) qtyInp.value = qty;
+      el.classList.remove('visible');
+      renderManualCatPicker(name);
+    });
+  });
+}
+
+/* ═══════════════════════════════════════════════════
+   MODE SUPERMARCHÉ
+   ═══════════════════════════════════════════════════ */
+let marketItems = [];
+let marketIdx   = 0;
+
+function openMarketMode() {
+  const allCatDefs = [...allCategories(), { key: 'autres', label: '📦 Autres', color: '#868E96', bg: 'rgba(134,142,150,0.10)' }];
+  marketItems = shoppingList
+    .filter(i => !i.bought)
+    .sort((a, b) => {
+      const ka = a.catKey || resolvedShopCategory(a.name).key;
+      const kb = b.catKey || resolvedShopCategory(b.name).key;
+      return ka.localeCompare(kb);
+    });
+  marketIdx = 0;
+  document.getElementById('market-overlay').classList.remove('hidden');
+  renderMarketItem();
+}
+
+function closeMarketMode() {
+  document.getElementById('market-overlay').classList.add('hidden');
+  renderCourses();
+}
+
+function renderMarketItem() {
+  const overlay  = document.getElementById('market-overlay');
+  const body     = document.getElementById('market-body');
+  const footer   = document.getElementById('market-footer');
+  const counter  = document.getElementById('market-counter');
+  const remaining = marketItems.filter(i => !shoppingList.find(s => s.id === i.id)?.bought).length;
+
+  if (remaining === 0) {
+    overlay.style.background = '#00875A';
+    counter.textContent = '';
+    footer.style.display = 'none';
+    body.innerHTML = `<div class="market-done-screen">
+      <div class="market-done-emoji">🎉</div>
+      <div class="market-done-title">Liste terminée !</div>
+      <div class="market-done-sub">Tous les articles ont été cochés.</div>
+    </div>`;
+    return;
+  }
+
+  while (marketIdx < marketItems.length && shoppingList.find(s => s.id === marketItems[marketIdx].id)?.bought) marketIdx++;
+  if (marketIdx >= marketItems.length) marketIdx = marketItems.findIndex(i => !shoppingList.find(s => s.id === i.id)?.bought);
+  const item = marketItems[marketIdx];
+  if (!item) { closeMarketMode(); return; }
+
+  const allCatDefs = [...allCategories(), { key: 'autres', label: '📦 Autres', color: '#868E96', bg: 'rgba(134,142,150,0.10)' }];
+  const catDefMap  = Object.fromEntries(allCatDefs.map(c => [c.key, c]));
+  const cat = (item.catKey && catDefMap[item.catKey]) || resolvedShopCategory(item.name);
+
+  overlay.style.background = cat.color || '#00875A';
+  counter.textContent = `${remaining} restant${remaining > 1 ? 's' : ''}`;
+  footer.style.display = '';
+
+  const emoji = cat.label.match(/^\p{Emoji}/u)?.[0] || '📦';
+  body.innerHTML = `
+    <div class="market-cat-emoji">${emoji}</div>
+    <div class="market-item-name">${esc(item.name)}</div>
+    ${item.qty ? `<div class="market-item-qty">${esc(item.qty)}</div>` : ''}`;
+
+  document.getElementById('market-prev-btn').disabled = marketIdx === 0;
+  document.getElementById('market-next-btn').disabled = marketIdx >= marketItems.length - 1;
+}
+
+/* ═══════════════════════════════════════════════════
+   LISTE PARTAGÉE
+   ═══════════════════════════════════════════════════ */
+function renderSharedListBar() {
+  const bar = document.getElementById('shared-list-bar');
+  if (!bar) return;
+  if (sharedListCode) {
+    bar.style.display = 'flex';
+    bar.className = 'shared-list-bar';
+    bar.innerHTML = `<span class="shared-list-badge">👥 Liste partagée · <strong>${esc(sharedListCode)}</strong></span>
+      <button class="shared-list-quit-btn" id="btn-quit-shared-list">Quitter</button>`;
+    document.getElementById('btn-quit-shared-list')?.addEventListener('click', async () => {
+      if (!confirm('Quitter la liste partagée ?')) return;
+      try { await window.__FC.leaveSharedList(user.uid, sharedListCode); } catch(e) { console.warn(e); }
+      if (unsubSharedList) { unsubSharedList(); unsubSharedList = null; }
+      sharedListCode = null;
+      unsubShopping = window.__FC.loadShoppingList(user.uid, ({ items, overrides, history }) => {
+        shoppingList = items; shopCatOverrides = overrides||{}; shopHistory = history||[]; renderCourses();
+      });
+      renderSharedListBar();
+      toast('Revenu à ta liste personnelle', 'info');
+    });
+  } else {
+    bar.style.display = 'none';
+    bar.innerHTML = '';
+  }
+}
+
+function switchToSharedList(code) {
+  if (unsubShopping) { unsubShopping(); unsubShopping = null; }
+  if (unsubSharedList) { unsubSharedList(); unsubSharedList = null; }
+  sharedListCode = code;
+  unsubSharedList = window.__FC.loadSharedList(code, ({ items, overrides, history }) => {
+    shoppingList = items; shopCatOverrides = overrides||{}; shopHistory = history||[]; renderCourses();
+  });
+  renderSharedListBar();
+}
+
+function renderShareSheet() {
+  const content = document.getElementById('share-sheet-content');
+  if (!content) return;
+  if (sharedListCode) {
+    content.innerHTML = `
+      <div style="text-align:center;margin-bottom:12px;font-size:0.85rem;color:var(--ink2)">Liste partagée active :</div>
+      <div class="share-code-display">${esc(sharedListCode)}</div>
+      <div class="share-code-hint">Donne ce code à ton proche pour qu'il rejoigne la liste.</div>
+      <button class="share-sheet-btn" id="btn-copy-code">📋 Copier le code</button>
+      <button class="share-sheet-btn" id="btn-quit-share-sheet" style="background:var(--red)">Quitter la liste partagée</button>`;
+    document.getElementById('btn-copy-code')?.addEventListener('click', () => {
+      navigator.clipboard?.writeText(sharedListCode);
+      toast('Code copié !', 'success');
+    });
+    document.getElementById('btn-quit-share-sheet')?.addEventListener('click', async () => {
+      document.getElementById('share-list-overlay').classList.add('hidden');
+      document.getElementById('btn-quit-shared-list')?.click();
+    });
+  } else {
+    content.innerHTML = `
+      <button class="share-sheet-btn" id="btn-create-shared-list">Créer une liste partagée</button>
+      <div id="share-created-info" style="display:none">
+        <div class="share-code-display" id="share-new-code"></div>
+        <div class="share-code-hint">Donne ce code à ton proche. La liste est maintenant synchronisée en temps réel.</div>
+        <button class="share-sheet-btn" id="btn-copy-new-code">📋 Copier le code</button>
+      </div>
+      <div class="share-sheet-divider">— ou rejoindre une liste existante —</div>
+      <div class="share-join-row">
+        <input class="share-join-inp" id="share-join-code-inp" placeholder="CODE" maxlength="6" autocomplete="off">
+        <button class="share-join-btn" id="btn-join-shared-list">Rejoindre</button>
+      </div>`;
+    document.getElementById('btn-create-shared-list')?.addEventListener('click', async () => {
+      const btn = document.getElementById('btn-create-shared-list');
+      btn.disabled = true; btn.textContent = 'Création…';
+      try {
+        const code = await window.__FC.createSharedList(user.uid, shoppingList, shopCatOverrides, shopHistory);
+        switchToSharedList(code);
+        document.getElementById('share-created-info').style.display = 'block';
+        document.getElementById('share-new-code').textContent = code;
+        btn.style.display = 'none';
+        document.getElementById('btn-copy-new-code')?.addEventListener('click', () => {
+          navigator.clipboard?.writeText(code);
+          toast('Code copié !', 'success');
+        });
+      } catch(e) {
+        toast('Erreur lors de la création', 'error');
+        btn.disabled = false; btn.textContent = 'Créer une liste partagée';
+      }
+    });
+    document.getElementById('btn-join-shared-list')?.addEventListener('click', async () => {
+      const code = (document.getElementById('share-join-code-inp')?.value || '').trim().toUpperCase();
+      if (code.length !== 6) { toast('Code invalide (6 caractères)', 'error'); return; }
+      const btn = document.getElementById('btn-join-shared-list');
+      btn.disabled = true; btn.textContent = '…';
+      try {
+        const result = await window.__FC.joinSharedList(code, user.uid);
+        if (!result) { toast('Liste introuvable', 'error'); btn.disabled = false; btn.textContent = 'Rejoindre'; return; }
+        switchToSharedList(code);
+        document.getElementById('share-list-overlay').classList.add('hidden');
+        toast(`👥 Liste ${code} rejointe !`, 'success');
+      } catch(e) {
+        toast('Erreur lors de la connexion', 'error');
+        btn.disabled = false; btn.textContent = 'Rejoindre';
+      }
+    });
+  }
+}
+
+// Market mode event listeners (once, outside renderCourses)
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('market-close-btn')?.addEventListener('click', closeMarketMode);
+  document.getElementById('market-buy-btn')?.addEventListener('click', () => {
+    const item = marketItems[marketIdx];
+    if (!item) return;
+    shoppingList = shoppingList.map(i => i.id === item.id ? { ...i, bought: true } : i);
+    saveShoppingListDB();
+    marketIdx++;
+    renderMarketItem();
+  });
+  document.getElementById('market-prev-btn')?.addEventListener('click', () => {
+    if (marketIdx > 0) { marketIdx--; renderMarketItem(); }
+  });
+  document.getElementById('market-next-btn')?.addEventListener('click', () => {
+    if (marketIdx < marketItems.length - 1) { marketIdx++; renderMarketItem(); }
+  });
+  document.getElementById('share-list-overlay')?.addEventListener('click', e => {
+    if (e.target === document.getElementById('share-list-overlay'))
+      document.getElementById('share-list-overlay').classList.add('hidden');
+  });
+});
+
 function shopItemCategory(name) {
   const cat = foodCategory(name);
   return cat;
@@ -4271,13 +4696,17 @@ function renderCourses() {
 
   // Quick actions
   const hasBought = shoppingList.some(i => i.bought);
+  const hasRemaining = shoppingList.some(i => !i.bought);
   const actionsHtml = `
     <div class="shop-actions-row">
       <button class="shop-action-btn" id="btn-check-all">✓ Tout cocher</button>
+      ${hasRemaining ? `<button class="shop-action-btn" id="btn-market-mode">🛒 Supermarché</button>` : ''}
       <button class="shop-action-btn" id="btn-share-list">↑ Partager</button>
+      <button class="shop-action-btn" id="btn-share-realtime">👥 En direct</button>
       ${hasBought ? `<button class="shop-action-btn danger" id="btn-clear-bought">🗑 Achetés</button>` : ''}
       <button class="shop-action-btn danger" id="btn-clear-all">🗑 Tout</button>
-    </div>`;
+    </div>
+    <div id="shared-list-bar-inner"></div>`;
 
   // Group by food category (use stored catKey if available, else auto-detect)
   const allCatDefs = [...allCategories(), { key: 'autres', label: '📦 Autres', color: '#868E96', bg: 'rgba(134,142,150,0.10)' }];
@@ -4391,11 +4820,23 @@ function renderCourses() {
     }
   });
 
+  // Market mode
+  document.getElementById('btn-market-mode')?.addEventListener('click', openMarketMode);
+
+  // Share realtime
+  document.getElementById('btn-share-realtime')?.addEventListener('click', () => {
+    document.getElementById('share-list-overlay').classList.remove('hidden');
+    renderShareSheet();
+  });
+
   // Clear all
   document.getElementById('btn-clear-all')?.addEventListener('click', () => {
     shoppingList = [];
     saveShoppingListDB(); renderCourses();
   });
+
+  // Update shared list bar
+  renderSharedListBar();
 }
 
 /* ═══════════════════════════════════════════════════
@@ -6554,8 +6995,8 @@ window.addEventListener('fc-ready', () => {
       });
 
       if (unsubShopping) unsubShopping();
-      unsubShopping = window.__FC.loadShoppingList(fbUser.uid, ({ items, overrides }) => {
-        shoppingList = items; shopCatOverrides = overrides || {}; renderCourses();
+      unsubShopping = window.__FC.loadShoppingList(fbUser.uid, ({ items, overrides, history }) => {
+        shoppingList = items; shopCatOverrides = overrides || {}; shopHistory = history || []; renderCourses();
       });
 
       if (unsubCategories) unsubCategories();
@@ -6609,7 +7050,9 @@ window.addEventListener('fc-ready', () => {
       if (unsub) { unsub(); unsub = null; }
       if (unsubRecipes) { unsubRecipes(); unsubRecipes = null; }
       pantry = []; if (unsubPantry) { unsubPantry(); unsubPantry = null; }
-      shoppingList = []; if (unsubShopping) { unsubShopping(); unsubShopping = null; }
+      shoppingList = []; shopHistory = []; sharedListCode = null;
+      if (unsubSharedList) { unsubSharedList(); unsubSharedList = null; }
+      if (unsubShopping) { unsubShopping(); unsubShopping = null; }
       userCategories = []; if (unsubCategories) { unsubCategories(); unsubCategories = null; }
       dailyLog = []; if (unsubDailyLog) { unsubDailyLog(); unsubDailyLog = null; }
       weightLog = []; if (unsubWeightLog) { unsubWeightLog(); unsubWeightLog = null; }
@@ -7166,6 +7609,7 @@ window.addEventListener('fc-ready', () => {
     const qty  = prefillQty  || (qtyInp?.value || '').trim();
     if (!name) { inp?.focus(); return; }
     const catKey = manualShopCatKey || resolvedShopCategory(name).key;
+    updateShopHistory(name, qty || null, catKey);
     shoppingList = [...shoppingList, { id: Date.now().toString(), name, qty: qty || null, recipe: 'Manuel', bought: false, catKey }];
     if (!prefillName) {
       inp.value = '';
@@ -7173,6 +7617,7 @@ window.addEventListener('fc-ready', () => {
       manualShopCatKey = null;
       manualCatExpanded = false;
       renderManualCatPicker('');
+      document.getElementById('shop-suggest-list')?.classList.remove('visible');
     }
     try { renderCourses(); } catch(e) { console.error('renderCourses error:', e); }
     saveShoppingListDB();
@@ -7182,6 +7627,10 @@ window.addEventListener('fc-ready', () => {
 
   document.getElementById('inp-manual-shop').addEventListener('input', e => {
     renderManualCatPicker(e.target.value);
+    renderShopSuggestions(e.target.value);
+  });
+  document.getElementById('inp-manual-shop').addEventListener('blur', () => {
+    setTimeout(() => document.getElementById('shop-suggest-list')?.classList.remove('visible'), 150);
   });
 
   // ── Articles habituels ──
@@ -7287,6 +7736,7 @@ window.addEventListener('fc-ready', () => {
   function addShopModalItem(name) {
     if (!name?.trim()) return;
     const catKey = shopModalCatKey || resolvedShopCategory(name).key;
+    updateShopHistory(name.trim(), null, catKey);
     shoppingList = [...shoppingList, { id: Date.now().toString(), name: name.trim(), recipe: 'Manuel', bought: false, catKey }];
     renderCourses(); saveShoppingListDB();
     toast(`✓ ${name.trim()} ajouté`, 'success');
@@ -7796,6 +8246,38 @@ if ('serviceWorker' in navigator) {
     <div style="display:flex;gap:10px">
       <button id="shop-edit-cancel" style="flex:1;padding:12px;border-radius:12px;border:1.5px solid var(--border2);background:var(--surface2);color:var(--ink2);font-size:0.9rem;font-weight:600;cursor:pointer">Annuler</button>
       <button id="shop-edit-save" style="flex:2;padding:12px;border-radius:12px;border:none;background:var(--green);color:#fff;font-size:0.9rem;font-weight:700;cursor:pointer">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Market mode overlay -->
+<div id="market-overlay" class="hidden">
+  <div class="market-header">
+    <span class="market-counter" id="market-counter"></span>
+    <button class="market-close-btn" id="market-close-btn">✕</button>
+  </div>
+  <div id="market-body-wrap">
+    <div class="market-body" id="market-body"></div>
+  </div>
+  <div class="market-footer" id="market-footer">
+    <button class="market-nav-btn" id="market-prev-btn" title="Précédent">←</button>
+    <button class="market-buy-btn" id="market-buy-btn">✓ Acheté</button>
+    <button class="market-nav-btn" id="market-next-btn" title="Suivant">→</button>
+  </div>
+</div>
+
+<!-- Share list bottom sheet -->
+<div id="share-list-overlay" class="hidden">
+  <div id="share-list-sheet">
+    <div class="share-sheet-handle"></div>
+    <div class="share-sheet-title">👥 Partager la liste en temps réel</div>
+    <div class="share-sheet-section" id="share-sheet-content">
+      <button class="share-sheet-btn" id="btn-create-shared-list">Créer une liste partagée</button>
+      <div class="share-sheet-divider">— ou rejoindre une liste existante —</div>
+      <div class="share-join-row">
+        <input class="share-join-inp" id="share-join-code-inp" placeholder="CODE" maxlength="6" autocomplete="off">
+        <button class="share-join-btn" id="btn-join-shared-list">Rejoindre</button>
+      </div>
     </div>
   </div>
 </div>
