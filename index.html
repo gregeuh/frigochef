@@ -127,11 +127,11 @@
     loadPantry: (uid, cb) => onSnapshot(doc(db, 'pantry', uid),
       snap => cb(snap.exists() ? snap.data().items || [] : [])
     ),
-    saveShoppingList: async (uid, items) => {
-      await setDoc(doc(db, 'shoppingList', uid), { items, updatedAt: Date.now() });
+    saveShoppingList: async (uid, items, overrides) => {
+      await setDoc(doc(db, 'shoppingList', uid), { items, overrides: overrides || {}, updatedAt: Date.now() });
     },
     loadShoppingList: (uid, cb) => onSnapshot(doc(db, 'shoppingList', uid),
-      snap => cb(snap.exists() ? snap.data().items || [] : [])
+      snap => cb(snap.exists() ? { items: snap.data().items || [], overrides: snap.data().overrides || {} } : { items: [], overrides: {} })
     ),
     saveCategories: async (uid, cats) => {
       await setDoc(doc(db, 'userCategories', uid), { cats, updatedAt: Date.now() });
@@ -3632,6 +3632,7 @@ const RESTRICTION_KEYWORDS = {
   'sans porc':  ['porc','lardons','bacon','jambon','saucisse de porc','rillettes','chorizo'],
 };
 let shoppingList = []; // { id, name, recipe, bought }
+let shopCatOverrides = {}; // { 'coca-cola': 'boissons', ... } — nom en minuscules → catKey
 let unsubShopping = null;
 let userCategories = []; // { key, label, color, bg, words }
 let unsubCategories = null;
@@ -4075,7 +4076,7 @@ function renderRecipes() {
    ═══════════════════════════════════════════════════ */
 function saveShoppingListDB() {
   if (!user) return;
-  window.__FC.saveShoppingList(user.uid, shoppingList)
+  window.__FC.saveShoppingList(user.uid, shoppingList, shopCatOverrides)
     .catch(e => console.error('Erreur liste de courses:', e));
 }
 
@@ -4094,7 +4095,7 @@ function openShopCatPopover(itemId, anchorEl) {
   const popover = document.getElementById('shop-cat-popover');
   const cats = [...allCategories(), { key: 'autres', label: '📦 Autres', color: '#868E96' }];
   const item = shoppingList.find(i => i.id === itemId);
-  const currentKey = item?.catKey || foodCategory(item?.name || '').key;
+  const currentKey = item?.catKey || resolvedShopCategory(item?.name || '').key;
 
   popover.innerHTML = cats.map(c => `
     <span class="scp-pill" data-key="${esc(c.key)}"
@@ -4115,7 +4116,10 @@ function openShopCatPopover(itemId, anchorEl) {
 
   popover.querySelectorAll('.scp-pill').forEach(pill => {
     pill.addEventListener('click', () => {
-      shoppingList = shoppingList.map(i => i.id === itemId ? { ...i, catKey: pill.dataset.key } : i);
+      const newKey = pill.dataset.key;
+      // Persist override so future additions of the same item use this category
+      if (item) shopCatOverrides[item.name.toLowerCase().trim()] = newKey;
+      shoppingList = shoppingList.map(i => i.id === itemId ? { ...i, catKey: newKey } : i);
       saveShoppingListDB(); renderCourses();
       popover.style.display = 'none';
     });
@@ -4129,6 +4133,17 @@ function openShopCatPopover(itemId, anchorEl) {
     }
   };
   setTimeout(() => document.addEventListener('click', close, true), 0);
+}
+
+function resolvedShopCategory(name) {
+  const key = name.toLowerCase().trim();
+  const overrideKey = shopCatOverrides[key];
+  if (overrideKey) {
+    const allCatDefs = [...allCategories(), { key: 'autres', label: '📦 Autres', color: '#868E96', bg: 'rgba(134,142,150,0.10)' }];
+    const found = allCatDefs.find(c => c.key === overrideKey);
+    if (found) return found;
+  }
+  return foodCategory(name);
 }
 
 function shopItemCategory(name) {
@@ -4185,7 +4200,7 @@ function renderCourses() {
   shoppingList.forEach(item => {
     const cat = item.catKey && catDefMap[item.catKey]
       ? catDefMap[item.catKey]
-      : shopItemCategory(item.name || '');
+      : resolvedShopCategory(item.name || '');
     const key = cat.key || 'autres';
     (byCat[key] = byCat[key] || { cat, items: [] }).items.push(item);
   });
@@ -6118,7 +6133,7 @@ async function generateShoppingFromPlan() {
         if (!name) return;
         const exists = shoppingList.some(s => s.name.toLowerCase() === name.toLowerCase());
         if (!exists) {
-          const cat = foodCategory(name);
+          const cat = resolvedShopCategory(name);
           shoppingList = [...shoppingList, {
             id: Date.now().toString() + Math.random(),
             name, recipe: entry.name, bought: false, catKey: cat.key
@@ -6443,8 +6458,8 @@ window.addEventListener('fc-ready', () => {
       });
 
       if (unsubShopping) unsubShopping();
-      unsubShopping = window.__FC.loadShoppingList(fbUser.uid, items => {
-        shoppingList = items; renderCourses();
+      unsubShopping = window.__FC.loadShoppingList(fbUser.uid, ({ items, overrides }) => {
+        shoppingList = items; shopCatOverrides = overrides || {}; renderCourses();
       });
 
       if (unsubCategories) unsubCategories();
@@ -7034,7 +7049,7 @@ window.addEventListener('fc-ready', () => {
     const name = prefillName || (inp?.value || '').trim();
     const qty  = prefillQty  || (qtyInp?.value || '').trim();
     if (!name) { inp?.focus(); return; }
-    const catKey = manualShopCatKey || foodCategory(name).key;
+    const catKey = manualShopCatKey || resolvedShopCategory(name).key;
     shoppingList = [...shoppingList, { id: Date.now().toString(), name, qty: qty || null, recipe: 'Manuel', bought: false, catKey }];
     if (!prefillName) {
       inp.value = '';
@@ -7154,7 +7169,7 @@ window.addEventListener('fc-ready', () => {
 
   function addShopModalItem(name) {
     if (!name?.trim()) return;
-    const catKey = shopModalCatKey || foodCategory(name).key;
+    const catKey = shopModalCatKey || resolvedShopCategory(name).key;
     shoppingList = [...shoppingList, { id: Date.now().toString(), name: name.trim(), recipe: 'Manuel', bought: false, catKey }];
     renderCourses(); saveShoppingListDB();
     toast(`✓ ${name.trim()} ajouté`, 'success');
