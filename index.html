@@ -1504,6 +1504,66 @@ body {
   background: var(--green-l); color: var(--green-dk);
 }
 .meal-kcal-source.hidden { display: none; }
+
+/* ── Meal type pills ── */
+.meal-type-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+.meal-type-pill {
+  flex: 1; min-width: 0; border: 1.5px solid var(--border2); background: var(--surface2);
+  border-radius: 20px; padding: 5px 8px; font-size: 0.72rem; font-weight: 600;
+  color: var(--ink2); cursor: pointer; text-align: center; transition: all 0.14s; white-space: nowrap;
+}
+.meal-type-pill:hover { border-color: var(--green); color: var(--green-dk); background: var(--green-l); }
+.meal-type-pill.active { border-color: var(--green); background: var(--green-l); color: var(--green-dk); box-shadow: 0 0 0 2px var(--green-l); }
+
+/* ── Quick calorie estimate buttons ── */
+.meal-kcal-quick { display: flex; gap: 6px; flex-wrap: wrap; }
+.meal-kcal-quick-btn {
+  flex: 1; min-width: 0; border: 1.5px solid var(--border2); background: var(--surface2);
+  border-radius: 16px; padding: 5px 6px; font-size: 0.70rem; font-weight: 600;
+  color: var(--ink2); cursor: pointer; text-align: center; transition: all 0.14s; white-space: nowrap;
+}
+.meal-kcal-quick-btn:hover { border-color: var(--green); color: var(--green-dk); background: var(--green-l); }
+.meal-kcal-quick-btn.active { border-color: var(--green-dk); background: var(--green); color: #fff; }
+
+/* ── Recent meals chips ── */
+.meal-recent-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.meal-recent-chip {
+  border: 1.5px solid var(--border2); background: var(--surface2); border-radius: 16px;
+  padding: 4px 10px; font-size: 0.70rem; font-weight: 500; color: var(--ink2);
+  cursor: pointer; transition: all 0.14s; max-width: 160px; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.meal-recent-chip:hover { border-color: var(--green); color: var(--green-dk); background: var(--green-l); }
+
+/* ── Meal barcode scanner ── */
+.meal-scanner-btn {
+  border: 1.5px solid var(--border2); background: var(--surface2); border-radius: 20px;
+  padding: 5px 14px; font-size: 0.75rem; font-weight: 600; color: var(--ink2);
+  cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.14s;
+}
+.meal-scanner-btn:hover { border-color: var(--green); color: var(--green-dk); background: var(--green-l); }
+#meal-scanner-view {
+  display: none; flex-direction: column; gap: 8px;
+  border: 1.5px solid var(--border); border-radius: var(--r); overflow: hidden;
+}
+#meal-scanner-view.active { display: flex; }
+#meal-scanner-reader { width: 100%; min-height: 200px; background: #000; }
+.meal-scanner-stop {
+  border: none; background: var(--surface2); border-radius: 0 0 var(--r) var(--r);
+  padding: 8px; font-size: 0.78rem; font-weight: 600; color: var(--ink2); cursor: pointer;
+}
+.meal-scanner-stop:hover { background: #fee2e2; color: #c00; }
+.meal-portion-row { display: flex; align-items: center; gap: 8px; }
+.meal-portion-row label { font-size: 0.75rem; color: var(--ink2); white-space: nowrap; }
+.meal-portion-row input { flex: 1; }
+
+/* ── Journal meal type badge ── */
+.journal-type-badge {
+  display: inline-block; font-size: 0.60rem; font-weight: 700; padding: 1px 6px;
+  border-radius: 8px; background: var(--green-l); color: var(--green-dk);
+  vertical-align: middle; margin-left: 4px; text-transform: capitalize;
+}
+
 .weight-withings-toggle { text-align: center; }
 .withings-section-label { font-size: 0.72rem; font-weight: 700; color: var(--ink3); text-transform: uppercase; letter-spacing: 0.06em; padding-top: 2px; }
 
@@ -2589,33 +2649,78 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
 
 <!-- ═══════════════ ADD MEAL MODAL ═══════════════ -->
 <div id="meal-modal-overlay" class="meal-modal-overlay hidden">
-  <div class="meal-modal-card">
+  <div class="meal-modal-card" style="max-height:95vh;overflow-y:auto">
     <div class="meal-modal-title">Ajouter un repas</div>
     <div class="meal-modal-body">
+
+      <!-- Type de repas -->
       <div class="rf-field">
-        <label class="rf-label">Nom du repas *</label>
+        <label class="rf-label">Type de repas</label>
+        <div class="meal-type-pills" id="meal-type-pills">
+          <button class="meal-type-pill" data-val="petit-déjeuner">🌅 Petit-déj</button>
+          <button class="meal-type-pill active" data-val="déjeuner">☀️ Déjeuner</button>
+          <button class="meal-type-pill" data-val="collation">🍎 Collation</button>
+          <button class="meal-type-pill" data-val="dîner">🌙 Dîner</button>
+          <button class="meal-type-pill" data-val="autre">➕ Autre</button>
+        </div>
+        <!-- Hidden select kept for saveAddMealModal compatibility -->
+        <select id="meal-inp-type" style="display:none">
+          <option value="petit-déjeuner">Petit-déj</option>
+          <option value="déjeuner" selected>Déjeuner</option>
+          <option value="collation">Collation</option>
+          <option value="dîner">Dîner</option>
+          <option value="autre">Autre</option>
+        </select>
+      </div>
+
+      <!-- Repas récents -->
+      <div class="rf-field" id="meal-recent-section" style="display:none">
+        <label class="rf-label">Récents</label>
+        <div class="meal-recent-chips" id="meal-recent-chips"></div>
+      </div>
+
+      <!-- Nom du repas -->
+      <div class="rf-field">
+        <label class="rf-label" style="display:flex;align-items:center;justify-content:space-between">
+          Nom du repas *
+          <button class="meal-scanner-btn" id="meal-btn-scan">📷 Scanner</button>
+        </label>
         <input id="meal-inp-name" class="inp" type="text" placeholder="Ex: Pâtes carbonara" autocomplete="off">
         <div id="meal-kcal-suggestions" class="meal-suggestions hidden"></div>
       </div>
-      <div style="display:flex;gap:10px">
-        <div class="rf-field" style="flex:1">
-          <label class="rf-label" style="display:flex;align-items:center;gap:4px">
-            Calories (kcal) *
-            <span id="meal-kcal-source" class="meal-kcal-source hidden"></span>
-          </label>
-          <input id="meal-inp-kcal" class="inp" type="number" placeholder="650" min="0" max="5000">
-          <div class="meal-kcal-hint" id="meal-kcal-hint">Cherchez sur le packaging, Yuka ou MyFitnessPal</div>
-        </div>
-        <div class="rf-field" style="flex:1">
-          <label class="rf-label">Repas</label>
-          <select id="meal-inp-type" class="inp">
-            <option value="petit-déjeuner">🌅 Petit-déj</option>
-            <option value="déjeuner" selected>☀️ Déjeuner</option>
-            <option value="dîner">🌙 Dîner</option>
-            <option value="collation">🍎 Collation</option>
-          </select>
+
+      <!-- Scanner view -->
+      <div id="meal-scanner-view">
+        <div id="meal-scanner-reader"></div>
+        <button class="meal-scanner-stop" id="meal-scanner-stop">⏹ Arrêter le scanner</button>
+      </div>
+
+      <!-- Portion adjuster (shown after barcode scan) -->
+      <div id="meal-portion-section" style="display:none">
+        <div class="meal-portion-row">
+          <label>Portion (g) :</label>
+          <input id="meal-inp-portion" class="inp" type="number" value="100" min="1" max="2000">
         </div>
       </div>
+
+      <!-- Calories -->
+      <div class="rf-field">
+        <label class="rf-label" style="display:flex;align-items:center;gap:4px">
+          Calories (kcal) *
+          <span id="meal-kcal-source" class="meal-kcal-source hidden"></span>
+        </label>
+        <input id="meal-inp-kcal" class="inp" type="number" placeholder="650" min="0" max="5000">
+        <div class="meal-kcal-hint" id="meal-kcal-hint">Cherchez sur le packaging, Yuka ou MyFitnessPal</div>
+        <!-- Quick estimate buttons -->
+        <div class="meal-kcal-quick" style="margin-top:8px" id="meal-kcal-quick">
+          <button class="meal-kcal-quick-btn" data-kcal="350">🥗 Léger<br><small>350</small></button>
+          <button class="meal-kcal-quick-btn" data-kcal="600">🍽️ Normal<br><small>600</small></button>
+          <button class="meal-kcal-quick-btn" data-kcal="850">🍔 Copieux<br><small>850</small></button>
+          <button class="meal-kcal-quick-btn" data-kcal="1100">🎉 Festif<br><small>1100</small></button>
+        </div>
+      </div>
+
+      <!-- Macros -->
       <div class="meal-macro-toggle" id="meal-macro-toggle">
         <button class="meal-macro-toggle-btn" id="btn-toggle-macros">+ Ajouter les macros</button>
       </div>
@@ -4374,7 +4479,7 @@ async function saveCatModal() {
 /* ═══════════════════════════════════════════════════
    SANTÉ TAB
    ═══════════════════════════════════════════════════ */
-const MEAL_ICONS = { 'petit-déjeuner':'🌅', 'déjeuner':'☀️', 'dîner':'🌙', 'collation':'🍎' };
+const MEAL_ICONS = { 'petit-déjeuner':'🌅', 'déjeuner':'☀️', 'dîner':'🌙', 'collation':'🍎', 'autre':'➕' };
 const GOAL_TIPS = {
   lose_weight: [
     { icon:'💧', text:'Boire 2L d\'eau par jour réduit la sensation de faim et booste le métabolisme.' },
@@ -4748,11 +4853,13 @@ function renderSante() {
       const icon = MEAL_ICONS[entry.type] || '🍽️';
       const macroStr = (entry.protein || entry.carbs || entry.fat)
         ? `P:${entry.protein||0}g G:${entry.carbs||0}g L:${entry.fat||0}g`
-        : entry.type || '';
+        : '';
+      const typeLabelMap = { 'petit-déjeuner':'Petit-déj', 'déjeuner':'Déjeuner', 'collation':'Collation', 'dîner':'Dîner', 'autre':'Autre' };
+      const typeLabel = entry.type ? typeLabelMap[entry.type] || entry.type : '';
       return `<div class="journal-entry">
         <div class="journal-entry-icon">${icon}</div>
         <div class="journal-entry-info">
-          <div class="journal-entry-name">${esc(entry.name)}</div>
+          <div class="journal-entry-name">${esc(entry.name)}${typeLabel ? `<span class="journal-type-badge">${esc(typeLabel)}</span>` : ''}</div>
           <div class="journal-entry-meta">${esc(macroStr)}</div>
         </div>
         <div class="journal-entry-kcal">${entry.kcal} kcal</div>
@@ -4897,11 +5004,117 @@ function openAddMealModal(prefill = {}) {
   if (prefill.name && prefill.kcal) {
     src.textContent = '📖 Recette'; src.classList.remove('hidden');
   }
+
+  // ── Meal type pills ──
+  const defaultType = prefill.type || 'déjeuner';
+  document.getElementById('meal-inp-type').value = defaultType;
+  document.querySelectorAll('#meal-type-pills .meal-type-pill').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.val === defaultType);
+  });
+
+  // ── Quick kcal buttons reset ──
+  document.querySelectorAll('#meal-kcal-quick .meal-kcal-quick-btn').forEach(b => b.classList.remove('active'));
+
+  // ── Reset scanner & portion ──
+  stopMealScanner();
+  document.getElementById('meal-portion-section').style.display = 'none';
+  document.getElementById('meal-inp-portion').value = 100;
+  window._mealScannerNutrients = null;
+
+  // ── Recent meals chips ──
+  const seen = new Set();
+  const recent = [...(dailyLog || [])].reverse().filter(e => {
+    if (!e.name || seen.has(e.name)) return false;
+    seen.add(e.name); return true;
+  }).slice(0, 5);
+  const recentSec = document.getElementById('meal-recent-section');
+  const recentChips = document.getElementById('meal-recent-chips');
+  if (recent.length) {
+    recentChips.innerHTML = recent.map(e =>
+      `<button class="meal-recent-chip" data-name="${esc(e.name)}" data-kcal="${e.kcal}"
+        data-prot="${e.protein||0}" data-carb="${e.carbs||0}" data-fat="${e.fat||0}">${esc(e.name)}</button>`
+    ).join('');
+    recentChips.querySelectorAll('.meal-recent-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        applyMealSuggestion(chip.dataset.name, parseInt(chip.dataset.kcal),
+          parseInt(chip.dataset.prot), parseInt(chip.dataset.carb), parseInt(chip.dataset.fat), '🕐 Récent');
+      });
+    });
+    recentSec.style.display = '';
+  } else {
+    recentSec.style.display = 'none';
+  }
+
   document.getElementById('meal-modal-overlay').classList.remove('hidden');
   setTimeout(() => document.getElementById('meal-inp-name').focus(), 60);
 }
 
+/* ── Meal barcode scanner ── */
+let _mealScannerInstance = null;
+
+function stopMealScanner() {
+  const view = document.getElementById('meal-scanner-view');
+  if (view) view.classList.remove('active');
+  if (_mealScannerInstance) {
+    _mealScannerInstance.stop().catch(() => {}).finally(() => {
+      _mealScannerInstance.clear();
+      _mealScannerInstance = null;
+    });
+  }
+}
+
+async function startMealScanner() {
+  const view = document.getElementById('meal-scanner-view');
+  view.classList.add('active');
+  try {
+    _mealScannerInstance = new Html5Qrcode('meal-scanner-reader');
+    await _mealScannerInstance.start(
+      { facingMode: 'environment' },
+      { fps: 10, qrbox: { width: 250, height: 150 } },
+      async (barcode) => {
+        stopMealScanner();
+        toast('📷 Code-barres détecté…', 'info');
+        try {
+          const resp = await fetch(`https://world.openfoodfacts.org/api/v2/product/${barcode}.json`);
+          const data = await resp.json();
+          const p = data.product;
+          if (!p) { toast('Produit introuvable', 'error'); return; }
+          const name = p.product_name_fr || p.product_name || barcode;
+          const kcalPer100 = Math.round(p.nutriments?.['energy-kcal_100g'] || 0);
+          const protPer100 = p.nutriments?.proteins_100g || 0;
+          const carbPer100 = p.nutriments?.carbohydrates_100g || 0;
+          const fatPer100  = p.nutriments?.fat_100g || 0;
+          window._mealScannerNutrients = { kcalPer100, protPer100, carbPer100, fatPer100 };
+          const portion = 100;
+          document.getElementById('meal-inp-name').value = name;
+          document.getElementById('meal-inp-kcal').value = Math.round(kcalPer100 * portion / 100);
+          document.getElementById('meal-inp-prot').value = Math.round(protPer100 * portion / 100) || '';
+          document.getElementById('meal-inp-carb').value = Math.round(carbPer100 * portion / 100) || '';
+          document.getElementById('meal-inp-fat').value  = Math.round(fatPer100  * portion / 100) || '';
+          if (protPer100 || carbPer100 || fatPer100) {
+            document.getElementById('meal-macros-section').style.display = 'block';
+            document.getElementById('btn-toggle-macros').textContent = '− Masquer les macros';
+          }
+          document.getElementById('meal-inp-portion').value = portion;
+          document.getElementById('meal-portion-section').style.display = '';
+          const src = document.getElementById('meal-kcal-source');
+          src.textContent = '📷 Open Food Facts'; src.classList.remove('hidden');
+          document.getElementById('meal-kcal-hint').style.display = 'none';
+          toast(`✓ ${name} trouvé`, 'success');
+        } catch(e) {
+          toast('Erreur lors de la recherche', 'error');
+        }
+      },
+      () => {}
+    );
+  } catch(e) {
+    stopMealScanner();
+    toast('Impossible d\'accéder à la caméra', 'error');
+  }
+}
+
 function closeAddMealModal() {
+  stopMealScanner();
   document.getElementById('meal-modal-overlay').classList.add('hidden');
 }
 
@@ -6323,6 +6536,47 @@ window.addEventListener('fc-ready', () => {
     const visible = sec.style.display !== 'none';
     sec.style.display = visible ? 'none' : 'block';
     btn.textContent = visible ? '+ Ajouter les macros' : '− Masquer les macros';
+  });
+
+  // ── Meal type pills ──
+  document.querySelectorAll('#meal-type-pills .meal-type-pill').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#meal-type-pills .meal-type-pill').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('meal-inp-type').value = btn.dataset.val;
+    });
+  });
+
+  // ── Quick kcal buttons ──
+  document.querySelectorAll('#meal-kcal-quick .meal-kcal-quick-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#meal-kcal-quick .meal-kcal-quick-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('meal-inp-kcal').value = btn.dataset.kcal;
+      hideMealSuggestions();
+    });
+  });
+
+  // ── Meal barcode scanner ──
+  document.getElementById('meal-btn-scan').addEventListener('click', () => {
+    const view = document.getElementById('meal-scanner-view');
+    if (view.classList.contains('active')) {
+      stopMealScanner();
+    } else {
+      startMealScanner();
+    }
+  });
+  document.getElementById('meal-scanner-stop').addEventListener('click', stopMealScanner);
+
+  // ── Portion adjuster (recalculates kcal after barcode scan) ──
+  document.getElementById('meal-inp-portion').addEventListener('input', () => {
+    const n = window._mealScannerNutrients;
+    if (!n) return;
+    const portion = parseFloat(document.getElementById('meal-inp-portion').value) || 100;
+    document.getElementById('meal-inp-kcal').value = Math.round(n.kcalPer100 * portion / 100);
+    document.getElementById('meal-inp-prot').value = Math.round(n.protPer100 * portion / 100) || '';
+    document.getElementById('meal-inp-carb').value = Math.round(n.carbPer100 * portion / 100) || '';
+    document.getElementById('meal-inp-fat').value  = Math.round(n.fatPer100  * portion / 100) || '';
   });
 
   // ── WEIGHT LOG ──
