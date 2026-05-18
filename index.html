@@ -4651,6 +4651,22 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('market-next-btn')?.addEventListener('click', () => {
     if (marketIdx < marketItems.length - 1) { marketIdx++; renderMarketItem(); }
   });
+  // Swipe gestures on market overlay
+  let _mTouchX = 0;
+  const marketOverlay = document.getElementById('market-overlay');
+  marketOverlay?.addEventListener('touchstart', e => { _mTouchX = e.touches[0].clientX; }, { passive: true });
+  marketOverlay?.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - _mTouchX;
+    if (Math.abs(dx) < 50) return;
+    if (dx < 0) {
+      // swipe left = acheté
+      document.getElementById('market-buy-btn')?.click();
+    } else {
+      // swipe right = passer au suivant
+      if (marketIdx < marketItems.length - 1) { marketIdx++; renderMarketItem(); }
+      else if (marketIdx > 0) { marketIdx--; renderMarketItem(); }
+    }
+  }, { passive: true });
   document.getElementById('share-list-overlay')?.addEventListener('click', e => {
     if (e.target === document.getElementById('share-list-overlay'))
       document.getElementById('share-list-overlay').classList.add('hidden');
@@ -4705,8 +4721,7 @@ function renderCourses() {
       <button class="shop-action-btn" id="btn-share-realtime">👥 En direct</button>
       ${hasBought ? `<button class="shop-action-btn danger" id="btn-clear-bought">🗑 Achetés</button>` : ''}
       <button class="shop-action-btn danger" id="btn-clear-all">🗑 Tout</button>
-    </div>
-    <div id="shared-list-bar-inner"></div>`;
+    </div>`;
 
   // Group by food category (use stored catKey if available, else auto-detect)
   const allCatDefs = [...allCategories(), { key: 'autres', label: '📦 Autres', color: '#868E96', bg: 'rgba(134,142,150,0.10)' }];
