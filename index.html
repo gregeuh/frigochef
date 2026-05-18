@@ -5121,7 +5121,9 @@ function clearIngredientForm() {
   document.getElementById('meal-household-units').style.display = 'none';
   document.getElementById('meal-household-label').style.display = 'none';
   document.getElementById('meal-serving-count').style.display = 'none';
-  document.getElementById('btn-add-ingredient').style.display = 'none';
+  const addIngBtn = document.getElementById('btn-add-ingredient');
+  addIngBtn.style.display = 'none';
+  addIngBtn.disabled = false;
   document.querySelectorAll('.meal-serving-btn').forEach(b => b.style.borderColor = '');
   window._mealScannerNutrients = null;
   document.getElementById('meal-kcal-source').classList.add('hidden');
@@ -5160,7 +5162,9 @@ function openAddMealModal(prefill = {}) {
   stopMealScanner();
   document.getElementById('meal-portion-section').style.display = 'none';
   document.getElementById('meal-inp-portion').value = 100;
-  document.getElementById('btn-add-ingredient').style.display = 'none';
+  const _addIngBtn = document.getElementById('btn-add-ingredient');
+  _addIngBtn.style.display = 'none';
+  _addIngBtn.disabled = false;
   window._mealScannerNutrients = null;
   _mealIngredients = [];
   renderIngredientsList();
@@ -5330,9 +5334,11 @@ async function startMealScanner() {
           const resp = await fetch(`https://world.openfoodfacts.org/api/v2/product/${barcode}.json`);
           const data = await resp.json();
           const p = data.product;
-          if (!p) { toast('Produit introuvable', 'error'); return; }
-          const name = p.product_name_fr || p.product_name || barcode;
+          if (!p) { toast('Produit introuvable dans Open Food Facts', 'error'); return; }
+          const name = p.product_name_fr || p.product_name || p.generic_name_fr || p.generic_name || '';
+          if (!name) { toast('Produit trouvé mais sans nom — saisissez-le manuellement', 'error'); return; }
           const kcalPer100 = Math.round(p.nutriments?.['energy-kcal_100g'] || 0);
+          if (!kcalPer100) toast('⚠️ Valeur calorique absente dans OFF — vérifiez', 'info');
           const protPer100 = p.nutriments?.proteins_100g || 0;
           const carbPer100 = p.nutriments?.carbohydrates_100g || 0;
           const fatPer100  = p.nutriments?.fat_100g || 0;
@@ -5401,10 +5407,13 @@ async function startMealScanner() {
 
 function closeAddMealModal() {
   stopMealScanner();
+  _mealIngredients = [];
+  window._mealScannerNutrients = null;
   document.getElementById('meal-modal-overlay').classList.add('hidden');
 }
 
 async function saveAddMealModal() {
+  if (!user) { toast('Connectez-vous d\'abord', 'error'); return; }
   const type = document.getElementById('meal-inp-type').value;
   let name, kcal, protein, carbs, fat;
 
@@ -5485,6 +5494,7 @@ function closeWeightModal() {
 async function saveWeightModal() {
   const w = parseFloat(document.getElementById('weight-inp').value);
   const t = parseFloat(document.getElementById('target-weight-inp').value);
+  if (!user) { toast('Connectez-vous d\'abord', 'error'); return; }
   if (!w || w < 30 || w > 300) { toast('Entrez un poids valide', 'error'); return; }
 
   const g = id => { const v = parseFloat(document.getElementById(id).value); return isNaN(v) ? undefined : v; };
@@ -6324,6 +6334,7 @@ window.addEventListener('fc-ready', () => {
 
   function closeAddModal() {
     stopScanner();
+    editingFoodCtx = null;
     addOverlay.classList.add('hidden');
   }
 
@@ -6923,10 +6934,13 @@ window.addEventListener('fc-ready', () => {
   });
 
   // ── Multi-ingredient builder ──
-  document.getElementById('btn-add-ingredient').addEventListener('click', () => {
+  document.getElementById('btn-add-ingredient').addEventListener('click', e => {
+    const btn = e.currentTarget;
+    if (btn.disabled) return;
     const name = document.getElementById('meal-inp-name').value.trim();
     const kcal = parseInt(document.getElementById('meal-inp-kcal').value) || 0;
     if (!name || !kcal) { toast('Scannez ou saisissez un ingrédient d\'abord', 'error'); return; }
+    btn.disabled = true;
     _mealIngredients.push({
       name,
       grams: parseFloat(document.getElementById('meal-inp-portion').value) || 100,
