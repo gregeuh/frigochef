@@ -3,3 +3,4 @@ node_modules/
 /package.json
 functions/.env
 functions/node_modules/
+.claude/
