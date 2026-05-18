@@ -1021,7 +1021,8 @@ body {
   position: fixed; z-index: 3000; background: var(--surface);
   border: 1px solid var(--border2); border-radius: 16px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.18); padding: 12px;
-  display: flex; flex-wrap: wrap; gap: 6px; max-width: 280px;
+  display: flex; flex-wrap: wrap; gap: 6px; max-width: 300px;
+  max-height: 50vh; overflow-y: auto; overscroll-behavior: contain;
 }
 #shop-cat-popover .scp-pill {
   display: inline-flex; align-items: center; gap: 3px;
@@ -4146,16 +4147,27 @@ function openShopCatPopover(itemId, anchorEl) {
       ${esc(c.label)}
     </span>`).join('');
 
-  // Position near anchor
+  // Position near anchor — measure after render so we know real height
   const rect = anchorEl.getBoundingClientRect();
   popover.style.display = 'flex';
-  const pw = 280, ph = 150;
-  let top = rect.bottom + 6;
-  let left = rect.left - pw + rect.width;
-  if (left < 8) left = 8;
-  if (top + ph > window.innerHeight - 8) top = rect.top - ph - 6;
-  popover.style.top = top + 'px';
-  popover.style.left = left + 'px';
+  popover.style.top = '-9999px';  // off-screen while measuring
+  popover.style.left = '-9999px';
+  requestAnimationFrame(() => {
+    const pw = popover.offsetWidth;
+    const ph = popover.offsetHeight;
+    const margin = 8;
+    // Horizontal: align right edge with anchor, clamp to viewport
+    let left = rect.right - pw;
+    if (left < margin) left = margin;
+    if (left + pw > window.innerWidth - margin) left = window.innerWidth - pw - margin;
+    // Vertical: prefer below, flip above if not enough room
+    let top = rect.bottom + 6;
+    if (top + ph > window.innerHeight - margin) top = rect.top - ph - 6;
+    // If still out of bounds (not enough space above either), clamp
+    if (top < margin) top = margin;
+    popover.style.top = top + 'px';
+    popover.style.left = left + 'px';
+  });
 
   popover.querySelectorAll('.scp-pill').forEach(pill => {
     pill.addEventListener('click', () => {
