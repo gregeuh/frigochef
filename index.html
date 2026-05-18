@@ -1009,6 +1009,28 @@ body {
 }
 .shop-item-card:hover .shop-item-del { opacity: 1; }
 .shop-item-del:hover { color: var(--red); }
+.shop-item-cat-btn {
+  opacity: 0; background: none; border: none; color: var(--ink3);
+  font-size: 0.8rem; padding: 4px 6px; cursor: pointer;
+  transition: opacity 0.15s, color 0.15s; border-radius: 6px;
+}
+.shop-item-card:hover .shop-item-cat-btn { opacity: 1; }
+.shop-item-cat-btn:hover { color: var(--green); }
+/* Cat change popover */
+#shop-cat-popover {
+  position: fixed; z-index: 3000; background: var(--surface);
+  border: 1px solid var(--border2); border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18); padding: 12px;
+  display: flex; flex-wrap: wrap; gap: 6px; max-width: 280px;
+}
+#shop-cat-popover .scp-pill {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 4px 10px; border-radius: 20px; border: 1.5px solid transparent;
+  font-size: 0.72rem; font-weight: 600; cursor: pointer;
+  background: var(--surface2); color: var(--ink2);
+  transition: background 0.15s;
+}
+#shop-cat-popover .scp-pill:hover { background: var(--green-l); color: var(--green-dk); }
 .shop-item-qty {
   font-size: 0.72rem; font-weight: 600; color: var(--green-dk);
   background: var(--green-l); border-radius: 8px; padding: 2px 7px;
@@ -4068,6 +4090,47 @@ function toggleShoppingItem(name, recipeName) {
   renderCourses();
 }
 
+function openShopCatPopover(itemId, anchorEl) {
+  const popover = document.getElementById('shop-cat-popover');
+  const cats = [...allCategories(), { key: 'autres', label: '📦 Autres', color: '#868E96' }];
+  const item = shoppingList.find(i => i.id === itemId);
+  const currentKey = item?.catKey || foodCategory(item?.name || '').key;
+
+  popover.innerHTML = cats.map(c => `
+    <span class="scp-pill" data-key="${esc(c.key)}"
+      style="${c.key === currentKey ? `background:${c.color};color:#fff;border-color:${c.color}` : ''}">
+      ${esc(c.label)}
+    </span>`).join('');
+
+  // Position near anchor
+  const rect = anchorEl.getBoundingClientRect();
+  popover.style.display = 'flex';
+  const pw = 280, ph = 150;
+  let top = rect.bottom + 6;
+  let left = rect.left - pw + rect.width;
+  if (left < 8) left = 8;
+  if (top + ph > window.innerHeight - 8) top = rect.top - ph - 6;
+  popover.style.top = top + 'px';
+  popover.style.left = left + 'px';
+
+  popover.querySelectorAll('.scp-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      shoppingList = shoppingList.map(i => i.id === itemId ? { ...i, catKey: pill.dataset.key } : i);
+      saveShoppingListDB(); renderCourses();
+      popover.style.display = 'none';
+    });
+  });
+
+  // Close on outside click
+  const close = e => {
+    if (!popover.contains(e.target) && e.target !== anchorEl) {
+      popover.style.display = 'none';
+      document.removeEventListener('click', close, true);
+    }
+  };
+  setTimeout(() => document.addEventListener('click', close, true), 0);
+}
+
 function shopItemCategory(name) {
   const cat = foodCategory(name);
   return cat;
@@ -4140,6 +4203,7 @@ function renderCourses() {
           ${item.recipe !== 'Manuel' ? `<div class="shop-item-recipe">${esc(item.recipe)}</div>` : ''}
         </div>
         ${item.qty ? `<span class="shop-item-qty">${esc(item.qty)}</span>` : ''}
+        <button class="shop-item-cat-btn" data-cat-item="${item.id}" title="Changer catégorie">🏷</button>
         <button class="shop-item-del" data-del="${item.id}" title="Supprimer">✕</button>
       </div>`).join('');
     const doneCount = items.filter(i => i.bought).length;
@@ -4158,6 +4222,7 @@ function renderCourses() {
   el.querySelectorAll('.shop-item-card').forEach(card => {
     card.addEventListener('click', e => {
       if (e.target.classList.contains('shop-item-del')) return;
+      if (e.target.classList.contains('shop-item-cat-btn')) return;
       const id = card.dataset.shopId;
       shoppingList = shoppingList.map(i => i.id === id ? { ...i, bought: !i.bought } : i);
       saveShoppingListDB(); renderCourses();
@@ -4170,6 +4235,14 @@ function renderCourses() {
       e.stopPropagation();
       shoppingList = shoppingList.filter(i => i.id !== btn.dataset.del);
       saveShoppingListDB(); renderCourses();
+    });
+  });
+
+  // Change category
+  el.querySelectorAll('.shop-item-cat-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      openShopCatPopover(btn.dataset.catItem, btn);
     });
   });
 
@@ -7577,5 +7650,7 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
+<!-- Shop category change popover (hidden by default) -->
+<div id="shop-cat-popover" style="display:none"></div>
 </body>
 </html>
