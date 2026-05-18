@@ -746,17 +746,17 @@ body {
 }
 .filters .pill { text-align: center; }
 .pill {
-  padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border);
-  background: var(--surface); font-size: 0.74rem; font-weight: 500;
-  color: var(--ink3); transition: all 0.18s cubic-bezier(0.34,1.56,0.64,1);
+  padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border2);
+  background: var(--surface2); font-size: 0.74rem; font-weight: 500;
+  color: var(--ink2); transition: all 0.18s cubic-bezier(0.34,1.56,0.64,1);
   -webkit-tap-highlight-color: transparent;
   box-shadow: var(--shadow-sm);
 }
 .pill.on {
-  background: var(--ink); border-color: var(--ink); color: #fff;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  background: var(--green); border-color: var(--green); color: #fff;
+  box-shadow: 0 2px 8px rgba(0,135,90,0.30);
 }
-.pill:hover:not(.on) { background: var(--surface2); color: var(--ink); }
+.pill:hover:not(.on) { border-color: var(--green); color: var(--green-dk); background: var(--green-l); }
 .pill:active { transform: scale(0.92); }
 
 /* ─── RECIPE GRID ─── */
