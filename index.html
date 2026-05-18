@@ -1959,6 +1959,20 @@ body {
   color: #fff;
   box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
+/* Badge catégorie sous le champ de saisie */
+.shop-cat-suggested {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 10px 4px 8px; border-radius: 20px;
+  font-size: 0.75rem; font-weight: 600; cursor: pointer;
+  color: #fff; border: none;
+  transition: opacity 0.15s, transform 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.shop-cat-suggested:active { transform: scale(0.94); }
+.shop-cat-suggested .scs-chevron { font-size: 0.6rem; opacity: 0.8; }
+.shop-cat-all-row {
+  display: flex; flex-wrap: wrap; gap: 5px; margin-top: 4px; width: 100%;
+}
 
 /* ─── DESTINATION FRIGO / PLACARD ─── */
 .dest-btn {
@@ -2507,7 +2521,7 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
         <button class="voice-shop-btn" id="btn-scan-shop" title="Scanner un code-barres">📷</button>
         <button class="manual-shop-btn" id="btn-manual-shop">＋</button>
       </div>
-      <div id="manual-shop-cat-row" style="display:none;gap:5px;flex-wrap:wrap;margin-bottom:10px"></div>
+      <div id="manual-shop-cat-badge" style="display:none;margin-bottom:8px;align-items:center;gap:6px;flex-wrap:wrap"></div>
       <div id="courses-content" class="courses-card"></div>
     </div>
   </div>
@@ -7019,25 +7033,45 @@ window.addEventListener('fc-ready', () => {
   // ── Ajout manuel liste de courses ──
   let manualShopCatKey = null; // catégorie choisie manuellement
 
+  let manualCatExpanded = false;
+
   function renderManualCatPicker(name) {
-    const row = document.getElementById('manual-shop-cat-row');
-    if (!name.trim()) { row.style.display = 'none'; manualShopCatKey = null; return; }
-    const detected = foodCategory(name);
-    // Si pas encore de sélection, utiliser la catégorie détectée
-    if (!manualShopCatKey) manualShopCatKey = detected.key;
+    const wrap = document.getElementById('manual-shop-cat-badge');
+    if (!name.trim()) {
+      wrap.style.display = 'none'; manualShopCatKey = null; manualCatExpanded = false; return;
+    }
+    // Use override-aware resolution; allow user override via manualShopCatKey
+    const resolved = resolvedShopCategory(name);
+    if (!manualShopCatKey) manualShopCatKey = resolved.key;
     const cats = [...allCategories(), { key: 'autres', label: '📦 Autres', color: '#868E96' }];
-    row.style.display = 'flex';
-    row.innerHTML = cats.map(cat => {
-      const sel = cat.key === manualShopCatKey;
-      return `<button class="shop-cat-pill ${sel ? 'selected' : ''}"
-        data-cat-key="${cat.key}"
-        style="${sel ? `background:${cat.color};border-color:${cat.color}` : `border-color:${cat.color}33;color:${cat.color}`}">
-        ${cat.label}
-      </button>`;
-    }).join('');
-    row.querySelectorAll('.shop-cat-pill').forEach(btn => {
+    const activeCat = cats.find(c => c.key === manualShopCatKey) || resolved;
+
+    let html = `<button class="shop-cat-suggested" data-action="toggle-cats"
+      style="background:${activeCat.color}">
+      ${esc(activeCat.label)} <span class="scs-chevron">${manualCatExpanded ? '▲' : '▼'}</span>
+    </button>`;
+
+    if (manualCatExpanded) {
+      html += `<div class="shop-cat-all-row">` + cats.map(cat => {
+        const sel = cat.key === manualShopCatKey;
+        return `<button class="shop-cat-pill ${sel ? 'selected' : ''}" data-cat-key="${esc(cat.key)}"
+          style="${sel ? `background:${cat.color};border-color:${cat.color}` : `border-color:${cat.color}33;color:${cat.color}`}">
+          ${esc(cat.label)}
+        </button>`;
+      }).join('') + `</div>`;
+    }
+
+    wrap.style.display = 'flex';
+    wrap.innerHTML = html;
+
+    wrap.querySelector('[data-action="toggle-cats"]')?.addEventListener('click', () => {
+      manualCatExpanded = !manualCatExpanded;
+      renderManualCatPicker(document.getElementById('inp-manual-shop').value);
+    });
+    wrap.querySelectorAll('.shop-cat-pill').forEach(btn => {
       btn.addEventListener('click', () => {
         manualShopCatKey = btn.dataset.catKey;
+        manualCatExpanded = false;
         renderManualCatPicker(document.getElementById('inp-manual-shop').value);
       });
     });
@@ -7055,6 +7089,7 @@ window.addEventListener('fc-ready', () => {
       inp.value = '';
       if (qtyInp) qtyInp.value = '';
       manualShopCatKey = null;
+      manualCatExpanded = false;
       renderManualCatPicker('');
     }
     try { renderCourses(); } catch(e) { console.error('renderCourses error:', e); }
