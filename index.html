@@ -1506,11 +1506,12 @@ body {
 .meal-kcal-source.hidden { display: none; }
 
 /* ── Meal type pills ── */
-.meal-type-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+.meal-type-pills { display: flex; gap: 5px; flex-wrap: wrap; }
 .meal-type-pill {
   flex: 1; min-width: 0; border: 1.5px solid var(--border2); background: var(--surface2);
-  border-radius: 20px; padding: 5px 8px; font-size: 0.72rem; font-weight: 600;
-  color: var(--ink2); cursor: pointer; text-align: center; transition: all 0.14s; white-space: nowrap;
+  border-radius: 20px; padding: 5px 6px; font-size: 0.68rem; font-weight: 600;
+  color: var(--ink2); cursor: pointer; text-align: center; transition: all 0.14s;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .meal-type-pill:hover { border-color: var(--green); color: var(--green-dk); background: var(--green-l); }
 .meal-type-pill.active { border-color: var(--green); background: var(--green-l); color: var(--green-dk); box-shadow: 0 0 0 2px var(--green-l); }
@@ -2657,10 +2658,10 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
       <div class="rf-field">
         <label class="rf-label">Type de repas</label>
         <div class="meal-type-pills" id="meal-type-pills">
-          <button class="meal-type-pill" data-val="petit-déjeuner">🌅 Petit-déj</button>
-          <button class="meal-type-pill active" data-val="déjeuner">☀️ Déjeuner</button>
+          <button class="meal-type-pill" data-val="petit-déjeuner">🌅 Matin</button>
+          <button class="meal-type-pill active" data-val="déjeuner">☀️ Midi</button>
           <button class="meal-type-pill" data-val="collation">🍎 Collation</button>
-          <button class="meal-type-pill" data-val="dîner">🌙 Dîner</button>
+          <button class="meal-type-pill" data-val="dîner">🌙 Soir</button>
           <button class="meal-type-pill" data-val="autre">➕ Autre</button>
         </div>
         <!-- Hidden select kept for saveAddMealModal compatibility -->
