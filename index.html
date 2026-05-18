@@ -1017,21 +1017,42 @@ body {
 .shop-item-card:hover .shop-item-cat-btn { opacity: 1; }
 .shop-item-cat-btn:hover { color: var(--green); }
 /* Cat change popover */
-#shop-cat-popover {
-  position: fixed; z-index: 3000; background: var(--surface);
-  border: 1px solid var(--border2); border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.18); padding: 12px;
-  display: flex; flex-wrap: wrap; gap: 6px; max-width: 300px;
-  max-height: 50vh; overflow-y: auto; overscroll-behavior: contain;
+/* Cat change bottom sheet */
+#shop-cat-sheet-overlay {
+  position: fixed; inset: 0; z-index: 3000;
+  background: rgba(10,14,12,0.55);
+  display: flex; align-items: flex-end;
+  animation: fadeIn 0.15s ease;
 }
-#shop-cat-popover .scp-pill {
-  display: inline-flex; align-items: center; gap: 3px;
-  padding: 4px 10px; border-radius: 20px; border: 1.5px solid transparent;
-  font-size: 0.72rem; font-weight: 600; cursor: pointer;
+#shop-cat-sheet-overlay.hidden { display: none; }
+#shop-cat-sheet {
+  width: 100%; max-width: 430px; margin: 0 auto;
+  background: var(--surface); border-radius: 24px 24px 0 0;
+  padding: 12px 16px calc(28px + env(safe-area-inset-bottom, 0px));
+  box-shadow: var(--shadow-lg);
+  animation: slideUp 0.28s cubic-bezier(0.34,1.56,0.64,1) both;
+  max-height: 70vh; display: flex; flex-direction: column;
+}
+#shop-cat-sheet-handle {
+  width: 36px; height: 4px; border-radius: 2px;
+  background: var(--border2); margin: 0 auto 14px;
+}
+#shop-cat-sheet-title {
+  font-size: 0.8rem; font-weight: 700; color: var(--ink2);
+  text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px;
+}
+#shop-cat-sheet-pills {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  overflow-y: auto; overscroll-behavior: contain;
+}
+#shop-cat-sheet-pills .scp-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 7px 13px; border-radius: 20px; border: 1.5px solid transparent;
+  font-size: 0.78rem; font-weight: 600; cursor: pointer;
   background: var(--surface2); color: var(--ink2);
-  transition: background 0.15s;
+  transition: background 0.15s; -webkit-tap-highlight-color: transparent;
 }
-#shop-cat-popover .scp-pill:hover { background: var(--green-l); color: var(--green-dk); }
+#shop-cat-sheet-pills .scp-pill:active { transform: scale(0.94); }
 .shop-item-qty {
   font-size: 0.72rem; font-weight: 600; color: var(--green-dk);
   background: var(--green-l); border-radius: 8px; padding: 2px 7px;
@@ -4135,59 +4156,32 @@ function toggleShoppingItem(name, recipeName) {
   renderCourses();
 }
 
-function openShopCatPopover(itemId, anchorEl) {
-  const popover = document.getElementById('shop-cat-popover');
+function openShopCatPopover(itemId) {
+  const overlay = document.getElementById('shop-cat-sheet-overlay');
+  const pillsEl = document.getElementById('shop-cat-sheet-pills');
   const cats = [...allCategories(), { key: 'autres', label: '📦 Autres', color: '#868E96' }];
   const item = shoppingList.find(i => i.id === itemId);
   const currentKey = item?.catKey || resolvedShopCategory(item?.name || '').key;
 
-  popover.innerHTML = cats.map(c => `
+  pillsEl.innerHTML = cats.map(c => `
     <span class="scp-pill" data-key="${esc(c.key)}"
-      style="${c.key === currentKey ? `background:${c.color};color:#fff;border-color:${c.color}` : ''}">
+      style="${c.key === currentKey ? `background:${c.color};color:#fff;border-color:${c.color}` : `border-color:${c.color}44;color:${c.color}`}">
       ${esc(c.label)}
     </span>`).join('');
 
-  // Position near anchor — measure after render so we know real height
-  const rect = anchorEl.getBoundingClientRect();
-  popover.style.display = 'flex';
-  popover.style.top = '-9999px';  // off-screen while measuring
-  popover.style.left = '-9999px';
-  requestAnimationFrame(() => {
-    const pw = popover.offsetWidth;
-    const ph = popover.offsetHeight;
-    const margin = 8;
-    // Horizontal: align right edge with anchor, clamp to viewport
-    let left = rect.right - pw;
-    if (left < margin) left = margin;
-    if (left + pw > window.innerWidth - margin) left = window.innerWidth - pw - margin;
-    // Vertical: prefer below, flip above if not enough room
-    let top = rect.bottom + 6;
-    if (top + ph > window.innerHeight - margin) top = rect.top - ph - 6;
-    // If still out of bounds (not enough space above either), clamp
-    if (top < margin) top = margin;
-    popover.style.top = top + 'px';
-    popover.style.left = left + 'px';
-  });
+  overlay.classList.remove('hidden');
 
-  popover.querySelectorAll('.scp-pill').forEach(pill => {
+  pillsEl.querySelectorAll('.scp-pill').forEach(pill => {
     pill.addEventListener('click', () => {
       const newKey = pill.dataset.key;
-      // Persist override so future additions of the same item use this category
       if (item) shopCatOverrides[item.name.toLowerCase().trim()] = newKey;
       shoppingList = shoppingList.map(i => i.id === itemId ? { ...i, catKey: newKey } : i);
       saveShoppingListDB(); renderCourses();
-      popover.style.display = 'none';
+      overlay.classList.add('hidden');
     });
   });
 
-  // Close on outside click
-  const close = e => {
-    if (!popover.contains(e.target) && e.target !== anchorEl) {
-      popover.style.display = 'none';
-      document.removeEventListener('click', close, true);
-    }
-  };
-  setTimeout(() => document.addEventListener('click', close, true), 0);
+  overlay.onclick = e => { if (e.target === overlay) overlay.classList.add('hidden'); };
 }
 
 function resolvedShopCategory(name) {
@@ -4292,7 +4286,7 @@ function renderCourses() {
   el.querySelectorAll('.shop-item-card').forEach(card => {
     card.addEventListener('click', e => {
       if (e.target.classList.contains('shop-item-del')) return;
-      if (e.target.classList.contains('shop-item-cat-btn')) return;
+      if (e.target.classList.contains('shop-item-cat-btn') || e.target.closest('.shop-item-cat-btn')) return;
       const id = card.dataset.shopId;
       shoppingList = shoppingList.map(i => i.id === id ? { ...i, bought: !i.bought } : i);
       saveShoppingListDB(); renderCourses();
@@ -4312,7 +4306,7 @@ function renderCourses() {
   el.querySelectorAll('.shop-item-cat-btn').forEach(btn => {
     btn.addEventListener('click', e => {
       e.stopPropagation();
-      openShopCatPopover(btn.dataset.catItem, btn);
+      openShopCatPopover(btn.dataset.catItem);
     });
   });
 
@@ -7741,7 +7735,13 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
-<!-- Shop category change popover (hidden by default) -->
-<div id="shop-cat-popover" style="display:none"></div>
+<!-- Shop category change bottom sheet -->
+<div id="shop-cat-sheet-overlay" class="hidden">
+  <div id="shop-cat-sheet">
+    <div id="shop-cat-sheet-handle"></div>
+    <div id="shop-cat-sheet-title">Changer la catégorie</div>
+    <div id="shop-cat-sheet-pills"></div>
+  </div>
+</div>
 </body>
 </html>
