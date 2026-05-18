@@ -1526,6 +1526,17 @@ body {
 .meal-kcal-quick-btn:hover { border-color: var(--green); color: var(--green-dk); background: var(--green-l); }
 .meal-kcal-quick-btn.active { border-color: var(--green-dk); background: var(--green); color: #fff; }
 
+/* ── Household portion unit buttons ── */
+.meal-household-units { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.meal-household-btn {
+  border: 1.5px solid var(--border2); background: var(--surface2); border-radius: 14px;
+  padding: 5px 10px; font-size: 0.70rem; font-weight: 600; color: var(--ink2);
+  cursor: pointer; transition: all 0.14s; white-space: nowrap;
+}
+.meal-household-btn:hover { border-color: var(--green); color: var(--green-dk); background: var(--green-l); }
+.meal-household-btn.active { border-color: var(--green-dk); background: var(--green); color: #fff; }
+.meal-household-section-label { font-size: 0.68rem; color: var(--ink3); margin-top: 8px; margin-bottom: 2px; display: block; }
+
 /* ── Recent meals chips ── */
 .meal-recent-chips { display: flex; gap: 6px; flex-wrap: wrap; }
 .meal-recent-chip {
@@ -2702,9 +2713,13 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
           <label id="meal-portion-label" style="font-size:0.73rem;color:var(--ink3);flex:1">Portion (g)</label>
           <input id="meal-inp-portion" class="inp" type="number" value="100" min="1" max="2000" style="width:90px;flex:none">
         </div>
-        <div id="meal-serving-count" style="display:none;align-items:center;gap:8px;margin-top:6px">
-          <span style="font-size:0.73rem;color:var(--ink3)">Nb de portions :</span>
-          <div style="display:flex;gap:4px">
+        <!-- Household unit quick-pick buttons (shown when category detected from Open Food Facts) -->
+        <span id="meal-household-label" class="meal-household-section-label" style="display:none">Choisir une portion :</span>
+        <div id="meal-household-units" class="meal-household-units" style="display:none"></div>
+        <!-- Serving count buttons (shown when serving_quantity known from OFF) -->
+        <div id="meal-serving-count" style="display:none;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap">
+          <span style="font-size:0.73rem;color:var(--ink3)">Nb de portions indiquées :</span>
+          <div style="display:flex;gap:4px;flex-wrap:wrap">
             <button class="meal-serving-btn" data-n="0.5" style="padding:3px 8px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface2);font-size:0.72rem;font-weight:600;cursor:pointer">½</button>
             <button class="meal-serving-btn" data-n="1"   style="padding:3px 8px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface2);font-size:0.72rem;font-weight:600;cursor:pointer">1</button>
             <button class="meal-serving-btn" data-n="2"   style="padding:3px 8px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface2);font-size:0.72rem;font-weight:600;cursor:pointer">2</button>
@@ -5075,6 +5090,113 @@ function stopMealScanner() {
   }
 }
 
+// ── Household portion units mapped to Open Food Facts category tags ──
+const HOUSEHOLD_UNITS_MAP = [
+  {
+    tags: ['en:yogurts','en:fermented-milk-products','fr:yaourts','fr:fromages-blancs','fr:desserts-lactes','en:dairy','en:dairy-desserts'],
+    units: [{label:'½ pot (62g)', grams:62},{label:'1 pot (125g)', grams:125},{label:'2 pots (250g)', grams:250}]
+  },
+  {
+    tags: ['en:jams-and-marmalades','en:sweet-spreads','fr:confitures','fr:miels','en:honey','en:nut-butters','fr:pates-de-fruits'],
+    units: [{label:'1 c. à café (7g)', grams:7},{label:'1 c. à soupe (20g)', grams:20}]
+  },
+  {
+    tags: ['en:butters','fr:beurres','en:margarines','fr:margarines'],
+    units: [{label:'1 noix (10g)', grams:10},{label:'1 c. à café (5g)', grams:5},{label:'1 c. à soupe (15g)', grams:15}]
+  },
+  {
+    tags: ['en:spreads','fr:pates-a-tartiner','en:chocolate-spreads','fr:pates-a-tartiner-au-chocolat'],
+    units: [{label:'1 c. à café (10g)', grams:10},{label:'1 c. à soupe (25g)', grams:25}]
+  },
+  {
+    tags: ['en:oils','fr:huiles','en:olive-oils','fr:huiles-d-olive','en:sunflower-oils','fr:huiles-de-tournesol','en:vegetable-oils'],
+    units: [{label:'1 c. à café (5g)', grams:5},{label:'1 c. à soupe (14g)', grams:14}]
+  },
+  {
+    tags: ['en:milks','fr:laits','en:whole-milks','en:semi-skimmed-milks','en:plant-based-milks','fr:laits-vegetaux','en:oat-milks','en:almond-milks'],
+    units: [{label:'1 verre (200ml)', grams:206},{label:'1 tasse (150ml)', grams:155},{label:'1 bol (250ml)', grams:258}]
+  },
+  {
+    tags: ['en:fruit-juices','fr:jus-de-fruits','en:nectars','en:vegetable-juices','en:smoothies','fr:smoothies'],
+    units: [{label:'1 verre (200ml)', grams:200},{label:'1 tasse (150ml)', grams:150},{label:'1 bol (250ml)', grams:250}]
+  },
+  {
+    tags: ['en:sodas','en:colas','en:lemonades','fr:boissons-gazeuses','en:energy-drinks','en:flavoured-waters'],
+    units: [{label:'1 verre (200ml)', grams:200},{label:'1 canette (330ml)', grams:330},{label:'1 bouteille (500ml)', grams:500}]
+  },
+  {
+    tags: ['en:breads','en:sliced-breads','fr:pains','fr:pain-de-mie','fr:baguettes','fr:pains-de-campagne'],
+    units: [{label:'1 tranche (25g)', grams:25},{label:'2 tranches (50g)', grams:50},{label:'3 tranches (75g)', grams:75}]
+  },
+  {
+    tags: ['en:crackers','fr:biscottes','fr:crackers','en:bread-substitutes','en:rye-crispbreads'],
+    units: [{label:'1 biscotte (10g)', grams:10},{label:'2 biscottes (20g)', grams:20},{label:'4 biscottes (40g)', grams:40}]
+  },
+  {
+    tags: ['en:cheeses','fr:fromages','en:soft-cheeses','en:hard-cheeses','en:blue-cheeses','fr:fromages-frais'],
+    units: [{label:'1 portion (30g)', grams:30},{label:'1 tranche (20g)', grams:20},{label:'2 tranches (40g)', grams:40}]
+  },
+  {
+    tags: ['en:deli-meats','en:cooked-meats','fr:charcuteries','fr:jambons','en:hams','fr:saucissons','en:sausages','fr:lardons'],
+    units: [{label:'1 tranche (30g)', grams:30},{label:'2 tranches (60g)', grams:60},{label:'3 tranches (90g)', grams:90}]
+  },
+  {
+    tags: ['en:breakfast-cereals','fr:cereales-de-petit-dejeuner','en:mueslis','fr:mueslis','en:corn-flakes','en:granolas'],
+    units: [{label:'1 tasse (40g)', grams:40},{label:'1 bol (60g)', grams:60}]
+  },
+  {
+    tags: ['en:chocolates','fr:chocolats','en:dark-chocolates','en:milk-chocolates','en:white-chocolates'],
+    units: [{label:'1 carré (5g)', grams:5},{label:'2 carrés (10g)', grams:10},{label:'4 carrés (20g)', grams:20},{label:'½ tablette (50g)', grams:50}]
+  },
+  {
+    tags: ['en:sugars','fr:sucres','en:cane-sugars','fr:sucre-de-canne','en:icing-sugars'],
+    units: [{label:'1 sucre (4g)', grams:4},{label:'1 c. à café (5g)', grams:5},{label:'1 c. à soupe (15g)', grams:15}]
+  },
+  {
+    tags: ['en:flours','fr:farines','en:wheat-flours','fr:farines-de-ble'],
+    units: [{label:'1 c. à soupe (15g)', grams:15},{label:'1 verre (130g)', grams:130}]
+  },
+  {
+    tags: ['en:pastas','fr:pates-alimentaires','en:fresh-pastas','fr:pates-fraiches'],
+    units: [{label:'1 portion (80g)', grams:80},{label:'1 portion copieuse (120g)', grams:120}]
+  },
+  {
+    tags: ['en:rices','fr:riz','en:white-rices','en:brown-rices','en:basmati-rices'],
+    units: [{label:'1 portion (70g)', grams:70},{label:'1 portion copieuse (100g)', grams:100}]
+  },
+  {
+    tags: ['en:soups','fr:soupes','en:creamy-soups','fr:soupes-en-briques'],
+    units: [{label:'1 bol (250ml)', grams:250},{label:'1 assiette (350ml)', grams:350}]
+  },
+  {
+    tags: ['en:ice-creams','en:sorbets','fr:glaces','fr:sorbets'],
+    units: [{label:'1 boule (60g)', grams:60},{label:'2 boules (120g)', grams:120}]
+  },
+  {
+    tags: ['en:biscuits-and-cakes','en:biscuits','fr:biscuits','en:cookies','fr:cookies'],
+    units: [{label:'1 biscuit (10g)', grams:10},{label:'2 biscuits (20g)', grams:20},{label:'4 biscuits (40g)', grams:40}]
+  },
+  {
+    tags: ['en:eggs','fr:oeufs'],
+    units: [{label:'1 œuf (55g)', grams:55},{label:'2 œufs (110g)', grams:110}]
+  },
+];
+
+function getHouseholdUnits(categoriesTags) {
+  if (!categoriesTags || !categoriesTags.length) return [];
+  const catSet = new Set(categoriesTags.map(t => t.toLowerCase()));
+  const seen = new Set();
+  const result = [];
+  for (const entry of HOUSEHOLD_UNITS_MAP) {
+    if (entry.tags.some(t => catSet.has(t))) {
+      for (const u of entry.units) {
+        if (!seen.has(u.label)) { seen.add(u.label); result.push(u); }
+      }
+    }
+  }
+  return result;
+}
+
 async function startMealScanner() {
   const view = document.getElementById('meal-scanner-view');
   view.classList.add('active');
@@ -5098,6 +5220,7 @@ async function startMealScanner() {
           const fatPer100  = p.nutriments?.fat_100g || 0;
           const servingQty = parseFloat(p.serving_quantity) || null;
           const servingTxt = p.serving_size || (servingQty ? `${servingQty}g` : '');
+          const categoriesTags = p.categories_tags || [];
           window._mealScannerNutrients = { kcalPer100, protPer100, carbPer100, fatPer100, servingQty };
           const portion = servingQty || 100;
           document.getElementById('meal-inp-name').value = name;
@@ -5116,7 +5239,22 @@ async function startMealScanner() {
           if (portLbl) portLbl.textContent = servingQty
             ? `Portion (g) — 1 portion = ${servingQty}g${servingTxt && !servingTxt.match(/^\d/) ? ' · '+servingTxt : ''}`
             : 'Portion (g)';
-          // Show serving count helper if serving size known
+          // Render household unit buttons based on product category
+          const householdUnits = getHouseholdUnits(categoriesTags);
+          const householdDiv  = document.getElementById('meal-household-units');
+          const householdLbl  = document.getElementById('meal-household-label');
+          if (householdDiv && householdUnits.length > 0) {
+            householdDiv.innerHTML = householdUnits.map(u =>
+              `<button class="meal-household-btn" data-grams="${u.grams}">${u.label}</button>`
+            ).join('');
+            householdDiv.style.display = 'flex';
+            if (householdLbl) householdLbl.style.display = '';
+          } else if (householdDiv) {
+            householdDiv.innerHTML = '';
+            householdDiv.style.display = 'none';
+            if (householdLbl) householdLbl.style.display = 'none';
+          }
+          // Show serving count helper if serving size known (and no household units, or as complement)
           const servCount = document.getElementById('meal-serving-count');
           const servInfo  = document.getElementById('meal-serving-info');
           if (servCount && servingQty) {
@@ -6606,12 +6744,27 @@ window.addEventListener('fc-ready', () => {
     document.getElementById('meal-inp-carb').value = Math.round(n.carbPer100 * grams / 100) || '';
     document.getElementById('meal-inp-fat').value  = Math.round(n.fatPer100  * grams / 100) || '';
   }
-  document.getElementById('meal-inp-portion').addEventListener('input', e => applyPortion(parseFloat(e.target.value) || 100));
+  document.getElementById('meal-inp-portion').addEventListener('input', e => {
+    applyPortion(parseFloat(e.target.value) || 100);
+    // Clear household/serving active state when manually editing
+    document.querySelectorAll('.meal-household-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.meal-serving-btn').forEach(b => b.style.borderColor = '');
+  });
+  // Household unit buttons (delegated — buttons are dynamically created)
+  document.getElementById('meal-household-units').addEventListener('click', e => {
+    const btn = e.target.closest('.meal-household-btn');
+    if (!btn) return;
+    document.querySelectorAll('.meal-household-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.meal-serving-btn').forEach(b => b.style.borderColor = '');
+    btn.classList.add('active');
+    applyPortion(parseFloat(btn.dataset.grams));
+  });
   document.getElementById('meal-serving-count').addEventListener('click', e => {
     const btn = e.target.closest('.meal-serving-btn');
     if (!btn) return;
     const n = window._mealScannerNutrients;
     if (!n?.servingQty) return;
+    document.querySelectorAll('.meal-household-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.meal-serving-btn').forEach(b => b.style.borderColor = '');
     btn.style.borderColor = 'var(--green)';
     applyPortion(Math.round(parseFloat(btn.dataset.n) * n.servingQty));
