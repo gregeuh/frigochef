@@ -1537,6 +1537,24 @@ body {
 .meal-household-btn.active { border-color: var(--green-dk); background: var(--green); color: #fff; }
 .meal-household-section-label { font-size: 0.68rem; color: var(--ink3); margin-top: 8px; margin-bottom: 2px; display: block; }
 
+/* ── Multi-ingredient builder ── */
+.meal-ingredient-chip {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 10px;
+  padding: 6px 10px; font-size: 0.73rem;
+}
+.meal-ingredient-chip .chip-name { flex: 1; font-weight: 500; color: var(--ink1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.meal-ingredient-chip .chip-grams { color: var(--ink3); font-size: 0.68rem; }
+.meal-ingredient-chip .chip-kcal { color: var(--green-dk); font-weight: 700; min-width: 48px; text-align: right; }
+.meal-ingredient-chip .chip-rm { background: none; border: none; color: var(--ink3); cursor: pointer; font-size: 1rem; padding: 0 2px; line-height: 1; flex: none; }
+.meal-ingredient-chip .chip-rm:hover { color: #e44; }
+#btn-add-ingredient {
+  display: none; width: 100%; margin-top: 10px; padding: 8px 12px; border-radius: 12px;
+  border: 1.5px dashed var(--green); background: var(--green-l); color: var(--green-dk);
+  font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.14s;
+}
+#btn-add-ingredient:hover { background: var(--green); color: #fff; border-style: solid; }
+
 /* ── Recent meals chips ── */
 .meal-recent-chips { display: flex; gap: 6px; flex-wrap: wrap; }
 .meal-recent-chip {
@@ -2685,6 +2703,15 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
         </select>
       </div>
 
+      <!-- Ingredient list (multi-ingredient builder) -->
+      <div id="meal-ingredients-wrap" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:10px;margin-bottom:10px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:0.73rem;font-weight:700;color:var(--ink2)">🧱 Composition du repas</span>
+          <span id="meal-ingredients-total" style="font-size:0.75rem;font-weight:700;color:var(--green-dk)"></span>
+        </div>
+        <div id="meal-ingredients-items" style="display:flex;flex-direction:column;gap:4px"></div>
+      </div>
+
       <!-- Repas récents -->
       <div class="rf-field" id="meal-recent-section" style="display:none">
         <label class="rf-label">Récents</label>
@@ -2729,6 +2756,9 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
           <span id="meal-serving-info" style="font-size:0.68rem;color:var(--ink3)"></span>
         </div>
       </div>
+
+      <!-- Add ingredient to list button (shown after barcode scan or suggestion) -->
+      <button id="btn-add-ingredient">➕ Ajouter cet ingrédient à ce repas</button>
 
       <!-- Calories -->
       <div class="rf-field">
@@ -4928,6 +4958,8 @@ function applyMealSuggestion(name, kcal, protein, carbs, fat, source) {
   src.textContent = source; src.classList.remove('hidden');
   document.getElementById('meal-kcal-hint').style.display = 'none';
   hideMealSuggestions();
+  // Show "Ajouter cet ingrédient" button for multi-ingredient mode
+  document.getElementById('btn-add-ingredient').style.display = '';
   haptic(10);
 }
 
@@ -5015,6 +5047,88 @@ function renderMealSuggestions(list, partial = false) {
 
 let mealModalFromRecipe = false;
 
+function renderIngredientsList() {
+  const wrap  = document.getElementById('meal-ingredients-wrap');
+  const items = document.getElementById('meal-ingredients-items');
+  const total = document.getElementById('meal-ingredients-total');
+  if (!wrap || !items) return;
+  if (_mealIngredients.length === 0) {
+    wrap.style.display = 'none';
+    return;
+  }
+  wrap.style.display = '';
+  items.innerHTML = _mealIngredients.map((ing, i) => `
+    <div class="meal-ingredient-chip">
+      <span class="chip-name">${esc(ing.name)}</span>
+      <span class="chip-grams">${ing.grams}g</span>
+      <span class="chip-kcal">${ing.kcal} kcal</span>
+      <button class="chip-rm" data-idx="${i}" title="Supprimer">×</button>
+    </div>`).join('');
+  const totalKcal = _mealIngredients.reduce((s, i) => s + i.kcal, 0);
+  const totalProt = _mealIngredients.reduce((s, i) => s + i.prot, 0);
+  const totalCarb = _mealIngredients.reduce((s, i) => s + i.carb, 0);
+  const totalFat  = _mealIngredients.reduce((s, i) => s + i.fat,  0);
+  const macroStr  = (totalProt || totalCarb || totalFat)
+    ? ` · P ${totalProt}g G ${totalCarb}g L ${totalFat}g` : '';
+  if (total) total.textContent = `Total : ${totalKcal} kcal${macroStr}`;
+  // Wire remove buttons
+  items.querySelectorAll('.chip-rm').forEach(btn => {
+    btn.addEventListener('click', () => {
+      _mealIngredients.splice(parseInt(btn.dataset.idx), 1);
+      renderIngredientsList();
+      syncIngredientsToForm();
+    });
+  });
+}
+
+function syncIngredientsToForm() {
+  // Keep name field = auto-composed name from remaining ingredients
+  const nameEl = document.getElementById('meal-inp-name');
+  if (_mealIngredients.length > 0) {
+    const autoName = _mealIngredients.map(i => i.name).join(' + ');
+    if (!nameEl.value || nameEl.dataset.autoName === nameEl.value) {
+      nameEl.value = autoName;
+      nameEl.dataset.autoName = autoName;
+    }
+    // Update kcal field only if form is "empty" (no current scan in progress)
+    if (!window._mealScannerNutrients) {
+      const totKcal = _mealIngredients.reduce((s, i) => s + i.kcal, 0);
+      const totProt = _mealIngredients.reduce((s, i) => s + i.prot, 0);
+      const totCarb = _mealIngredients.reduce((s, i) => s + i.carb, 0);
+      const totFat  = _mealIngredients.reduce((s, i) => s + i.fat,  0);
+      document.getElementById('meal-inp-kcal').value = totKcal;
+      if (totProt || totCarb || totFat) {
+        document.getElementById('meal-inp-prot').value = totProt || '';
+        document.getElementById('meal-inp-carb').value = totCarb || '';
+        document.getElementById('meal-inp-fat').value  = totFat  || '';
+        document.getElementById('meal-macros-section').style.display = 'block';
+        document.getElementById('btn-toggle-macros').textContent = '− Masquer les macros';
+      }
+    }
+  }
+}
+
+function clearIngredientForm() {
+  document.getElementById('meal-inp-name').value = '';
+  document.getElementById('meal-inp-name').dataset.autoName = '';
+  document.getElementById('meal-inp-kcal').value = '';
+  document.getElementById('meal-inp-prot').value = '';
+  document.getElementById('meal-inp-carb').value = '';
+  document.getElementById('meal-inp-fat').value  = '';
+  document.getElementById('meal-portion-section').style.display = 'none';
+  document.getElementById('meal-inp-portion').value = 100;
+  document.getElementById('meal-household-units').innerHTML = '';
+  document.getElementById('meal-household-units').style.display = 'none';
+  document.getElementById('meal-household-label').style.display = 'none';
+  document.getElementById('meal-serving-count').style.display = 'none';
+  document.getElementById('btn-add-ingredient').style.display = 'none';
+  document.querySelectorAll('.meal-serving-btn').forEach(b => b.style.borderColor = '');
+  window._mealScannerNutrients = null;
+  document.getElementById('meal-kcal-source').classList.add('hidden');
+  document.getElementById('meal-kcal-hint').style.display = '';
+  setTimeout(() => document.getElementById('meal-inp-name').focus(), 60);
+}
+
 function openAddMealModal(prefill = {}) {
   mealModalFromRecipe = !!prefill.fromRecipe;
   document.getElementById('meal-inp-name').value = prefill.name || '';
@@ -5042,11 +5156,14 @@ function openAddMealModal(prefill = {}) {
   // ── Quick kcal buttons reset ──
   document.querySelectorAll('#meal-kcal-quick .meal-kcal-quick-btn').forEach(b => b.classList.remove('active'));
 
-  // ── Reset scanner & portion ──
+  // ── Reset scanner, portion & ingredient builder ──
   stopMealScanner();
   document.getElementById('meal-portion-section').style.display = 'none';
   document.getElementById('meal-inp-portion').value = 100;
+  document.getElementById('btn-add-ingredient').style.display = 'none';
   window._mealScannerNutrients = null;
+  _mealIngredients = [];
+  renderIngredientsList();
 
   // ── Recent meals chips ──
   const seen = new Set();
@@ -5076,8 +5193,9 @@ function openAddMealModal(prefill = {}) {
   setTimeout(() => document.getElementById('meal-inp-name').focus(), 60);
 }
 
-/* ── Meal barcode scanner ── */
+/* ── Meal barcode scanner + multi-ingredient builder ── */
 let _mealScannerInstance = null;
+let _mealIngredients = []; // [{name, grams, kcal, prot, carb, fat}]
 
 function stopMealScanner() {
   const view = document.getElementById('meal-scanner-view');
@@ -5266,6 +5384,8 @@ async function startMealScanner() {
           const src = document.getElementById('meal-kcal-source');
           src.textContent = '📷 Open Food Facts'; src.classList.remove('hidden');
           document.getElementById('meal-kcal-hint').style.display = 'none';
+          // Show "Ajouter cet ingrédient" button for multi-ingredient mode
+          document.getElementById('btn-add-ingredient').style.display = '';
           toast(`✓ ${name} trouvé`, 'success');
         } catch(e) {
           toast('Erreur lors de la recherche', 'error');
@@ -5285,14 +5405,46 @@ function closeAddMealModal() {
 }
 
 async function saveAddMealModal() {
-  const name = document.getElementById('meal-inp-name').value.trim();
-  const kcal = parseInt(document.getElementById('meal-inp-kcal').value);
-  if (!name) { toast('Donnez un nom au repas', 'error'); return; }
-  if (!kcal || kcal < 0) { toast('Entrez les calories', 'error'); return; }
-  const type   = document.getElementById('meal-inp-type').value;
-  const protein = parseInt(document.getElementById('meal-inp-prot').value) || 0;
-  const carbs   = parseInt(document.getElementById('meal-inp-carb').value) || 0;
-  const fat     = parseInt(document.getElementById('meal-inp-fat').value)  || 0;
+  const type = document.getElementById('meal-inp-type').value;
+  let name, kcal, protein, carbs, fat;
+
+  if (_mealIngredients.length > 0) {
+    // Multi-ingredient mode: collect totals from ingredient list + current form if filled
+    const curName = document.getElementById('meal-inp-name').value.trim();
+    const curKcal = parseInt(document.getElementById('meal-inp-kcal').value) || 0;
+    // If a product is currently shown (unsaved ingredient), add it automatically
+    if (window._mealScannerNutrients && curName && curKcal > 0) {
+      _mealIngredients.push({
+        name: curName,
+        grams: parseFloat(document.getElementById('meal-inp-portion').value) || 100,
+        kcal: curKcal,
+        prot: parseInt(document.getElementById('meal-inp-prot').value) || 0,
+        carb: parseInt(document.getElementById('meal-inp-carb').value) || 0,
+        fat:  parseInt(document.getElementById('meal-inp-fat').value)  || 0,
+      });
+    }
+    if (_mealIngredients.length === 0) { toast('Ajoutez au moins un ingrédient', 'error'); return; }
+    kcal    = _mealIngredients.reduce((s, i) => s + i.kcal, 0);
+    protein = _mealIngredients.reduce((s, i) => s + i.prot, 0);
+    carbs   = _mealIngredients.reduce((s, i) => s + i.carb, 0);
+    fat     = _mealIngredients.reduce((s, i) => s + i.fat,  0);
+    // Name: use what's in the field; fall back to auto-composed
+    const autoName = _mealIngredients.map(i => i.name).join(' + ');
+    const fieldName = document.getElementById('meal-inp-name').value.trim();
+    name = (fieldName && fieldName !== document.getElementById('meal-inp-name').dataset.autoName)
+      ? fieldName : autoName;
+    if (!name) name = autoName;
+  } else {
+    // Single-product / manual mode (existing behavior)
+    name    = document.getElementById('meal-inp-name').value.trim();
+    kcal    = parseInt(document.getElementById('meal-inp-kcal').value);
+    protein = parseInt(document.getElementById('meal-inp-prot').value) || 0;
+    carbs   = parseInt(document.getElementById('meal-inp-carb').value) || 0;
+    fat     = parseInt(document.getElementById('meal-inp-fat').value)  || 0;
+    if (!name) { toast('Donnez un nom au repas', 'error'); return; }
+    if (!kcal || kcal < 0) { toast('Entrez les calories', 'error'); return; }
+  }
+
   const entry = { id: Date.now().toString(), name, kcal, type, protein, carbs, fat, addedAt: Date.now() };
   dailyLog = [...dailyLog, entry];
   await window.__FC.saveDailyLog(user.uid, todayDate(), dailyLog);
@@ -6768,6 +6920,29 @@ window.addEventListener('fc-ready', () => {
     document.querySelectorAll('.meal-serving-btn').forEach(b => b.style.borderColor = '');
     btn.style.borderColor = 'var(--green)';
     applyPortion(Math.round(parseFloat(btn.dataset.n) * n.servingQty));
+  });
+
+  // ── Multi-ingredient builder ──
+  document.getElementById('btn-add-ingredient').addEventListener('click', () => {
+    const name = document.getElementById('meal-inp-name').value.trim();
+    const kcal = parseInt(document.getElementById('meal-inp-kcal').value) || 0;
+    if (!name || !kcal) { toast('Scannez ou saisissez un ingrédient d\'abord', 'error'); return; }
+    _mealIngredients.push({
+      name,
+      grams: parseFloat(document.getElementById('meal-inp-portion').value) || 100,
+      kcal,
+      prot: parseInt(document.getElementById('meal-inp-prot').value) || 0,
+      carb: parseInt(document.getElementById('meal-inp-carb').value) || 0,
+      fat:  parseInt(document.getElementById('meal-inp-fat').value)  || 0,
+    });
+    renderIngredientsList();
+    clearIngredientForm();
+    // Update name field to show auto-composed name
+    const autoName = _mealIngredients.map(i => i.name).join(' + ');
+    document.getElementById('meal-inp-name').value = autoName;
+    document.getElementById('meal-inp-name').dataset.autoName = autoName;
+    toast(`✓ ${name} ajouté · scannez le prochain`, 'success');
+    haptic(10);
   });
 
   // ── WEIGHT LOG ──
