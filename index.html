@@ -376,7 +376,7 @@ body {
 .perk-icon { font-size: 1.3rem; }
 
 /* ─── APP LAYOUT — FULL SCREEN TABS ─── */
-#app-screen { position: relative; }
+#app-screen { position: relative; width: 100%; }
 
 @keyframes tabIn {
   from { opacity: 0; transform: scale(0.992); }
@@ -403,7 +403,7 @@ body {
   backdrop-filter: blur(20px) saturate(160%);
   -webkit-backdrop-filter: blur(20px) saturate(160%);
   border-bottom: 1px solid transparent;
-  padding: calc(14px + env(safe-area-inset-top, 0px)) 16px 10px;
+  padding: calc(14px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 16px)) 10px max(16px, env(safe-area-inset-left, 16px));
   transition: background 0.28s ease, border-color 0.28s ease, backdrop-filter 0.28s ease;
 }
 .tab-header.hdr-solid {
@@ -422,7 +422,9 @@ body {
 .tab-sub {
   font-size: 0.72rem; color: var(--ink3); margin-top: 3px;
 }
-.tab-body { padding: 10px 14px 0; }
+.tab-body {
+  padding: 10px max(14px, env(safe-area-inset-right, 14px)) 0 max(14px, env(safe-area-inset-left, 14px));
+}
 
 /* ─── FAB SPEED DIAL ─── */
 .fab-wrap {
@@ -3827,8 +3829,10 @@ const FOOD_CATEGORIES = [
     words: ['pomme','banane','orange','citron','citron vert','fraise','raisin','poire','pêche','abricot','cerise','mangue','ananas','kiwi','melon','pastèque','figue','prune','myrtille','framboise','mûre','clémentine','mandarine','pamplemousse','fruit'] },
   { key: 'legumes',  label: '🥦 Légumes',            color: '#51CF66', bg: 'rgba(81,207,102,0.10)',
     words: ['carotte','tomate','salade','laitue','épinard','courgette','aubergine','poivron','oignon','ail','poireau','brocoli','chou','haricot','petit pois','maïs','betterave','navet','céleri','concombre','radis','champignon','endive','asperge','artichaut','fenouil','potiron','courge','patate douce','pomme de terre','légume','bette','blette','mâche','roquette','avocat'] },
-  { key: 'viandes',  label: '🥩 Viandes & Poissons', color: '#FF8C42', bg: 'rgba(255,140,66,0.10)',
-    words: ['poulet','bœuf','boeuf','porc','veau','agneau','canard','dinde','lapin','saumon','thon','cabillaud','sole','dorade','sardine','crevette','moule','calamar','seiche','jambon','lardons','bacon','saucisse','merguez','chipolata','steak','côte','filet','viande','poisson','blanc de poulet'] },
+  { key: 'viandes',  label: '🥩 Viandes',              color: '#FF8C42', bg: 'rgba(255,140,66,0.10)',
+    words: ['poulet','bœuf','boeuf','porc','veau','agneau','canard','dinde','lapin','jambon','lardons','bacon','saucisse','merguez','chipolata','steak','côte','filet de poulet','blanc de poulet','viande','rôti','côtelette','escalope','magret','foie','boudin'] },
+  { key: 'poissons', label: '🐟 Poissons & Fruits de mer', color: '#0EA5E9', bg: 'rgba(14,165,233,0.10)',
+    words: ['saumon','thon','cabillaud','sole','dorade','sardine','crevette','moule','calamar','seiche','poisson','surimi','anchois','truite','bar','maquereau','lieu','colin','merlu','daurade','hareng','tilapia','espadon','saint-jacques','homard','langouste','palourde','huître','crabe'] },
   { key: 'laitier',  label: '🧀 Produits laitiers',  color: '#FFD43B', bg: 'rgba(255,212,59,0.10)',
     words: ['lait','beurre','crème','yaourt','yogurt','fromage','mozzarella','parmesan','camembert','brie','emmental','gruyère','ricotta','mascarpone','comté','roquefort','chèvre','feta','crème fraîche','crème liquide'] },
   { key: 'oeufs',    label: '🥚 Œufs',               color: '#FFA94D', bg: 'rgba(255,169,77,0.10)',
