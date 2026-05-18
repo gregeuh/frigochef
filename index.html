@@ -7855,20 +7855,6 @@ window.addEventListener('fc-ready', () => {
     document.querySelectorAll('.tab-header').forEach(h => h.classList.toggle('hdr-solid', scrolled));
   }, { passive: true });
 
-  // ── Swipe horizontal entre onglets ──
-  let _tx = 0, _ty = 0;
-  document.getElementById('app-screen').addEventListener('touchstart', e => {
-    _tx = e.touches[0].clientX; _ty = e.touches[0].clientY;
-  }, { passive: true });
-  document.getElementById('app-screen').addEventListener('touchend', e => {
-    const dx = e.changedTouches[0].clientX - _tx;
-    const dy = e.changedTouches[0].clientY - _ty;
-    if (Math.abs(dx) < 55 || Math.abs(dy) > Math.abs(dx) * 0.75) return;
-    const cur = document.querySelector('.tab-item.active')?.dataset.tab;
-    const idx = TAB_ORDER.indexOf(cur);
-    if (dx < 0 && idx < TAB_ORDER.length - 1) switchTab(TAB_ORDER[idx + 1]);
-    if (dx > 0 && idx > 0) switchTab(TAB_ORDER[idx - 1]);
-  }, { passive: true });
   document.getElementById('btn-share-profil').addEventListener('click', openShareModal);
 
   // ── CATEGORY MODAL ──
