@@ -6994,7 +6994,7 @@ window.addEventListener('fc-ready', () => {
     setTimeout(() => chip.classList.remove('added'), 1200);
   });
 
-  document.getElementById('btn-manual-shop').addEventListener('click', addManualShopItem);
+  document.getElementById('btn-manual-shop').addEventListener('click', () => addManualShopItem());
   document.getElementById('btn-scan-shop').addEventListener('click', () => openShopAddModal('', true));
 
   // ── Shop Add Modal ──
