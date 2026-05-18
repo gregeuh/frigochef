@@ -2494,6 +2494,7 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
     <div class="tab-body">
       <!-- Articles habituels -->
       <div class="shop-habituels" id="shop-habituels">
+        <!-- Alimentaire -->
         <button class="shop-habituel-chip" data-name="Lait" data-qty="1L">🥛 Lait</button>
         <button class="shop-habituel-chip" data-name="Pain" data-qty="">🍞 Pain</button>
         <button class="shop-habituel-chip" data-name="Œufs" data-qty="6">🥚 Œufs</button>
@@ -2512,6 +2513,19 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
         <button class="shop-habituel-chip" data-name="Oignons" data-qty="">🧅 Oignons</button>
         <button class="shop-habituel-chip" data-name="Poisson" data-qty="">🐟 Poisson</button>
         <button class="shop-habituel-chip" data-name="Salade" data-qty="">🥗 Salade</button>
+        <!-- Hygiène & Entretien -->
+        <button class="shop-habituel-chip" data-name="Lessive" data-qty="">🧺 Lessive</button>
+        <button class="shop-habituel-chip" data-name="Liquide vaisselle" data-qty="">🍽️ Liquide vaisselle</button>
+        <button class="shop-habituel-chip" data-name="Tablettes lave-vaisselle" data-qty="x30">✨ Tablettes vaisselle</button>
+        <button class="shop-habituel-chip" data-name="Papier toilette" data-qty="">🧻 Papier toilette</button>
+        <button class="shop-habituel-chip" data-name="Essuie-tout" data-qty="">🪣 Essuie-tout</button>
+        <button class="shop-habituel-chip" data-name="Sac poubelle" data-qty="">🗑️ Sac poubelle</button>
+        <button class="shop-habituel-chip" data-name="Gel douche" data-qty="">🚿 Gel douche</button>
+        <button class="shop-habituel-chip" data-name="Shampooing" data-qty="">💆 Shampooing</button>
+        <button class="shop-habituel-chip" data-name="Déodorant" data-qty="">🌸 Déodorant</button>
+        <button class="shop-habituel-chip" data-name="Dentifrice" data-qty="">🪥 Dentifrice</button>
+        <button class="shop-habituel-chip" data-name="Mouchoirs" data-qty="">🤧 Mouchoirs</button>
+        <button class="shop-habituel-chip" data-name="Éponges" data-qty="">🧽 Éponges</button>
       </div>
       <!-- Saisie manuelle -->
       <div class="manual-shop-form">
@@ -3604,7 +3618,22 @@ const FOOD_CATEGORIES = [
   { key: 'epicerie', label: '🌾 Épicerie',            color: '#74C0FC', bg: 'rgba(116,192,252,0.10)',
     words: ['farine','sucre','sel','huile','vinaigre','pâtes','riz','lentille','quinoa','pain','biscottes','céréale','miel','confiture','sauce','ketchup','moutarde','mayonnaise','curry','cumin','paprika','poivre','cannelle','levure','bouillon','conserve','chocolat','cacao','vanille','orge','épeautre','semoule','boulgour'] },
   { key: 'boissons', label: '🧃 Boissons',            color: '#9775FA', bg: 'rgba(151,117,250,0.10)',
-    words: ['eau','jus','soda','bière','vin','café','thé','smoothie','limonade','sirop','kombucha','lait','boisson'] },
+    words: ['eau','jus','soda','bière','vin','café','thé','smoothie','limonade','sirop','kombucha','boisson','coca','pepsi','fanta','sprite','schweppes','orangina','perrier','evian','vittel','whisky','rhum','gin','vodka','cidre','champagne','prosecco'] },
+  // ── Non-alimentaire ──
+  { key: 'hygiene',  label: '🧴 Hygiène & Beauté',   color: '#F06595', bg: 'rgba(240,101,149,0.10)',
+    words: ['shampooing','shampoing','shampoo','après-shampooing','après shampooing','gel douche','savon','déodorant','déo','dentifrice','brosse à dents','fil dentaire','rasoir','mousse à raser','coton','démaquillant','fond de teint','mascara','rouge à lèvres','parfum','crème hydratante','crème visage','crème corps','sérum','lotion','protège-slip','tampon','serviette hygiénique','préservatif','gel','laque','huile cheveux','masque cheveux','coupe-ongles'] },
+  { key: 'entretien',label: '🧹 Entretien ménager',  color: '#20C997', bg: 'rgba(32,201,151,0.10)',
+    words: ['lessive','assouplissant','détergent','liquide vaisselle','tablette lave-vaisselle','tablette vaisselle','pastille vaisselle','produit ménager','nettoyant','désinfectant','javel','ajax','mr propre','flash','spontex','éponge','gratte','tampon récurant','paille de fer','sac poubelle','sac plastique','film alimentaire','papier cuisson','torchon','chiffon microfibre','balai','serpillière','mop','aspirateur','filtre aspirateur','seau'] },
+  { key: 'papier',   label: '🧻 Papier & WC',        color: '#A9E34B', bg: 'rgba(169,227,75,0.10)',
+    words: ['papier toilette','papier wc','papier hygiénique','essuie-tout','sopalin','mouchoir','kleenex','serviette papier','nappe','coton-tige'] },
+  { key: 'animaux',  label: '🐾 Animaux',             color: '#C17D11', bg: 'rgba(193,125,17,0.10)',
+    words: ['croquettes','pâtée','nourriture chat','nourriture chien','litière','os','friandise animale','jouet chat','jouet chien','laisse','cage','aquarium'] },
+  { key: 'pharmacie',label: '💊 Pharmacie & Santé',  color: '#E64980', bg: 'rgba(230,73,128,0.10)',
+    words: ['médicament','doliprane','paracétamol','ibuprofène','aspirine','antibiotique','pansement','désinfectant plaie','betadine','mercurochrome','vitamine','complément','oméga','magnésium','probiotique','sirop','pastille gorge','lotion oculaire','goutte','spray nasal','thermomètre','tensiomètre'] },
+  { key: 'maison',   label: '🏠 Maison & Bricolage',  color: '#868E96', bg: 'rgba(134,142,150,0.10)',
+    words: ['ampoule','pile','batterie','bougie','allumette','briquet','ruban adhésif','scotch','colle','vis','clou','crochet','cadre','plante','pot','terreau','engrais','sac congélation','boîte hermétique','tupperware','papier aluminium','ficelle','corde'] },
+  { key: 'bebe',     label: '👶 Bébé & Enfant',       color: '#74C0FC', bg: 'rgba(116,192,252,0.08)',
+    words: ['couche','couches','lait maternisé','petit pot','compote bébé','lait infantile','lingette bébé','crème bébé','gel bébé','shampooing bébé','bavoir','tétine','biberon','sucette'] },
 ];
 function allCategories() {
   return [...userCategories, ...FOOD_CATEGORIES];
