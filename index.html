@@ -2482,6 +2482,7 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
         <input class="manual-shop-inp" id="inp-manual-shop" type="text" placeholder="Ajouter un article…" autocomplete="off">
         <input class="shop-qty-inp" id="inp-manual-shop-qty" type="text" placeholder="Qté" maxlength="8">
         <button class="voice-shop-btn" id="btn-voice-shop" title="Ajouter par la voix">🎙️</button>
+        <button class="voice-shop-btn" id="btn-scan-shop" title="Scanner un code-barres">📷</button>
         <button class="manual-shop-btn" id="btn-manual-shop">＋</button>
       </div>
       <div id="manual-shop-cat-row" style="display:none;gap:5px;flex-wrap:wrap;margin-bottom:10px"></div>
@@ -6885,7 +6886,7 @@ window.addEventListener('fc-ready', () => {
     document.getElementById('fab-courses').addEventListener('click', () => {
       closeFab();
       if (window.switchTabPublic) window.switchTabPublic('courses');
-      setTimeout(() => window.openShopAddModal && window.openShopAddModal(), 150);
+      setTimeout(() => document.getElementById('inp-manual-shop')?.focus(), 200);
     });
   })();
   document.getElementById('btn-add-cancel').addEventListener('click', closeAddModal);
@@ -6993,14 +6994,15 @@ window.addEventListener('fc-ready', () => {
     setTimeout(() => chip.classList.remove('added'), 1200);
   });
 
-  document.getElementById('btn-manual-shop').addEventListener('click', () => openShopAddModal());
+  document.getElementById('btn-manual-shop').addEventListener('click', addManualShopItem);
+  document.getElementById('btn-scan-shop').addEventListener('click', () => openShopAddModal('', true));
 
   // ── Shop Add Modal ──
   let shopScanner = null;
   let shopModalCatKey = null;
   let shopScannedName = '';
 
-  function openShopAddModal(prefillName = '') {
+  function openShopAddModal(prefillName = '', scanOnly = false) {
     const overlay = document.getElementById('shop-add-overlay');
     overlay.classList.remove('hidden');
     document.getElementById('shop-inp-name').value = prefillName;
@@ -7010,8 +7012,12 @@ window.addEventListener('fc-ready', () => {
     shopModalCatKey = null;
     document.getElementById('shop-cat-row-modal').style.display = 'none';
     document.getElementById('shop-cat-row-modal').innerHTML = '';
-    switchShopTab('manual');
-    setTimeout(() => document.getElementById('shop-inp-name').focus(), 80);
+    if (scanOnly) {
+      switchShopTab('scan');
+    } else {
+      switchShopTab('manual');
+      setTimeout(() => document.getElementById('shop-inp-name').focus(), 80);
+    }
   }
   window.openShopAddModal = openShopAddModal;
 
