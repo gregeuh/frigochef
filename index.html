@@ -4717,6 +4717,7 @@ function renderSharedListBar() {
         renderSharedListBar();
         toast('Revenu à ta liste personnelle', 'info');
       });
+    });
   } else {
     bar.style.display = 'none';
     bar.innerHTML = '';
@@ -7404,7 +7405,7 @@ function _initApp() {
 
   document.getElementById('ob-back-2').addEventListener('click', () => obSetStep(1));
   document.getElementById('ob-next-2').addEventListener('click', () => {
-    if (!obData.activity) { toast('Veuillez sélectionner votre niveau d'activité.', 'error'); return; }
+    if (!obData.activity) { toast("Veuillez sélectionner votre niveau d'activité.", 'error'); return; }
     obSetStep(3);
   });
 
@@ -8244,7 +8245,7 @@ function _initApp() {
   document.addEventListener('click', e => {
     if (!e.target.closest('#btn-connect-withings')) return;
     const currentUser = user || window.__FC.getUser();
-    if (!currentUser) { toast('Connectez-vous d'abord', 'error'); return; }
+    if (!currentUser) { toast("Connectez-vous d'abord", 'error'); return; }
     window.location.href = `https://us-central1-frigochef-95045.cloudfunctions.net/withingsAuth?uid=${currentUser.uid}`;
   });
 
