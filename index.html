@@ -227,6 +227,7 @@ input  { font-family: inherit; }
 /* ─── TOKENS ─── */
 :root {
   --bg:        #F4F6F8;
+  --bg-gradient: linear-gradient(160deg, #F0F7F4 0%, #F4F6F8 50%, #EEF2F8 100%);
   --surface:   #FFFFFF;
   --surface2:  rgba(100,116,139,0.09);
   --border:    rgba(51,65,85,0.10);
@@ -260,6 +261,7 @@ input  { font-family: inherit; }
 }
 [data-theme="dark"] {
   --bg:        #080C0A;
+  --bg-gradient: linear-gradient(160deg, #080E0B 0%, #080C0A 50%, #070B0F 100%);
   --surface:   #111714;
   --surface2:  rgba(255,255,255,0.06);
   --surface3:  #1A2320;
@@ -290,7 +292,7 @@ html, body {
 }
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
-  background: var(--bg);
+  background: var(--bg-gradient);
   color: var(--ink);
   min-height: 100vh;
   font-size: 14px;
@@ -305,7 +307,7 @@ body {
   #app-screen {
     max-width: 430px;
     margin: 0 auto;
-    background: var(--bg);
+    background: var(--bg-gradient);
     min-height: 100vh;
     box-shadow: 0 0 0 1px rgba(0,0,0,0.05), 0 20px 60px rgba(0,0,0,0.18);
     position: relative;
@@ -399,6 +401,24 @@ body {
 .tab-page.active {
   display: block;
   animation: tabIn 0.30s cubic-bezier(0.34, 1.3, 0.64, 1) both;
+}
+.tab-page {
+  animation: none;
+}
+.tab-page.tab-entering {
+  animation: tabEnter 0.22s cubic-bezier(0.22,1,0.36,1) both;
+}
+@keyframes tabEnter {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes itemSlideIn {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.food-row, .pantry-row, .courses-card, .recipe-card {
+  animation: itemSlideIn 0.28s cubic-bezier(0.22,1,0.36,1) both;
 }
 
 .tab-header {
@@ -4516,6 +4536,10 @@ function renderFridge() {
   if (fresh.length)   { html += group('✅ En stock', fresh, idx); }
   el.innerHTML = html;
 
+  document.querySelectorAll('#fridge-list .food-row').forEach((el2, i) => {
+    el2.style.animationDelay = (i * 40) + 'ms';
+  });
+
   el.querySelectorAll('[data-del]').forEach(btn => {
     btn.addEventListener('click', e => {
       e.stopPropagation();
@@ -6078,6 +6102,30 @@ function applyThemeColor(key) {
   document.querySelectorAll('.theme-color-swatch').forEach(s => {
     s.classList.toggle('selected', s.dataset.themeKey === key);
   });
+  // Subtle tinted background gradient matching theme
+  const tints = {
+    green:  'linear-gradient(160deg,#EEF7F2 0%,#F4F6F8 50%,#EEF2F5 100%)',
+    blue:   'linear-gradient(160deg,#EEF3FF 0%,#F4F6F8 50%,#EEF0FF 100%)',
+    purple: 'linear-gradient(160deg,#F3EEFF 0%,#F4F6F8 50%,#F0EEFF 100%)',
+    rose:   'linear-gradient(160deg,#FFEEF2 0%,#F4F6F8 50%,#FFEEEE 100%)',
+    orange: 'linear-gradient(160deg,#FFF2EE 0%,#F4F6F8 50%,#FFF0E8 100%)',
+    teal:   'linear-gradient(160deg,#EEF8FF 0%,#F4F6F8 50%,#EEF6FF 100%)',
+    amber:  'linear-gradient(160deg,#FFF8EE 0%,#F4F6F8 50%,#FFF5E0 100%)',
+    indigo: 'linear-gradient(160deg,#F0EEFF 0%,#F4F6F8 50%,#EEF0FF 100%)',
+  };
+  const darkTints = {
+    green:  'linear-gradient(160deg,#080F0B 0%,#080C0A 50%,#070B0A 100%)',
+    blue:   'linear-gradient(160deg,#08090F 0%,#080C0A 50%,#07080F 100%)',
+    purple: 'linear-gradient(160deg,#0C080F 0%,#080C0A 50%,#0A070F 100%)',
+    rose:   'linear-gradient(160deg,#0F0808 0%,#080C0A 50%,#0F0709 100%)',
+    orange: 'linear-gradient(160deg,#0F0A07 0%,#080C0A 50%,#0F0907 100%)',
+    teal:   'linear-gradient(160deg,#07100F 0%,#080C0A 50%,#070C0F 100%)',
+    amber:  'linear-gradient(160deg,#0F0D07 0%,#080C0A 50%,#0F0C07 100%)',
+    indigo: 'linear-gradient(160deg,#0A090F 0%,#080C0A 50%,#08090F 100%)',
+  };
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const grad = (isDark ? darkTints : tints)[key] || (isDark ? darkTints.green : tints.green);
+  document.documentElement.style.setProperty('--bg-gradient', grad);
 }
 
 function renderThemeColorPicker() {
