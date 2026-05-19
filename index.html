@@ -8317,16 +8317,17 @@ function _initApp() {
     const page = document.getElementById('tab-' + tabName);
     if (item) item.classList.add('active');
     if (page) { window.scrollTo(0, 0); page.classList.add('active'); }
-    document.getElementById('fab-wrap').style.display = tabName === 'profil' ? 'none' : '';
+    document.getElementById('fab-wrap').style.display = (tabName === 'profil' || tabName === 'accueil') ? 'none' : '';
     movePill(tabName);
     haptic(6);
+    if (tabName === 'accueil') renderDashboard();
   }
   window.switchTabPublic = switchTab;
   document.querySelectorAll('.tab-item').forEach(item => {
     item.addEventListener('click', () => switchTab(item.dataset.tab));
   });
   // init pill on first render
-  requestAnimationFrame(() => movePill('frigo'));
+  requestAnimationFrame(() => movePill('accueil'));
 
   // Glassmorphism header on scroll
   window.addEventListener('scroll', () => {
