@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#F4F6F8">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -298,6 +298,7 @@ body {
   font-size: 14px;
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
+  touch-action: manipulation;
 }
 
 /* ─── DESKTOP: centre l'app comme un téléphone ─── */
@@ -1334,12 +1335,16 @@ body, #app-screen, .tab-page, .card, .food-row, .pantry-row, .courses-card,
 }
 .profile-avatar-lg {
   width: 58px; height: 58px; border-radius: 50%;
-  background: linear-gradient(145deg, #00A36C 0%, #006644 100%);
+  background: linear-gradient(145deg, var(--accent) 0%, var(--green-dk) 100%);
   color: #fff;
   font-size: 1.4rem; font-weight: 800;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 4px 20px rgba(0,102,68,0.55), inset 0 1px 0 rgba(255,255,255,0.30);
+  box-shadow: 0 4px 20px var(--fab-glow, rgba(0,102,68,0.55)), inset 0 1px 0 rgba(255,255,255,0.30);
+  overflow: hidden;
+}
+.profile-avatar-lg img {
+  width: 100%; height: 100%; object-fit: cover; border-radius: 50%;
 }
 .profile-hero-info { flex: 1; min-width: 0; }
 .profile-name-lg { font-size: 1.05rem; font-weight: 800; color: #fff; letter-spacing: -0.02em; }
@@ -7927,7 +7932,13 @@ function _initApp() {
       document.getElementById('auth-screen').classList.add('hidden');
       document.getElementById('app-screen').classList.remove('hidden');
       document.getElementById('user-name').textContent = fbUser.displayName?.split(' ')[0] || 'Vous';
-      document.getElementById('user-avatar').textContent = (fbUser.displayName || '?')[0].toUpperCase();
+      const avatarEl = document.getElementById('user-avatar');
+      if (fbUser.photoURL) {
+        avatarEl.innerHTML = `<img src="${fbUser.photoURL}" alt="" referrerpolicy="no-referrer">`;
+      } else {
+        const initials = (fbUser.displayName || '?').split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+        avatarEl.textContent = initials;
+      }
 
       // Charger le profil d'abord pour savoir quel frigo utiliser
       profile = await window.__FC.loadProfile(fbUser.uid);
