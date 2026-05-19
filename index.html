@@ -3891,9 +3891,12 @@ const FOOD_CATEGORIES = [
   { key: 'bebe',     label: '👶 Bébé & Enfant',       color: '#74C0FC', bg: 'rgba(116,192,252,0.08)',
     words: ['couche','couches','lait maternisé','petit pot','compote bébé','lait infantile','lingette bébé','crème bébé','gel bébé','shampooing bébé','bavoir','tétine','biberon','sucette'] },
 ];
+let _allCategoriesCache = null;
 function allCategories() {
-  return [...userCategories, ...FOOD_CATEGORIES];
+  if (!_allCategoriesCache) _allCategoriesCache = [...userCategories, ...FOOD_CATEGORIES];
+  return _allCategoriesCache;
 }
+function invalidateCategoriesCache() { _allCategoriesCache = null; }
 function foodCategory(name) {
   const n = name.toLowerCase();
   for (const cat of allCategories()) {
@@ -4077,6 +4080,27 @@ function renderPantry() {
 
 function haptic(ms = 8) { if (navigator.vibrate) navigator.vibrate(ms); }
 
+function confirmSheet(message, onConfirm, { confirmLabel = 'Confirmer', danger = true } = {}) {
+  const existing = document.getElementById('confirm-sheet-overlay');
+  if (existing) existing.remove();
+  const el = document.createElement('div');
+  el.id = 'confirm-sheet-overlay';
+  el.style.cssText = 'position:fixed;inset:0;z-index:9000;background:rgba(10,14,12,0.60);display:flex;align-items:flex-end;animation:fadeIn 0.15s ease';
+  el.innerHTML = `<div style="width:100%;max-width:430px;margin:0 auto;background:var(--surface);border-radius:24px 24px 0 0;padding:20px 20px calc(32px + env(safe-area-inset-bottom,0px));box-shadow:var(--shadow-lg);animation:slideUp 0.25s cubic-bezier(0.34,1.56,0.64,1) both">
+    <div style="width:36px;height:4px;border-radius:2px;background:var(--border2);margin:0 auto 16px"></div>
+    <p style="text-align:center;font-size:0.95rem;color:var(--ink);margin-bottom:20px;line-height:1.5">${esc(message)}</p>
+    <div style="display:flex;gap:10px">
+      <button id="cfs-cancel" style="flex:1;padding:13px;border-radius:14px;border:1.5px solid var(--border2);background:var(--surface2);color:var(--ink2);font-size:0.9rem;font-weight:600;cursor:pointer">Annuler</button>
+      <button id="cfs-ok" style="flex:1;padding:13px;border-radius:14px;border:none;background:${danger ? 'var(--red)' : 'var(--green)'};color:#fff;font-size:0.9rem;font-weight:700;cursor:pointer">${esc(confirmLabel)}</button>
+    </div>
+  </div>`;
+  document.body.appendChild(el);
+  const close = () => el.remove();
+  el.querySelector('#cfs-cancel').onclick = close;
+  el.querySelector('#cfs-ok').onclick = () => { close(); onConfirm(); };
+  el.onclick = e => { if (e.target === el) close(); };
+}
+
 function toast(msg, type = 'info') {
   document.querySelectorAll('.app-toast').forEach(t => t.remove());
   const icons = { error: '⚠️', success: '✓', info: '' };
@@ -4230,7 +4254,7 @@ function renderCookTonight() {
         <span class="cook-tonight-emoji">${r.emoji || '🍽️'}</span>
         <div class="cook-tonight-info">
           <div class="cook-tonight-name">${esc(r.name)}</div>
-          <div class="cook-tonight-meta">${r.time ? `⏱ ${r.time} min` : ''}${r.calories ? ` · ${r.calories} kcal` : ''}</div>
+          <div class="cook-tonight-meta">${r.time ? `⏱ ${esc(String(r.time))} min` : ''}${r.calories ? ` · ${esc(String(r.calories))} kcal` : ''}</div>
         </div>
         <span class="cook-tonight-pct">${r.matchPct != null ? r.matchPct + '%' : '✓'}</span>
       </div>`).join('')}`;
@@ -4454,7 +4478,7 @@ function renderRecipes() {
       </div>
       <div class="card-body">
         <div class="card-name">${esc(r.name)}</div>
-        <div class="card-meta"><span>⏱ ${r.time}min</span><span>👥 ${r.servings}</span></div>
+        <div class="card-meta"><span>⏱ ${esc(String(r.time||''))}min</span><span>👥 ${esc(String(r.servings||''))}</span></div>
         <div class="chip-row" style="margin-bottom:${calBadge ? '0.3rem' : '0'}">${chips}</div>
         ${calBadge}
       </div>
@@ -4679,16 +4703,16 @@ function renderSharedListBar() {
     bar.innerHTML = `<span class="shared-list-badge">👥 Liste partagée · <strong>${esc(sharedListCode)}</strong></span>
       <button class="shared-list-quit-btn" id="btn-quit-shared-list">Quitter</button>`;
     document.getElementById('btn-quit-shared-list')?.addEventListener('click', async () => {
-      if (!confirm('Quitter la liste partagée ?')) return;
-      try { await window.__FC.leaveSharedList(user.uid, sharedListCode); } catch(e) { console.warn(e); }
-      if (unsubSharedList) { unsubSharedList(); unsubSharedList = null; }
-      sharedListCode = null;
-      unsubShopping = window.__FC.loadShoppingList(user.uid, ({ items, overrides, history }) => {
-        shoppingList = items; shopCatOverrides = overrides||{}; shopHistory = history||[]; renderCourses();
+      confirmSheet('Quitter la liste partagée ?', async () => {
+        try { await window.__FC.leaveSharedList(user.uid, sharedListCode); } catch(e) { console.warn(e); }
+        if (unsubSharedList) { unsubSharedList(); unsubSharedList = null; }
+        sharedListCode = null;
+        unsubShopping = window.__FC.loadShoppingList(user.uid, ({ items, overrides, history }) => {
+          shoppingList = items; shopCatOverrides = overrides||{}; shopHistory = history||[]; renderCourses();
+        });
+        renderSharedListBar();
+        toast('Revenu à ta liste personnelle', 'info');
       });
-      renderSharedListBar();
-      toast('Revenu à ta liste personnelle', 'info');
-    });
   } else {
     bar.style.display = 'none';
     bar.innerHTML = '';
@@ -5096,11 +5120,11 @@ function openModal(r) {
   if (r.isCustom) {
     document.getElementById('modal-edit').addEventListener('click', () => { closeModal(); openRecipeForm(r); });
     document.getElementById('modal-del').addEventListener('click', () => {
-      if (confirm(`Supprimer "${r.name}" ?`)) {
+      confirmSheet(`Supprimer "${r.name}" ?`, () => {
         userRecipes = userRecipes.filter(x => x.id !== r.id);
         saveUserRecipesDB(); renderRecipes(); closeModal();
-        toast(`${r.emoji} ${r.name} supprimé`);
-      }
+        toast(`${esc(r.emoji)} ${esc(r.name)} supprimé`);
+      }, { confirmLabel: 'Supprimer' });
     });
   }
 }
@@ -5574,7 +5598,7 @@ async function saveCatModal() {
   const label = `${emoji} ${name}`;
   const bg = catModalColor + '1A';
   const newCat = { key, label, color: catModalColor, bg, words };
-  userCategories = [...userCategories, newCat];
+  userCategories = [...userCategories, newCat]; invalidateCategoriesCache();
   await window.__FC.saveCategories(user.uid, userCategories);
   renderProfileCats();
   closeCatModal();
@@ -7156,7 +7180,7 @@ window.addEventListener('fc-ready', () => {
 
       if (unsubCategories) unsubCategories();
       unsubCategories = window.__FC.loadCategories(fbUser.uid, cats => {
-        userCategories = cats; renderProfileCats();
+        userCategories = cats; invalidateCategoriesCache(); renderProfileCats();
       });
 
       loadCalHistory();
@@ -7208,7 +7232,7 @@ window.addEventListener('fc-ready', () => {
       shoppingList = []; shopHistory = []; sharedListCode = null;
       if (unsubSharedList) { unsubSharedList(); unsubSharedList = null; }
       if (unsubShopping) { unsubShopping(); unsubShopping = null; }
-      userCategories = []; if (unsubCategories) { unsubCategories(); unsubCategories = null; }
+      userCategories = []; invalidateCategoriesCache(); if (unsubCategories) { unsubCategories(); unsubCategories = null; }
       dailyLog = []; if (unsubDailyLog) { unsubDailyLog(); unsubDailyLog = null; }
       weightLog = []; if (unsubWeightLog) { unsubWeightLog(); unsubWeightLog = null; }
       withingsActivity = []; withingsSleep = []; withingsIsConnected = false; withingsSyncedAt = null;
@@ -7221,7 +7245,7 @@ window.addEventListener('fc-ready', () => {
 
   // Login
   document.getElementById('btn-login').addEventListener('click', () => {
-    window.__FC.signIn().catch(err => alert('Erreur de connexion : ' + err.message));
+    window.__FC.signIn().catch(err => toast('Erreur de connexion : ' + err.message, 'error'));
   });
 
   // Logout
@@ -7321,7 +7345,7 @@ window.addEventListener('fc-ready', () => {
   });
 
   document.getElementById('ob-next-0').addEventListener('click', () => {
-    if (!obData.goal) { alert('Veuillez choisir un objectif pour continuer.'); return; }
+    if (!obData.goal) { toast('Veuillez choisir un objectif pour continuer.', 'error'); return; }
     obSetStep(1);
   });
 
@@ -7339,10 +7363,10 @@ window.addEventListener('fc-ready', () => {
     const age    = parseInt(document.getElementById('ob-age').value);
     const height = parseInt(document.getElementById('ob-height').value);
     const weight = parseInt(document.getElementById('ob-weight').value);
-    if (!obData.genre) { alert('Veuillez sélectionner votre genre.'); return; }
-    if (!age || age < 15 || age > 99) { alert('Entrez un âge valide (15-99).'); return; }
-    if (!height || height < 100 || height > 250) { alert('Entrez une taille valide (100-250 cm).'); return; }
-    if (!weight || weight < 30 || weight > 300) { alert('Entrez un poids valide (30-300 kg).'); return; }
+    if (!obData.genre) { toast('Veuillez sélectionner votre genre.', 'error'); return; }
+    if (!age || age < 15 || age > 99) { toast('Entrez un âge valide (15-99).', 'error'); return; }
+    if (!height || height < 100 || height > 250) { toast('Entrez une taille valide (100-250 cm).', 'error'); return; }
+    if (!weight || weight < 30 || weight > 300) { toast('Entrez un poids valide (30-300 kg).', 'error'); return; }
     obData.age    = age;
     obData.height = height;
     obData.weight = weight;
@@ -7360,7 +7384,7 @@ window.addEventListener('fc-ready', () => {
 
   document.getElementById('ob-back-2').addEventListener('click', () => obSetStep(1));
   document.getElementById('ob-next-2').addEventListener('click', () => {
-    if (!obData.activity) { alert('Veuillez sélectionner votre niveau d\'activité.'); return; }
+    if (!obData.activity) { toast('Veuillez sélectionner votre niveau d'activité.', 'error'); return; }
     obSetStep(3);
   });
 
@@ -7704,16 +7728,19 @@ window.addEventListener('fc-ready', () => {
   });
 
   // ── Search — frigo/placard ──
+  let _searchTimer = null;
   document.getElementById('inp-frigo-search').addEventListener('input', e => {
     fridgeSearch = e.target.value;
-    renderFridge();
-    renderPantry();
+    clearTimeout(_searchTimer);
+    _searchTimer = setTimeout(() => { renderFridge(); renderPantry(); }, 180);
   });
 
   // ── Search — recettes ──
+  let _recipeTimer = null;
   document.getElementById('inp-recipe-search').addEventListener('input', e => {
     recipeSearch = e.target.value;
-    renderRecipes();
+    clearTimeout(_recipeTimer);
+    _recipeTimer = setTimeout(() => renderRecipes(), 180);
   });
 
   // ── Ajout manuel liste de courses ──
@@ -8197,7 +8224,7 @@ window.addEventListener('fc-ready', () => {
   document.addEventListener('click', e => {
     if (!e.target.closest('#btn-connect-withings')) return;
     const currentUser = user || window.__FC.getUser();
-    if (!currentUser) { alert('Connectez-vous d\'abord'); return; }
+    if (!currentUser) { toast('Connectez-vous d'abord', 'error'); return; }
     window.location.href = `https://us-central1-frigochef-95045.cloudfunctions.net/withingsAuth?uid=${currentUser.uid}`;
   });
 
@@ -8235,17 +8262,18 @@ window.addEventListener('fc-ready', () => {
         .catch(() => toast(sharedFridgeCode, 'success'));
     }
   });
-  document.getElementById('profile-share-quit').addEventListener('click', async () => {
-    if (!confirm('Quitter le frigo partagé ? Vous reviendrez à votre frigo personnel.')) return;
-    sharedFridgeCode = null;
-    profile = { ...profile, sharedFridgeCode: null };
-    await window.__FC.saveProfile(user.uid, profile);
-    if (unsub) unsub();
-    unsub = window.__FC.loadFridge(user.uid, items => {
-      fridge = items; renderFridge(); renderAlerts();
-    });
-    updateShareBtn();
-    toast('Frigo personnel restauré', 'success');
+  document.getElementById('profile-share-quit').addEventListener('click', () => {
+    confirmSheet('Quitter le frigo partagé ? Vous reviendrez à votre frigo personnel.', async () => {
+      sharedFridgeCode = null;
+      profile = { ...profile, sharedFridgeCode: null };
+      await window.__FC.saveProfile(user.uid, profile);
+      if (unsub) unsub();
+      unsub = window.__FC.loadFridge(user.uid, items => {
+        fridge = items; renderFridge(); renderAlerts();
+      });
+      updateShareBtn();
+      toast('Frigo personnel restauré', 'success');
+    }, { confirmLabel: 'Quitter', danger: false });
   });
 
   // Initialize profile tab
@@ -8339,9 +8367,9 @@ window.addEventListener('fc-ready', () => {
 
   document.getElementById('btn-confirm-join').addEventListener('click', async () => {
     const code = document.getElementById('inp-share-code').value.trim().toUpperCase();
-    if (code.length < 4) { alert('Entrez un code valide.'); return; }
+    if (code.length < 4) { toast('Entrez un code valide.', 'error'); return; }
     const result = await window.__FC.joinSharedFridge(code, user.uid);
-    if (!result) { alert('Code introuvable. Vérifiez le code partagé.'); return; }
+    if (!result) { toast('Code introuvable. Vérifiez le code partagé.', 'error'); return; }
     sharedFridgeCode = code;
     profile = { ...profile, sharedFridgeCode: code };
     await window.__FC.saveProfile(user.uid, profile);
@@ -8353,21 +8381,22 @@ window.addEventListener('fc-ready', () => {
     closeShareModal();
   });
 
-  document.getElementById('btn-leave-share').addEventListener('click', async () => {
-    if (!confirm('Quitter le frigo partagé ? Vous reviendrez à votre frigo personnel.')) return;
-    sharedFridgeCode = null;
-    profile = { ...profile, sharedFridgeCode: null };
-    await window.__FC.saveProfile(user.uid, profile);
-    if (unsub) unsub();
-    unsub = window.__FC.loadFridge(user.uid, items => {
-      fridge = items; renderFridge(); renderAlerts();
-    });
-    updateShareBtn();
-    closeShareModal();
+  document.getElementById('btn-leave-share').addEventListener('click', () => {
+    confirmSheet('Quitter le frigo partagé ? Vous reviendrez à votre frigo personnel.', async () => {
+      sharedFridgeCode = null;
+      profile = { ...profile, sharedFridgeCode: null };
+      await window.__FC.saveProfile(user.uid, profile);
+      if (unsub) unsub();
+      unsub = window.__FC.loadFridge(user.uid, items => {
+        fridge = items; renderFridge(); renderAlerts();
+      });
+      updateShareBtn();
+      closeShareModal();
+    }, { confirmLabel: 'Quitter', danger: false });
   });
 
   function copyCode(code) {
-    navigator.clipboard.writeText(code).then(() => alert(`Code "${code}" copié !`));
+    navigator.clipboard.writeText(code).then(() => toast(`Code "${esc(code)}" copié !`, 'success'));
   }
   document.getElementById('btn-copy-created').addEventListener('click', () => copyCode(document.getElementById('sv-code-display').textContent));
   document.getElementById('btn-copy-manage').addEventListener('click',  () => copyCode(document.getElementById('sv-code-manage').textContent));
