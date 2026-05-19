@@ -2587,6 +2587,158 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
   background: var(--surface); color: var(--ink);
   box-shadow: 0 2px 8px rgba(0,0,0,0.08), 0 0 0 0.5px rgba(0,0,0,0.04);
 }
+/* ── Dashboard ── */
+.dash-section-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--ink3);
+  margin: 18px 0 8px;
+}
+.dash-card {
+  background: var(--surface);
+  border-radius: 18px;
+  padding: 16px 18px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+.dash-card-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink3);
+  margin-bottom: 10px;
+}
+.dash-cal-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.dash-cal-ring-wrap {
+  flex-shrink: 0;
+}
+.dash-cal-ring-wrap svg { display: block; }
+.dash-cal-info { flex: 1; }
+.dash-cal-val {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--ink);
+}
+.dash-cal-unit { font-size: 0.78rem; color: var(--ink3); margin-top: 2px; }
+.dash-cal-bar-wrap {
+  height: 6px;
+  background: var(--surface2);
+  border-radius: 3px;
+  margin-top: 10px;
+  overflow: hidden;
+}
+.dash-cal-bar {
+  height: 100%;
+  background: var(--green);
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+.dash-cal-bar.over { background: var(--red); }
+.dash-stat-row {
+  display: flex;
+  gap: 10px;
+}
+.dash-stat-card {
+  flex: 1;
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 14px 12px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.dash-stat-card:active { transform: scale(0.96); }
+.dash-stat-icon { font-size: 1.5rem; margin-bottom: 4px; }
+.dash-stat-val {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1;
+}
+.dash-stat-label {
+  font-size: 0.68rem;
+  color: var(--ink3);
+  margin-top: 3px;
+  font-weight: 600;
+}
+.dash-alert-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+.dash-alert-item:last-child { border-bottom: none; padding-bottom: 0; }
+.dash-alert-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.dash-alert-dot.urgent { background: var(--red); }
+.dash-alert-dot.soon   { background: var(--orange); }
+.dash-alert-name { font-size: 0.9rem; font-weight: 600; color: var(--ink); flex: 1; }
+.dash-alert-days { font-size: 0.78rem; color: var(--ink3); }
+.dash-courses-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border);
+}
+.dash-courses-item:last-child { border-bottom: none; padding-bottom: 0; }
+.dash-courses-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+.dash-courses-name { font-size: 0.9rem; color: var(--ink); flex: 1; }
+.dash-see-more {
+  font-size: 0.78rem;
+  color: var(--accent);
+  font-weight: 600;
+  text-align: center;
+  padding-top: 8px;
+  cursor: pointer;
+}
+.dash-empty-state {
+  text-align: center;
+  padding: 16px 0 8px;
+  color: var(--ink3);
+  font-size: 0.85rem;
+}
+.dash-quick-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.dash-quick-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s;
+}
+.dash-quick-btn:active { transform: scale(0.96); }
+.dash-quick-btn-icon { font-size: 1.4rem; }
+.dash-quick-btn-label { font-size: 0.82rem; font-weight: 600; color: var(--ink2); }
+
 /* ── Frigo Widget ── */
 .frigo-widget {
   display: grid; grid-template-columns: repeat(4, 1fr);
@@ -2657,8 +2809,20 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
 <!-- ═══════════════ APP ═══════════════ -->
 <div id="app-screen" class="hidden">
 
+  <!-- ── TAB: ACCUEIL (Dashboard) ── -->
+  <div class="tab-page active" id="tab-accueil">
+    <div class="tab-header">
+      <div class="tab-header-row">
+        <div class="tab-large-title" id="dash-greeting" style="background:linear-gradient(135deg,var(--green-dk),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">👋 Bonjour</div>
+      </div>
+    </div>
+    <div class="tab-body" id="dash-body">
+      <!-- Cards rendered by renderDashboard() -->
+    </div>
+  </div>
+
   <!-- ── TAB: FRIGO ── -->
-  <div class="tab-page active" id="tab-frigo">
+  <div class="tab-page" id="tab-frigo">
     <div class="tab-header">
       <div class="tab-header-row">
         <div class="tab-large-title" id="fridge-count-label" style="background:linear-gradient(135deg,var(--green-dk),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">🍽️ Ma Cuisine</div>
@@ -3100,7 +3264,11 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
   <!-- BOTTOM TAB BAR -->
   <nav class="bottom-tab-bar" id="bottom-nav">
     <div class="tab-pill" id="tab-pill"></div>
-    <button class="tab-item active" data-tab="frigo">
+    <button class="tab-item active" data-tab="accueil">
+      <span class="tab-item-icon">🏠</span>
+      <span class="tab-item-label">Accueil</span>
+    </button>
+    <button class="tab-item" data-tab="frigo">
       <span class="tab-item-icon-wrap">
         <span class="tab-item-icon">🍽️</span>
         <span class="tab-alert-badge hidden" id="frigo-tab-badge"></span>
@@ -4227,6 +4395,7 @@ function renderFridge() {
     });
   });
   renderCookTonight();
+  renderDashboard();
 }
 
 function renderCookTonight() {
@@ -5020,6 +5189,7 @@ function renderCourses() {
 
   // Update shared list bar
   renderSharedListBar();
+  renderDashboard();
 }
 
 /* ═══════════════════════════════════════════════════
@@ -5738,6 +5908,124 @@ function renderCalHistory() {
       <div class="cal-bar-lbl">${dayLabel}</div>
     </div>`;
   }).join('')}</div>`;
+}
+
+function renderDashboard() {
+  const body = document.getElementById('dash-body');
+  if (!body) return;
+
+  // Greeting based on time
+  const h = new Date().getHours();
+  const greet = h < 5 ? '🌙 Bonne nuit' : h < 12 ? '☀️ Bonjour' : h < 18 ? '🌤 Bon après-midi' : '🌙 Bonsoir';
+  const nameStr = user?.displayName?.split(' ')[0] || '';
+  const greetEl = document.getElementById('dash-greeting');
+  if (greetEl) greetEl.textContent = greet + (nameStr ? `, ${nameStr}` : '');
+
+  // ── Calories card ──
+  const totalKcal = dailyLog.reduce((s, e) => s + (e.kcal || 0), 0);
+  const goal = profile?.dailyCalories || 0;
+  const calPct = goal ? Math.min(totalKcal / goal * 100, 100) : 0;
+  const calRemain = goal ? goal - totalKcal : null;
+  const calOver = goal && totalKcal > goal;
+
+  const calHtml = `
+    <div class="dash-card">
+      <div class="dash-card-title">🔥 Calories aujourd'hui</div>
+      <div class="dash-cal-row">
+        <div class="dash-cal-info">
+          <div class="dash-cal-val">${totalKcal}</div>
+          <div class="dash-cal-unit">${goal ? `kcal · objectif ${goal}` : 'kcal consommées'}</div>
+          ${goal ? `<div class="dash-cal-bar-wrap"><div class="dash-cal-bar${calOver ? ' over' : ''}" style="width:${calPct}%"></div></div>` : ''}
+          ${goal ? `<div style="font-size:0.75rem;color:${calOver ? 'var(--red)' : 'var(--ink3)'};margin-top:6px">${calOver ? `+${Math.abs(calRemain)} kcal de trop` : `${calRemain} kcal restantes`}</div>` : ''}
+        </div>
+      </div>
+    </div>`;
+
+  // ── DLC alerts ──
+  const allItems = [...fridge, ...pantry];
+  const urgent = allItems.filter(i => i.dlc && dlcStatus(i.dlc)?.cls === 'dlc-urgent');
+  const soon   = allItems.filter(i => i.dlc && dlcStatus(i.dlc)?.cls === 'dlc-soon');
+  const alerts = [...urgent, ...soon].slice(0, 5);
+
+  let dlcHtml = '';
+  if (alerts.length > 0) {
+    const rows = alerts.map(i => {
+      const s = dlcStatus(i.dlc);
+      const isUrgent = s.cls === 'dlc-urgent';
+      return `<div class="dash-alert-item" onclick="window.switchTabPublic('frigo')">
+        <div class="dash-alert-dot ${isUrgent ? 'urgent' : 'soon'}"></div>
+        <div class="dash-alert-name">${esc(i.name)}</div>
+        <div class="dash-alert-days">${s.label}</div>
+      </div>`;
+    }).join('');
+    const more = urgent.length + soon.length - alerts.length;
+    dlcHtml = `<div class="dash-card">
+      <div class="dash-card-title">⚠️ Dates de péremption</div>
+      ${rows}
+      ${more > 0 ? `<div class="dash-see-more" onclick="window.switchTabPublic('frigo')">+${more} article${more > 1 ? 's' : ''}</div>` : ''}
+    </div>`;
+  }
+
+  // ── Shopping list preview ──
+  const todo = shoppingList.filter(i => !i.bought);
+  let coursesHtml = '';
+  if (todo.length > 0) {
+    const preview = todo.slice(0, 5);
+    const rows = preview.map(i => `<div class="dash-courses-item">
+      <div class="dash-courses-dot"></div>
+      <div class="dash-courses-name">${esc(i.name)}</div>
+    </div>`).join('');
+    const more = todo.length - preview.length;
+    coursesHtml = `<div class="dash-card">
+      <div class="dash-card-title">🛒 Courses à faire</div>
+      ${rows}
+      ${more > 0 ? `<div class="dash-see-more" onclick="window.switchTabPublic('courses')">+${more} article${more > 1 ? 's' : ''}</div>` : ''}
+    </div>`;
+  }
+
+  // ── Stat tiles ──
+  const totalItems = fridge.length + pantry.length;
+  const statHtml = `<div class="dash-stat-row">
+    <div class="dash-stat-card" onclick="window.switchTabPublic('frigo')">
+      <div class="dash-stat-icon">🧊</div>
+      <div class="dash-stat-val">${totalItems}</div>
+      <div class="dash-stat-label">Articles en stock</div>
+    </div>
+    <div class="dash-stat-card" onclick="window.switchTabPublic('recettes')">
+      <div class="dash-stat-icon">🍳</div>
+      <div class="dash-stat-val">${recipes.length}</div>
+      <div class="dash-stat-label">Recettes</div>
+    </div>
+    <div class="dash-stat-card" onclick="window.switchTabPublic('courses')">
+      <div class="dash-stat-icon">🛒</div>
+      <div class="dash-stat-val">${todo.length}</div>
+      <div class="dash-stat-label">À acheter</div>
+    </div>
+  </div>`;
+
+  // ── Quick actions ──
+  const quickHtml = `
+    <div class="dash-section-title">Accès rapide</div>
+    <div class="dash-quick-actions">
+      <button class="dash-quick-btn" onclick="window.switchTabPublic('frigo');document.getElementById('btn-fab-main')?.click()">
+        <span class="dash-quick-btn-icon">➕</span>
+        <span class="dash-quick-btn-label">Ajouter un aliment</span>
+      </button>
+      <button class="dash-quick-btn" onclick="window.switchTabPublic('courses');document.getElementById('inp-shop')?.focus()">
+        <span class="dash-quick-btn-icon">🛍️</span>
+        <span class="dash-quick-btn-label">Ajouter une course</span>
+      </button>
+      <button class="dash-quick-btn" onclick="window.switchTabPublic('sante')">
+        <span class="dash-quick-btn-icon">📊</span>
+        <span class="dash-quick-btn-label">Voir ma santé</span>
+      </button>
+      <button class="dash-quick-btn" onclick="window.switchTabPublic('recettes')">
+        <span class="dash-quick-btn-icon">🍳</span>
+        <span class="dash-quick-btn-label">Parcourir les recettes</span>
+      </button>
+    </div>`;
+
+  body.innerHTML = statHtml + (alerts.length ? dlcHtml : '') + coursesHtml + calHtml + quickHtml;
 }
 
 function renderSante() {
@@ -7191,7 +7479,7 @@ function _initApp() {
 
       if (unsubDailyLog) unsubDailyLog();
       unsubDailyLog = window.__FC.loadDailyLog(fbUser.uid, todayDate(), entries => {
-        dailyLog = entries; renderSante();
+        dailyLog = entries; renderSante(); renderDashboard();
       });
 
       if (unsubWeightLog) unsubWeightLog();
