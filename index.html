@@ -1396,6 +1396,11 @@ body {
   text-transform: uppercase; letter-spacing: 0.06em;
   margin: 16px 14px 8px;
 }
+.pref-section-title {
+  font-size: 0.72rem; font-weight: 600; color: var(--ink3);
+  text-transform: uppercase; letter-spacing: 0.06em;
+  margin: 16px 14px 8px;
+}
 .cat-grid {
   margin: 0 14px; display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px;
 }
@@ -4386,6 +4391,7 @@ function renderPantry() {
     });
   });
   updateFrigoTabBadge();
+  setupDragDrop('pantry-list', pantry, savePantry);
 }
 
 function haptic(ms = 8) { if (navigator.vibrate) navigator.vibrate(ms); }
@@ -4534,6 +4540,7 @@ function renderFridge() {
   });
   renderCookTonight();
   renderDashboard();
+  setupDragDrop('fridge-list', fridge, saveFridge);
 }
 
 function renderCookTonight() {
@@ -6168,9 +6175,12 @@ function setupDragDrop(listId, dataArray, saveFn) {
   const list = document.getElementById(listId);
   if (!list) return;
   let dragSrcIndex = null;
+  // fridge uses .food-row, pantry uses .pantry-row
+  const itemSel = listId === 'fridge-list' ? '.food-row' : '.pantry-row';
 
-  list.querySelectorAll('.fridge-item').forEach((item, idx) => {
+  list.querySelectorAll(itemSel).forEach((item, idx) => {
     item.setAttribute('draggable', 'true');
+    item.classList.add('fridge-item'); // add shared class for CSS targeting
 
     // Add drag handle if not present (insert as first child)
     if (!item.querySelector('.drag-handle')) {
@@ -6188,20 +6198,28 @@ function setupDragDrop(listId, dataArray, saveFn) {
     });
     item.addEventListener('dragend', () => {
       item.classList.remove('dragging');
-      list.querySelectorAll('.fridge-item').forEach(i => i.classList.remove('drag-over'));
+      list.querySelectorAll(itemSel).forEach(i => i.classList.remove('drag-over'));
     });
     item.addEventListener('dragover', e => {
       e.preventDefault();
       e.dataTransfer.dropEffect = 'move';
-      list.querySelectorAll('.fridge-item').forEach(i => i.classList.remove('drag-over'));
+      list.querySelectorAll(itemSel).forEach(i => i.classList.remove('drag-over'));
       item.classList.add('drag-over');
     });
     item.addEventListener('drop', e => {
       e.preventDefault();
       item.classList.remove('drag-over');
       if (dragSrcIndex === null || dragSrcIndex === idx) return;
-      const moved = dataArray.splice(dragSrcIndex, 1)[0];
-      dataArray.splice(idx, 0, moved);
+      // Map visible index back to dataArray index using data-item-id
+      const allItems = list.querySelectorAll(itemSel);
+      const srcId = allItems[dragSrcIndex]?.dataset.itemId;
+      const dstId = item.dataset.itemId;
+      if (!srcId || !dstId || srcId === dstId) { dragSrcIndex = null; return; }
+      const srcArrIdx = dataArray.findIndex(x => x.id === srcId);
+      const dstArrIdx = dataArray.findIndex(x => x.id === dstId);
+      if (srcArrIdx === -1 || dstArrIdx === -1) { dragSrcIndex = null; return; }
+      const moved = dataArray.splice(srcArrIdx, 1)[0];
+      dataArray.splice(dstArrIdx, 0, moved);
       dragSrcIndex = null;
       saveFn();
       if (listId === 'fridge-list') renderFridge();
@@ -9010,6 +9028,21 @@ function _initApp() {
   }
   document.getElementById('btn-copy-created').addEventListener('click', () => copyCode(document.getElementById('sv-code-display').textContent));
   document.getElementById('btn-copy-manage').addEventListener('click',  () => copyCode(document.getElementById('sv-code-manage').textContent));
+
+  // ── GLOBAL SEARCH ──
+  document.getElementById('global-search-close').addEventListener('click', closeGlobalSearch);
+  document.getElementById('global-search-overlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('global-search-overlay')) closeGlobalSearch();
+  });
+  document.getElementById('global-search-inp').addEventListener('input', e => {
+    clearTimeout(_gsearchTimer);
+    _gsearchTimer = setTimeout(() => renderGlobalSearchResults(e.target.value), 200);
+  });
+  document.getElementById('btn-global-search')?.addEventListener('click', openGlobalSearch);
+
+  // ── THEME COLOR ──
+  if (profile?.themeColor) applyThemeColor(profile.themeColor);
+  renderThemeColorPicker();
 } // fin _initApp
 
 // Lance l'init dès que Firebase est prêt — robuste contre les race conditions
