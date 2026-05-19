@@ -2715,6 +2715,10 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
   transition: transform 0.15s;
 }
 .dash-stat-card:active { transform: scale(0.96); }
+/* ── Tinted shadow depth ── */
+.dash-card, .dash-stat-card {
+  box-shadow: var(--shadow-tinted, var(--shadow));
+}
 .dash-stat-icon { font-size: 1.5rem; margin-bottom: 4px; }
 .dash-stat-val {
   font-size: 1.4rem;
@@ -2994,6 +2998,7 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
 
 <!-- ═══════════════ APP ═══════════════ -->
 <div id="app-screen" class="hidden">
+  <div id="scroll-progress" style="position:fixed;top:0;left:0;height:3px;width:0%;background:var(--accent);z-index:9999;transition:width 0.1s linear;border-radius:0 2px 2px 0;pointer-events:none"></div>
 
   <!-- ── TAB: ACCUEIL (Dashboard) ── -->
   <div class="tab-page active" id="tab-accueil">
@@ -5245,10 +5250,14 @@ function renderCourses() {
   const sub = document.getElementById('courses-sub');
 
   if (!shoppingList.length) {
-    el.innerHTML = `<div style="text-align:center;padding:3rem 1rem;color:var(--ink3)">
-      <div style="font-size:3rem;opacity:0.20;margin-bottom:0.75rem">🛒</div>
-      <div style="font-size:0.94rem;font-weight:700;color:var(--ink);margin-bottom:0.3rem">Liste vide</div>
-      <div style="font-size:0.78rem;line-height:1.6">Cochez des ingrédients dans une recette<br>ou ajoutez un article manuellement.</div>
+    el.innerHTML = `<div style="text-align:center;padding:40px 20px;color:var(--ink3)">
+      <svg width="72" height="72" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom:12px;opacity:0.45">
+        <circle cx="28" cy="62" r="5" stroke="currentColor" stroke-width="3" fill="none"/>
+        <circle cx="52" cy="62" r="5" stroke="currentColor" stroke-width="3" fill="none"/>
+        <path d="M8 10h8l10 32h28l8-22H24" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      </svg>
+      <div style="font-weight:600;font-size:0.95rem;margin-bottom:4px">Liste vide</div>
+      <div style="font-size:0.82rem">Ajoutez des articles à acheter</div>
     </div>`;
     if (sub) sub.textContent = 'Ajoutez des ingrédients ou cochez des recettes.';
     return;
@@ -5334,6 +5343,11 @@ function renderCourses() {
       if (e.target.classList.contains('shop-item-edit-btn') || e.target.closest('.shop-item-edit-btn')) return;
       const id = card.dataset.shopId;
       shoppingList = shoppingList.map(i => i.id === id ? { ...i, bought: !i.bought } : i);
+      const remaining = shoppingList.filter(i => !i.bought).length;
+      if (remaining === 0 && shoppingList.length > 0) {
+        launchConfetti();
+        toast('🎉 Liste complète ! Bravo !', 'success');
+      }
       saveShoppingListDB(); renderCourses();
     });
   });
@@ -6155,6 +6169,8 @@ function applyThemeColor(key) {
   document.documentElement.style.setProperty('--green', theme.accent);
   document.documentElement.style.setProperty('--green-dk', theme.dk);
   document.documentElement.style.setProperty('--fab-glow', theme.glow);
+  document.documentElement.style.setProperty('--shadow-tinted',
+    `0 4px 16px ${theme.glow}, 0 1px 4px rgba(0,0,0,0.05)`);
   document.querySelectorAll('.theme-color-swatch').forEach(s => {
     s.classList.toggle('selected', s.dataset.themeKey === key);
   });
@@ -6331,6 +6347,27 @@ function setupDragDrop(listId, dataArray, saveFn) {
       else renderPantry();
     });
   });
+}
+
+function launchConfetti() {
+  const colors = ['#00A36C','#2563EB','#F59E0B','#EF4444','#8B5CF6','#06B6D4','#F97316'];
+  const container = document.createElement('div');
+  container.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:99999;overflow:hidden';
+  document.body.appendChild(container);
+  for (let i = 0; i < 60; i++) {
+    const piece = document.createElement('div');
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    const size = 6 + Math.random() * 8;
+    const startX = 20 + Math.random() * 60;
+    const delay = Math.random() * 0.6;
+    const duration = 1.2 + Math.random() * 0.8;
+    piece.style.cssText = `position:absolute;left:${startX}%;top:-10px;width:${size}px;height:${size * 0.6}px;background:${color};border-radius:2px;animation:confettiFall ${duration}s ${delay}s ease-in forwards;transform-origin:center`;
+    container.appendChild(piece);
+  }
+  const style = document.createElement('style');
+  style.textContent = '@keyframes confettiFall{0%{transform:translateY(0) rotate(0deg);opacity:1}80%{opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}';
+  document.head.appendChild(style);
+  setTimeout(() => { container.remove(); style.remove(); }, 2500);
 }
 
 function renderDashboard() {
@@ -8784,7 +8821,14 @@ function _initApp() {
   }
   window.switchTabPublic = switchTab;
   document.querySelectorAll('.tab-item').forEach(item => {
-    item.addEventListener('click', () => switchTab(item.dataset.tab));
+    item.addEventListener('click', () => {
+      const currentActive = document.querySelector('.tab-item.active');
+      if (currentActive === item) {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+      switchTab(item.dataset.tab);
+    });
   });
   // init pill on first render
   requestAnimationFrame(() => movePill('accueil'));
@@ -9185,6 +9229,17 @@ function _initApp() {
   // ── THEME COLOR ──
   if (profile?.themeColor) applyThemeColor(profile.themeColor);
   renderThemeColorPicker();
+
+  // ── SCROLL PROGRESS ──
+  const scrollProgress = document.getElementById('scroll-progress');
+  if (scrollProgress) {
+    window.addEventListener('scroll', () => {
+      const scrollTop = window.scrollY || document.documentElement.scrollTop;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const pct = docHeight > 0 ? Math.min((scrollTop / docHeight) * 100, 100) : 0;
+      scrollProgress.style.width = pct + '%';
+    }, { passive: true });
+  }
 } // fin _initApp
 
 // Lance l'init dès que Firebase est prêt — robuste contre les race conditions
