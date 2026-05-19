@@ -2779,6 +2779,136 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
 }
 .pantry-row:hover { background: var(--surface2); box-shadow: var(--shadow-md); }
 .pantry-row:active { transform: scale(0.97); }
+
+/* ── THEME COLOR PICKER ── */
+.theme-color-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+.theme-color-swatch {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+}
+.theme-color-swatch.selected {
+  border-color: var(--ink);
+  transform: scale(1.15);
+}
+
+/* ── GLOBAL SEARCH OVERLAY ── */
+#global-search-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 5000;
+  background: rgba(10,14,12,0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  animation: fadeIn 0.15s ease;
+}
+#global-search-overlay.hidden { display: none; }
+.gsearch-box {
+  background: var(--surface);
+  border-radius: 0 0 20px 20px;
+  padding: 16px 16px 20px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+}
+.gsearch-input-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface2);
+  border-radius: 14px;
+  padding: 10px 14px;
+}
+.gsearch-input-row input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 1rem;
+  color: var(--ink);
+  outline: none;
+}
+.gsearch-close {
+  background: none;
+  border: none;
+  color: var(--ink3);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+}
+.gsearch-results {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+.gsearch-section-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--ink3);
+  margin: 14px 0 8px;
+}
+.gsearch-section-title:first-child { margin-top: 0; }
+.gsearch-result-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--surface);
+  border-radius: 14px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.gsearch-result-item:active { background: var(--surface2); }
+.gsearch-result-icon { font-size: 1.3rem; flex-shrink: 0; }
+.gsearch-result-name { font-size: 0.92rem; font-weight: 600; color: var(--ink); }
+.gsearch-result-sub { font-size: 0.75rem; color: var(--ink3); margin-top: 1px; }
+.gsearch-result-badge {
+  margin-left: auto;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 3px 7px;
+  border-radius: 8px;
+  background: var(--surface2);
+  color: var(--ink3);
+}
+.gsearch-empty {
+  text-align: center;
+  color: var(--ink3);
+  font-size: 0.88rem;
+  padding: 40px 0;
+}
+
+/* ── DRAG & DROP ── */
+.drag-handle {
+  cursor: grab;
+  padding: 8px 6px 8px 2px;
+  color: var(--ink3);
+  font-size: 1rem;
+  flex-shrink: 0;
+  touch-action: none;
+  user-select: none;
+}
+.drag-handle:active { cursor: grabbing; }
+.fridge-item.dragging {
+  opacity: 0.4;
+  background: var(--surface2);
+}
+.fridge-item.drag-over {
+  border-top: 2px solid var(--accent);
+}
 </style>
 </head>
 <body>
@@ -2814,6 +2944,7 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
     <div class="tab-header">
       <div class="tab-header-row">
         <div class="tab-large-title" id="dash-greeting" style="background:linear-gradient(135deg,var(--green-dk),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">👋 Bonjour</div>
+        <button class="icon-btn" id="btn-global-search" title="Recherche globale">🔍</button>
       </div>
     </div>
     <div class="tab-body" id="dash-body">
@@ -3055,6 +3186,13 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
           <span class="settings-label"><span class="settings-row-icon">🔔</span><span id="notif-label">Notifications DLC</span></span>
           <span class="settings-chevron" id="notif-status">—</span>
         </button>
+      </div>
+
+      <!-- Couleur d'accent -->
+      <div class="pref-section-title" style="margin-top:18px">🎨 Couleur de l'interface</div>
+      <div class="card" style="padding:16px 18px">
+        <div style="font-size:0.82rem;color:var(--ink3);margin-bottom:10px">Choisissez votre couleur d'accent</div>
+        <div class="theme-color-row" id="theme-color-picker"></div>
       </div>
 
       <!-- Catégories -->
@@ -5908,6 +6046,168 @@ function renderCalHistory() {
       <div class="cal-bar-lbl">${dayLabel}</div>
     </div>`;
   }).join('')}</div>`;
+}
+
+/* ═══════════════════════════════════════════════════
+   FEATURE: THEME COLOR PICKER
+   ═══════════════════════════════════════════════════ */
+const THEME_COLORS = [
+  { key: 'green',  label: 'Vert (défaut)', accent: '#00A36C', dk: '#006644' },
+  { key: 'blue',   label: 'Bleu',          accent: '#2563EB', dk: '#1d4ed8' },
+  { key: 'purple', label: 'Violet',         accent: '#7C3AED', dk: '#5b21b6' },
+  { key: 'rose',   label: 'Rose',           accent: '#E11D48', dk: '#be123c' },
+  { key: 'orange', label: 'Orange',         accent: '#EA580C', dk: '#c2410c' },
+  { key: 'teal',   label: 'Turquoise',      accent: '#0891B2', dk: '#0e7490' },
+  { key: 'amber',  label: 'Ambre',          accent: '#D97706', dk: '#b45309' },
+  { key: 'indigo', label: 'Indigo',         accent: '#4F46E5', dk: '#4338ca' },
+];
+
+function applyThemeColor(key) {
+  const theme = THEME_COLORS.find(t => t.key === key) || THEME_COLORS[0];
+  document.documentElement.style.setProperty('--accent', theme.accent);
+  document.documentElement.style.setProperty('--green', theme.accent);
+  document.documentElement.style.setProperty('--green-dk', theme.dk);
+  document.querySelectorAll('.theme-color-swatch').forEach(s => {
+    s.classList.toggle('selected', s.dataset.themeKey === key);
+  });
+}
+
+function renderThemeColorPicker() {
+  const container = document.getElementById('theme-color-picker');
+  if (!container) return;
+  const currentKey = profile?.themeColor || 'green';
+  container.innerHTML = THEME_COLORS.map(t =>
+    `<div class="theme-color-swatch${t.key === currentKey ? ' selected' : ''}"
+      data-theme-key="${t.key}"
+      style="background:${t.accent}"
+      title="${t.label}"
+      onclick="handleThemeColorClick('${t.key}')"></div>`
+  ).join('');
+}
+
+window.handleThemeColorClick = async function(key) {
+  applyThemeColor(key);
+  if (profile) {
+    profile = { ...profile, themeColor: key };
+    await window.__FC.saveProfile(user.uid, profile);
+  }
+  renderThemeColorPicker();
+};
+
+/* ═══════════════════════════════════════════════════
+   FEATURE: GLOBAL SEARCH
+   ═══════════════════════════════════════════════════ */
+function openGlobalSearch() {
+  document.getElementById('global-search-overlay').classList.remove('hidden');
+  setTimeout(() => document.getElementById('global-search-inp')?.focus(), 80);
+}
+
+function closeGlobalSearch() {
+  document.getElementById('global-search-overlay').classList.add('hidden');
+  document.getElementById('global-search-inp').value = '';
+  document.getElementById('global-search-results').innerHTML = '<div class="gsearch-empty">Commencez à taper pour rechercher</div>';
+}
+window.closeGlobalSearch = closeGlobalSearch;
+
+let _gsearchTimer = null;
+function renderGlobalSearchResults(q) {
+  const results = document.getElementById('global-search-results');
+  if (!results) return;
+  const query = q.trim().toLowerCase();
+  if (!query) {
+    results.innerHTML = '<div class="gsearch-empty">Commencez à taper pour rechercher</div>';
+    return;
+  }
+
+  const fridgeMatches = fridge.filter(i => i.name.toLowerCase().includes(query));
+  const pantryMatches = pantry.filter(i => i.name.toLowerCase().includes(query));
+  const recipeMatches = recipes.filter(r => r.name.toLowerCase().includes(query));
+
+  if (!fridgeMatches.length && !pantryMatches.length && !recipeMatches.length) {
+    results.innerHTML = `<div class="gsearch-empty">Aucun résultat pour « ${esc(q)} »</div>`;
+    return;
+  }
+
+  let html = '';
+  if (fridgeMatches.length) {
+    html += `<div class="gsearch-section-title">🧊 Frigo (${fridgeMatches.length})</div>`;
+    html += fridgeMatches.slice(0, 6).map(i => {
+      const dlcS = i.dlc ? dlcStatus(i.dlc) : null;
+      return `<div class="gsearch-result-item" onclick="closeGlobalSearch();window.switchTabPublic('frigo')">
+        <div class="gsearch-result-icon">🧊</div>
+        <div><div class="gsearch-result-name">${esc(i.name)}</div>${i.qty ? `<div class="gsearch-result-sub">${esc(i.qty)}</div>` : ''}</div>
+        ${dlcS ? `<div class="gsearch-result-badge" style="background:var(--${dlcS.cls === 'dlc-urgent' ? 'red' : dlcS.cls === 'dlc-soon' ? 'orange' : 'green'}-l);color:var(--${dlcS.cls === 'dlc-urgent' ? 'red' : dlcS.cls === 'dlc-soon' ? 'orange' : 'green'}-dk)">${dlcS.label}</div>` : ''}
+      </div>`;
+    }).join('');
+  }
+  if (pantryMatches.length) {
+    html += `<div class="gsearch-section-title">🗄 Placard (${pantryMatches.length})</div>`;
+    html += pantryMatches.slice(0, 6).map(i =>
+      `<div class="gsearch-result-item" onclick="closeGlobalSearch();window.switchTabPublic('frigo');document.getElementById('btn-view-placard')?.click()">
+        <div class="gsearch-result-icon">🗄</div>
+        <div><div class="gsearch-result-name">${esc(i.name)}</div>${i.qty ? `<div class="gsearch-result-sub">${esc(i.qty)}</div>` : ''}</div>
+      </div>`
+    ).join('');
+  }
+  if (recipeMatches.length) {
+    html += `<div class="gsearch-section-title">🍳 Recettes (${recipeMatches.length})</div>`;
+    html += recipeMatches.slice(0, 6).map(r =>
+      `<div class="gsearch-result-item" onclick="closeGlobalSearch();window.switchTabPublic('recettes')">
+        <div class="gsearch-result-icon">🍳</div>
+        <div><div class="gsearch-result-name">${esc(r.name)}</div>${r.time ? `<div class="gsearch-result-sub">${esc(String(r.time))} min</div>` : ''}</div>
+      </div>`
+    ).join('');
+  }
+  results.innerHTML = html;
+}
+
+/* ═══════════════════════════════════════════════════
+   FEATURE: DRAG & DROP REORDER
+   ═══════════════════════════════════════════════════ */
+function setupDragDrop(listId, dataArray, saveFn) {
+  const list = document.getElementById(listId);
+  if (!list) return;
+  let dragSrcIndex = null;
+
+  list.querySelectorAll('.fridge-item').forEach((item, idx) => {
+    item.setAttribute('draggable', 'true');
+
+    // Add drag handle if not present (insert as first child)
+    if (!item.querySelector('.drag-handle')) {
+      const handle = document.createElement('span');
+      handle.className = 'drag-handle';
+      handle.textContent = '⠿';
+      handle.setAttribute('aria-hidden', 'true');
+      item.insertBefore(handle, item.firstChild);
+    }
+
+    item.addEventListener('dragstart', e => {
+      dragSrcIndex = idx;
+      item.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    item.addEventListener('dragend', () => {
+      item.classList.remove('dragging');
+      list.querySelectorAll('.fridge-item').forEach(i => i.classList.remove('drag-over'));
+    });
+    item.addEventListener('dragover', e => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      list.querySelectorAll('.fridge-item').forEach(i => i.classList.remove('drag-over'));
+      item.classList.add('drag-over');
+    });
+    item.addEventListener('drop', e => {
+      e.preventDefault();
+      item.classList.remove('drag-over');
+      if (dragSrcIndex === null || dragSrcIndex === idx) return;
+      const moved = dataArray.splice(dragSrcIndex, 1)[0];
+      dataArray.splice(idx, 0, moved);
+      dragSrcIndex = null;
+      saveFn();
+      if (listId === 'fridge-list') renderFridge();
+      else renderPantry();
+    });
+  });
 }
 
 function renderDashboard() {
@@ -8782,6 +9082,20 @@ if ('serviceWorker' in navigator) {
     <div id="shop-cat-sheet-handle"></div>
     <div id="shop-cat-sheet-title">Changer la catégorie</div>
     <div id="shop-cat-sheet-pills"></div>
+  </div>
+</div>
+
+<!-- Global search overlay -->
+<div id="global-search-overlay" class="hidden">
+  <div class="gsearch-box">
+    <div class="gsearch-input-row">
+      <span>🔍</span>
+      <input id="global-search-inp" type="search" placeholder="Rechercher dans toute l'application…" autocomplete="off">
+      <button class="gsearch-close" id="global-search-close">✕</button>
+    </div>
+  </div>
+  <div class="gsearch-results" id="global-search-results">
+    <div class="gsearch-empty">Commencez à taper pour rechercher</div>
   </div>
 </div>
 </body>
