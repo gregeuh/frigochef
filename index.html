@@ -49,7 +49,7 @@
 
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js';
-  import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged }
+  import { getAuth, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, signOut, onAuthStateChanged }
     from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js';
   import { getFirestore, doc, setDoc, getDoc, deleteDoc, onSnapshot }
     from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js';
@@ -69,11 +69,22 @@
   const db        = getFirestore(app);
   const provider  = new GoogleAuthProvider();
 
+  // iOS Safari bloque les popups — utilise redirect sur mobile, popup sur desktop
+  const _isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
   window.__FC = {
-    signIn:  () => signInWithPopup(auth, provider),
+    signIn: () => _isMobile
+      ? signInWithRedirect(auth, provider)
+      : signInWithPopup(auth, provider).catch(err => {
+          // Fallback redirect si popup bloqué
+          if (err.code === 'auth/popup-blocked' || err.code === 'auth/cancelled-popup-request') {
+            return signInWithRedirect(auth, provider);
+          }
+          throw err;
+        }),
     signOut: () => signOut(auth),
     onAuth:  (cb) => onAuthStateChanged(auth, cb),
     getUser: () => auth.currentUser,
+    handleRedirectResult: () => getRedirectResult(auth).catch(() => {}),
     saveFridge: async (uid, items) => {
       await setDoc(doc(db, 'fridges', uid), { items, updatedAt: Date.now() });
     },
@@ -7136,6 +7147,9 @@ function esc(str) {
    AUTH + EVENTS (after fc-ready)
    ═══════════════════════════════════════════════════ */
 window.addEventListener('fc-ready', () => {
+
+  // Récupère le résultat d'un signInWithRedirect (iOS Safari)
+  window.__FC.handleRedirectResult();
 
   window.__FC.onAuth(async (fbUser) => {
     if (fbUser) {
