@@ -421,6 +421,21 @@ body {
   animation: itemSlideIn 0.28s cubic-bezier(0.22,1,0.36,1) both;
 }
 
+/* ── TAP SCALE ── */
+.food-row, .pantry-row, .courses-card, .dash-stat-card, .dash-card, .recipe-card, .card {
+  transition: transform 0.15s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.15s;
+}
+.food-row:active, .pantry-row:active, .courses-card:active, .dash-stat-card:active, .dash-card:active {
+  transform: scale(0.97);
+}
+
+/* ── THEME COLOR TRANSITIONS ── */
+html { transition: background 0.4s ease; }
+body, #app-screen, .tab-page, .card, .food-row, .pantry-row, .courses-card,
+.bottom-tab-bar, .tab-header, .fab, .dash-card, .dash-stat-card {
+  transition: background-color 0.35s ease, background 0.35s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
 .tab-header {
   position: sticky; top: 0; z-index: 50;
   background: rgba(244,246,248,0.72);
@@ -799,6 +814,14 @@ body {
   line-height: 1; z-index: 10;
 }
 .tab-alert-badge.hidden { display: none; }
+@keyframes badgePulse {
+  0%   { box-shadow: 0 0 0 0 rgba(229,57,53,0.6); }
+  70%  { box-shadow: 0 0 0 6px rgba(229,57,53,0); }
+  100% { box-shadow: 0 0 0 0 rgba(229,57,53,0); }
+}
+.tab-alert-badge:not(.hidden) {
+  animation: badgePulse 2s ease-out infinite;
+}
 /* ── Card badges row ── */
 .f-badges { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
 .f-del {
@@ -3008,14 +3031,27 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
       <div id="cook-tonight" class="cook-tonight" style="display:none"></div>
       <div id="fridge-list">
         <div class="fridge-empty">
-          <div class="fridge-empty-icon">🧊</div>
-          Frigo vide — appuyez sur <strong>＋</strong> pour commencer
+          <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom:12px;opacity:0.5">
+            <rect x="18" y="8" width="44" height="64" rx="8" stroke="currentColor" stroke-width="3" fill="none"/>
+            <line x1="18" y1="32" x2="62" y2="32" stroke="currentColor" stroke-width="2.5"/>
+            <circle cx="50" cy="22" r="3" fill="currentColor" opacity="0.5"/>
+            <circle cx="50" cy="50" r="3" fill="currentColor" opacity="0.5"/>
+          </svg>
+          <div style="font-weight:600;margin-bottom:4px">Frigo vide</div>
+          <div style="font-size:0.82rem;opacity:0.6">Appuyez sur <strong>&#xff0b;</strong> pour commencer</div>
         </div>
       </div>
       <div id="pantry-list" class="hidden">
         <div class="pantry-empty">
-          <div class="pantry-empty-icon">🗄</div>
-          Votre placard est vide.<br>Ajoutez vos basiques !
+          <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom:12px;opacity:0.5">
+            <rect x="14" y="10" width="52" height="60" rx="6" stroke="currentColor" stroke-width="3" fill="none"/>
+            <line x1="14" y1="35" x2="66" y2="35" stroke="currentColor" stroke-width="2.5"/>
+            <line x1="14" y1="52" x2="66" y2="52" stroke="currentColor" stroke-width="2.5"/>
+            <circle cx="40" cy="23" r="4" fill="currentColor" opacity="0.4"/>
+            <circle cx="40" cy="44" r="4" fill="currentColor" opacity="0.4"/>
+          </svg>
+          <div style="font-weight:600;margin-bottom:4px">Placard vide</div>
+          <div style="font-size:0.82rem;opacity:0.6">Ajoutez vos basiques !</div>
         </div>
       </div>
     </div>
@@ -3051,7 +3087,12 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
       </div>
       <div class="grid" id="recipe-grid">
         <div class="empty">
-          <div class="empty-icon">🍳</div>
+          <svg width="72" height="72" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom:12px;opacity:0.45">
+            <ellipse cx="36" cy="42" rx="24" ry="8" stroke="currentColor" stroke-width="3" fill="none"/>
+            <path d="M12 42 Q12 20 36 20 Q60 20 60 42" stroke="currentColor" stroke-width="3" fill="none"/>
+            <line x1="36" y1="20" x2="36" y2="10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M30 10 Q36 6 42 10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+          </svg>
           <div class="empty-title">Aucune recette</div>
           <div class="empty-sub">Ajoutez des aliments dans votre frigo, ou créez vos propres recettes.</div>
         </div>
@@ -4361,7 +4402,7 @@ function renderPantry() {
   if (!pantryView) return;
   label.textContent = `🗄 Placard · ${pantry.length} article${pantry.length > 1 ? 's' : ''}`;
   if (pantry.length === 0) {
-    el.innerHTML = `<div class="pantry-empty"><div class="pantry-empty-icon">🗄</div>Votre placard est vide.<br>Ajoutez vos basiques !</div>`;
+    el.innerHTML = `<div class="pantry-empty"><svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom:12px;opacity:0.5"><rect x="14" y="10" width="52" height="60" rx="6" stroke="currentColor" stroke-width="3" fill="none"/><line x1="14" y1="35" x2="66" y2="35" stroke="currentColor" stroke-width="2.5"/><line x1="14" y1="52" x2="66" y2="52" stroke="currentColor" stroke-width="2.5"/><circle cx="40" cy="23" r="4" fill="currentColor" opacity="0.4"/><circle cx="40" cy="44" r="4" fill="currentColor" opacity="0.4"/></svg><div style="font-weight:600;margin-bottom:4px">Placard vide</div><div style="font-size:0.82rem;opacity:0.6">Ajoutez vos basiques !</div></div>`;
     return;
   }
   const qp = fridgeSearch.toLowerCase();
@@ -4521,7 +4562,7 @@ function renderFridge() {
   }
 
   if (fridge.length === 0) {
-    el.innerHTML = `<div class="fridge-empty"><div class="fridge-empty-icon">🧊</div>Votre frigo est vide.<br>Ajoutez des aliments !</div>`;
+    el.innerHTML = `<div class="fridge-empty"><svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom:12px;opacity:0.5"><rect x="18" y="8" width="44" height="64" rx="8" stroke="currentColor" stroke-width="3" fill="none"/><line x1="18" y1="32" x2="62" y2="32" stroke="currentColor" stroke-width="2.5"/><circle cx="50" cy="22" r="3" fill="currentColor" opacity="0.5"/><circle cx="50" cy="50" r="3" fill="currentColor" opacity="0.5"/></svg><div style="font-weight:600;margin-bottom:4px">Frigo vide</div><div style="font-size:0.82rem;opacity:0.6">Ajoutez des aliments !</div></div>`;
     return;
   }
 
