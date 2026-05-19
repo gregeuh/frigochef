@@ -417,18 +417,21 @@ body {
   from { opacity: 0; transform: translateY(14px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.food-row, .pantry-row, .courses-card, .recipe-card {
+.food-row, .pantry-row, .courses-card, .recipe-card, #recipe-grid .card {
   animation: itemSlideIn 0.28s cubic-bezier(0.22,1,0.36,1) both;
 }
 
 .tab-header {
   position: sticky; top: 0; z-index: 50;
-  background: var(--header-bg);
-  backdrop-filter: blur(20px) saturate(160%);
-  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  background: rgba(244,246,248,0.72);
+  backdrop-filter: blur(16px) saturate(1.6);
+  -webkit-backdrop-filter: blur(16px) saturate(1.6);
   border-bottom: 1px solid transparent;
   padding: calc(14px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 16px)) 10px max(16px, env(safe-area-inset-left, 16px));
   transition: background 0.28s ease, border-color 0.28s ease, backdrop-filter 0.28s ease;
+}
+[data-theme="dark"] .tab-header {
+  background: rgba(8,12,10,0.80);
 }
 .tab-header.hdr-solid {
   background: var(--header-bg-solid);
@@ -526,10 +529,11 @@ body {
   bottom: max(20px, env(safe-area-inset-bottom, 20px));
   left: 50%; transform: translateX(-50%);
   display: flex; align-items: stretch;
-  background: var(--nav-bg);
-  backdrop-filter: blur(28px) saturate(200%);
-  -webkit-backdrop-filter: blur(28px) saturate(200%);
+  background: rgba(244,246,248,0.75);
+  backdrop-filter: blur(20px) saturate(1.8);
+  -webkit-backdrop-filter: blur(20px) saturate(1.8);
   border: 1px solid var(--glass-border);
+  border-top: 1px solid rgba(255,255,255,0.60);
   border-radius: 28px;
   padding: 6px 8px;
   gap: 2px;
@@ -541,6 +545,10 @@ body {
   width: calc(100% - 40px);
   max-width: 400px;
   transition: padding 0.3s ease, border-radius 0.3s ease;
+}
+[data-theme="dark"] .bottom-tab-bar {
+  background: rgba(8,12,10,0.80);
+  border-top: 1px solid rgba(255,255,255,0.07);
 }
 .bottom-tab-bar.nav-compact {
   padding: 3px 8px;
@@ -4389,6 +4397,9 @@ function renderPantry() {
     </div>`;
     }).join('')}
   `).join('');
+  document.querySelectorAll('#pantry-list .pantry-row').forEach((el2, i) => {
+    el2.style.animationDelay = (i * 40) + 'ms';
+  });
   el.querySelectorAll('[data-pantry-del]').forEach(btn => {
     btn.addEventListener('click', e => {
       e.stopPropagation();
@@ -4826,6 +4837,10 @@ function renderRecipes() {
       </div>
     </div>`;
   }).join('');
+
+  document.querySelectorAll('#recipe-grid .card').forEach((el, i) => {
+    el.style.animationDelay = (i * 30) + 'ms';
+  });
 
   grid.querySelectorAll('.card').forEach(card => {
     card.addEventListener('click', e => {
@@ -6286,7 +6301,7 @@ function renderDashboard() {
   const greet = h < 5 ? '🌙 Bonne nuit' : h < 12 ? '☀️ Bonjour' : h < 18 ? '🌤 Bon après-midi' : '🌙 Bonsoir';
   const nameStr = user?.displayName?.split(' ')[0] || '';
   const greetEl = document.getElementById('dash-greeting');
-  if (greetEl) greetEl.textContent = greet + (nameStr ? `, ${nameStr}` : '');
+  if (greetEl) greetEl.textContent = '🏠 Accueil';
 
   // ── Calories card ──
   const totalKcal = dailyLog.reduce((s, e) => s + (e.kcal || 0), 0);
@@ -6392,7 +6407,37 @@ function renderDashboard() {
       </button>
     </div>`;
 
-  body.innerHTML = statHtml + (alerts.length ? dlcHtml : '') + coursesHtml + calHtml + quickHtml;
+  const heroHtml = `
+  <div style="
+    background: linear-gradient(135deg, var(--accent) 0%, var(--green-dk) 100%);
+    border-radius: 24px;
+    padding: 22px 20px 20px;
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 8px 32px var(--fab-glow, rgba(0,102,68,0.35));
+  ">
+    <div style="position:absolute;top:-20px;right:-20px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,0.08)"></div>
+    <div style="position:absolute;bottom:-30px;right:20px;width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,0.06)"></div>
+    <div style="font-size:1.3rem;font-weight:800;color:#fff;margin-bottom:4px">${greet}${nameStr ? `, ${nameStr}` : ''} 👋</div>
+    <div style="font-size:0.82rem;color:rgba(255,255,255,0.75);margin-bottom:16px">${new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})}</div>
+    <div style="display:flex;gap:10px">
+      <div style="flex:1;background:rgba(255,255,255,0.18);border-radius:14px;padding:10px 12px;text-align:center">
+        <div style="font-size:1.4rem;font-weight:800;color:#fff">${totalKcal}</div>
+        <div style="font-size:0.68rem;color:rgba(255,255,255,0.75);margin-top:2px">kcal aujourd'hui</div>
+      </div>
+      <div style="flex:1;background:rgba(255,255,255,0.18);border-radius:14px;padding:10px 12px;text-align:center">
+        <div style="font-size:1.4rem;font-weight:800;color:#fff">${todo.length}</div>
+        <div style="font-size:0.68rem;color:rgba(255,255,255,0.75);margin-top:2px">courses à faire</div>
+      </div>
+      <div style="flex:1;background:rgba(255,255,255,0.18);border-radius:14px;padding:10px 12px;text-align:center">
+        <div style="font-size:1.4rem;font-weight:800;color:#fff">${urgent.length + soon.length}</div>
+        <div style="font-size:0.68rem;color:rgba(255,255,255,0.75);margin-top:2px">alertes DLC</div>
+      </div>
+    </div>
+  </div>`;
+
+  body.innerHTML = heroHtml + statHtml + (alerts.length ? dlcHtml : '') + coursesHtml + calHtml + quickHtml;
 }
 
 function renderSante() {
@@ -8683,7 +8728,14 @@ function _initApp() {
     const item = document.querySelector(`.tab-item[data-tab="${tabName}"]`);
     const page = document.getElementById('tab-' + tabName);
     if (item) item.classList.add('active');
-    if (page) { window.scrollTo(0, 0); page.classList.add('active'); }
+    if (page) {
+      window.scrollTo(0, 0);
+      page.classList.add('active');
+      page.classList.remove('tab-entering');
+      void page.offsetWidth; // force reflow
+      page.classList.add('tab-entering');
+      setTimeout(() => page.classList.remove('tab-entering'), 300);
+    }
     document.getElementById('fab-wrap').style.display = (tabName === 'profil' || tabName === 'accueil') ? 'none' : '';
     movePill(tabName);
     haptic(6);
