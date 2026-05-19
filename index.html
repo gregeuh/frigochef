@@ -3215,7 +3215,7 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
         <div class="profile-hero-top">
           <div class="profile-avatar-lg" id="user-avatar">?</div>
           <div class="profile-hero-info">
-            <div class="profile-name-lg" id="user-name"></div>
+            <div class="profile-name-lg" id="user-name" style="cursor:pointer;display:flex;align-items:center;gap:6px" title="Modifier le nom"></div>
             <div class="profile-goal-badge" id="profile-goal-badge">NutriHome</div>
           </div>
           <button class="profile-edit-btn" id="btn-profile-edit" title="Modifier le profil">✏️</button>
@@ -6376,6 +6376,23 @@ function launchConfetti() {
   setTimeout(() => { container.remove(); style.remove(); }, 2500);
 }
 
+function getDisplayName() {
+  return profile?.customName || user?.displayName?.split(' ')[0] || 'Vous';
+}
+
+function updateProfileName() {
+  const nameEl = document.getElementById('user-name');
+  if (!nameEl) return;
+  const name = getDisplayName();
+  nameEl.innerHTML = `${esc(name)} <span style="font-size:0.7rem;opacity:0.55;font-weight:500">✏️</span>`;
+  // Update avatar initials if no photo
+  const avatarEl = document.getElementById('user-avatar');
+  if (avatarEl && !avatarEl.querySelector('img')) {
+    const initials = name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+    avatarEl.textContent = initials;
+  }
+}
+
 function renderDashboard() {
   const body = document.getElementById('dash-body');
   if (!body) return;
@@ -6383,7 +6400,7 @@ function renderDashboard() {
   // Greeting based on time
   const h = new Date().getHours();
   const greet = h < 5 ? '🌙 Bonne nuit' : h < 12 ? '☀️ Bonjour' : h < 18 ? '🌤 Bon après-midi' : '🌙 Bonsoir';
-  const nameStr = user?.displayName?.split(' ')[0] || '';
+  const nameStr = getDisplayName();
   const greetEl = document.getElementById('dash-greeting');
   if (greetEl) greetEl.textContent = '🏠 Accueil';
 
@@ -7931,7 +7948,6 @@ function _initApp() {
       _dlcToastShown = false; // reset DLC toast flag on login
       document.getElementById('auth-screen').classList.add('hidden');
       document.getElementById('app-screen').classList.remove('hidden');
-      document.getElementById('user-name').textContent = fbUser.displayName?.split(' ')[0] || 'Vous';
       const avatarEl = document.getElementById('user-avatar');
       if (fbUser.photoURL) {
         avatarEl.innerHTML = `<img src="${fbUser.photoURL}" alt="" referrerpolicy="no-referrer">`;
@@ -7943,6 +7959,7 @@ function _initApp() {
       // Charger le profil d'abord pour savoir quel frigo utiliser
       profile = await window.__FC.loadProfile(fbUser.uid);
       favorites = profile?.favorites || [];
+      updateProfileName();
 
       if (unsub) unsub();
       if (profile?.sharedFridgeCode) {
@@ -9252,6 +9269,37 @@ function _initApp() {
       scrollProgress.style.width = pct + '%';
     }, { passive: true });
   }
+
+  // ── RENAME SHEET ──
+  const renameOverlay = document.getElementById('rename-overlay');
+  const renameInp = document.getElementById('rename-inp');
+
+  function openRenameSheet() {
+    renameInp.value = getDisplayName();
+    renameOverlay.classList.remove('hidden');
+    setTimeout(() => renameInp.focus(), 80);
+  }
+  function closeRenameSheet() { renameOverlay.classList.add('hidden'); }
+
+  document.getElementById('user-name').addEventListener('click', openRenameSheet);
+  document.getElementById('rename-cancel').addEventListener('click', closeRenameSheet);
+  renameOverlay.addEventListener('click', e => { if (e.target === renameOverlay) closeRenameSheet(); });
+
+  document.getElementById('rename-save').addEventListener('click', async () => {
+    const name = renameInp.value.trim();
+    if (!name) return;
+    profile = { ...profile, customName: name };
+    await window.__FC.saveProfile(user.uid, profile);
+    updateProfileName();
+    renderDashboard();
+    closeRenameSheet();
+    toast('Nom mis à jour !', 'success');
+  });
+
+  renameInp.addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('rename-save').click();
+    if (e.key === 'Escape') closeRenameSheet();
+  });
 } // fin _initApp
 
 // Lance l'init dès que Firebase est prêt — robuste contre les race conditions
@@ -9338,6 +9386,20 @@ if ('serviceWorker' in navigator) {
   </div>
   <div class="gsearch-results" id="global-search-results">
     <div class="gsearch-empty">Commencez à taper pour rechercher</div>
+  </div>
+</div>
+
+<!-- Rename sheet -->
+<div id="rename-overlay" class="hidden" style="position:fixed;inset:0;z-index:8000;background:rgba(10,14,12,0.60);display:flex;align-items:flex-end;animation:fadeIn 0.15s ease">
+  <div style="width:100%;max-width:430px;margin:0 auto;background:var(--surface);border-radius:24px 24px 0 0;padding:20px 20px calc(28px + env(safe-area-inset-bottom,0px));box-shadow:var(--shadow-lg)">
+    <div style="width:36px;height:4px;border-radius:2px;background:var(--border2);margin:0 auto 18px"></div>
+    <div style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink3);margin-bottom:14px">✏️ Modifier le nom d'affichage</div>
+    <input id="rename-inp" type="text" maxlength="30" placeholder="Votre prénom ou pseudo"
+      style="width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid var(--border2);background:var(--surface2);color:var(--ink);font-size:1rem;box-sizing:border-box;outline:none;margin-bottom:16px">
+    <div style="display:flex;gap:10px">
+      <button id="rename-cancel" style="flex:1;padding:12px;border-radius:12px;border:1.5px solid var(--border2);background:var(--surface2);color:var(--ink2);font-size:0.9rem;font-weight:600;cursor:pointer">Annuler</button>
+      <button id="rename-save" style="flex:2;padding:12px;border-radius:12px;border:none;background:var(--accent);color:#fff;font-size:0.9rem;font-weight:700;cursor:pointer">Enregistrer</button>
+    </div>
   </div>
 </div>
 </body>
