@@ -5352,7 +5352,13 @@ function renderCourses() {
       const remaining = shoppingList.filter(i => !i.bought).length;
       if (remaining === 0 && shoppingList.length > 0) {
         launchConfetti();
-        toast('🎉 Liste complète ! Bravo !', 'success');
+        setTimeout(() => {
+          confirmSheet('🎉 Tout acheté ! Vider la liste ?', () => {
+            shoppingList = [];
+            saveShoppingListDB(); renderCourses();
+            toast('Liste vidée, bonne cuisine !', 'success');
+          }, { confirmLabel: 'Vider la liste', danger: false });
+        }, 800);
       }
       saveShoppingListDB(); renderCourses();
     });
