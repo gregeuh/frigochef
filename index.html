@@ -34,6 +34,7 @@
     https://wbsapi.withings.net
     https://world.openfoodfacts.org
     https://api.allorigins.win
+    https://api.groq.com
     wss://*.firebaseio.com;
   frame-src https://accounts.google.com https://*.firebaseapp.com;
   object-src 'none';
@@ -949,6 +950,7 @@ body, #app-screen, .tab-page, .card, .food-row, .pantry-row, .courses-card,
   animation: fadeIn 0.18s ease;
 }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes spin { to { transform: rotate(360deg); } }
 @keyframes slideUp {
   from { transform: translateY(70px); opacity: 0; }
   to   { transform: translateY(0);    opacity: 1; }
@@ -3092,6 +3094,7 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
         <div style="display:flex;gap:6px;align-items:center">
           <button class="icon-btn" id="btn-open-planning" title="Planificateur de repas">📅</button>
           <button class="icon-btn" id="btn-import-url" title="Importer depuis une URL">🔗</button>
+          <button id="btn-ai-recipe" title="Générer une recette avec l'IA" style="display:flex;align-items:center;gap:5px;padding:6px 12px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:20px;font-size:0.76rem;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(99,102,241,0.35);letter-spacing:-0.01em;transition:transform 0.15s,box-shadow 0.15s">✨ IA</button>
           <button id="btn-new-recipe" title="Créer une recette" style="display:flex;align-items:center;gap:5px;padding:6px 12px;background:linear-gradient(135deg,#00A36C,#006644);color:#fff;border:none;border-radius:20px;font-size:0.76rem;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,102,68,0.30);letter-spacing:-0.01em;transition:transform 0.15s,box-shadow 0.15s">✏️ Nouvelle</button>
         </div>
       </div>
@@ -3294,6 +3297,17 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
       <div class="card" style="padding:16px 18px">
         <div style="font-size:0.82rem;color:var(--ink3);margin-bottom:10px">Choisissez votre couleur d'accent</div>
         <div class="theme-color-row" id="theme-color-picker"></div>
+      </div>
+
+      <div class="pref-section-title" style="margin-top:18px">🤖 Intelligence Artificielle</div>
+      <div class="card" style="padding:16px 18px">
+        <div style="font-size:0.82rem;color:var(--ink3);margin-bottom:4px">Clé API Groq <span style="font-size:0.72rem">(gratuite sur <strong>console.groq.com</strong>)</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input id="inp-groq-key" type="password" placeholder="gsk_••••••••••••••••••••••" autocomplete="off"
+            style="flex:1;padding:10px 12px;border-radius:10px;border:1.5px solid var(--border2);background:var(--surface2);color:var(--ink);font-size:0.85rem;outline:none;box-sizing:border-box">
+          <button id="btn-save-groq-key" style="padding:10px 14px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-size:0.82rem;font-weight:700;cursor:pointer;white-space:nowrap">Enregistrer</button>
+        </div>
+        <div id="groq-key-status" style="font-size:0.75rem;color:var(--ink3);margin-top:6px"></div>
       </div>
 
       <!-- Catégories -->
@@ -9514,6 +9528,16 @@ if ('serviceWorker' in navigator) {
     <div style="display:flex;gap:10px">
       <button id="rename-cancel" style="flex:1;padding:12px;border-radius:12px;border:1.5px solid var(--border2);background:var(--surface2);color:var(--ink2);font-size:0.9rem;font-weight:600;cursor:pointer">Annuler</button>
       <button id="rename-save" style="flex:2;padding:12px;border-radius:12px;border:none;background:var(--accent);color:#fff;font-size:0.9rem;font-weight:700;cursor:pointer">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- AI Recipe Generation sheet -->
+<div id="ai-recipe-overlay" class="hidden" style="position:fixed;inset:0;z-index:7000;background:rgba(10,14,12,0.65);display:flex;align-items:flex-end;animation:fadeIn 0.15s ease">
+  <div id="ai-recipe-sheet" style="width:100%;max-width:430px;margin:0 auto;background:var(--surface);border-radius:24px 24px 0 0;padding:20px 20px calc(32px + env(safe-area-inset-bottom,0px));box-shadow:var(--shadow-lg);max-height:85vh;overflow-y:auto">
+    <div style="width:36px;height:4px;border-radius:2px;background:var(--border2);margin:0 auto 18px"></div>
+    <div id="ai-recipe-content">
+      <!-- filled by JS -->
     </div>
   </div>
 </div>
