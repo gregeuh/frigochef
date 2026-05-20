@@ -1075,6 +1075,22 @@ body, #app-screen, .tab-page, .card, .food-row, .pantry-row, .courses-card,
 
 /* Category groups */
 .shop-cat-group { margin-bottom: 8px; }
+.shop-cat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+  padding: 10px 0 6px;
+  transition: opacity 0.15s;
+}
+.shop-cat-header:active { opacity: 0.7; }
+.shop-cat-chevron {
+  font-size: 0.75rem;
+  color: var(--ink3);
+  transition: transform 0.2s ease;
+}
+.shop-cat-chevron.collapsed { transform: rotate(-90deg); }
 .shop-cat-head {
   font-size: 0.60rem; text-transform: uppercase; letter-spacing: 0.08em;
   font-weight: 700; padding: 0 4px; margin: 8px 0 4px;
@@ -4329,6 +4345,7 @@ const RESTRICTION_KEYWORDS = {
   'sans porc':  ['porc','lardons','bacon','jambon','saucisse de porc','rillettes','chorizo'],
 };
 let shoppingList = []; // { id, name, recipe, bought }
+let collapsedShopCats = new Set();
 let shopCatOverrides = {}; // { 'coca-cola': 'boissons', ... } — nom en minuscules → catKey
 let shopHistory = []; // [{ name, qty, catKey }] — historique autocomplétion, max 80
 let sharedListCode = null;  // code liste partagée active
@@ -5315,7 +5332,8 @@ function renderCourses() {
   // Render each category group (bought items sorted to bottom)
   const groupsHtml = Object.values(byCat).map(({ cat, items }) => {
     const sorted = [...items].sort((a, b) => (a.bought ? 1 : 0) - (b.bought ? 1 : 0));
-    const rows = sorted.map(item => `
+    const isCollapsed = collapsedShopCats.has(cat.key);
+    const rows = isCollapsed ? '' : sorted.map(item => `
       <div class="shop-item-card ${item.bought ? 'bought' : ''}" data-shop-id="${item.id}">
         <div class="shop-custom-checkbox">
           <span class="shop-custom-checkbox-check">✓</span>
@@ -5332,14 +5350,32 @@ function renderCourses() {
     const doneCount = items.filter(i => i.bought).length;
     const badge = doneCount === items.length && items.length > 0
       ? ' ✓' : doneCount > 0 ? ` ${doneCount}/${items.length}` : '';
+    const chevronClass = isCollapsed ? 'shop-cat-chevron collapsed' : 'shop-cat-chevron';
     return `
       <div class="shop-cat-group">
-        <div class="shop-cat-head" style="color:${cat.color}">${cat.label}${badge}</div>
+        <div class="shop-cat-header shop-cat-head" style="color:${cat.color}" data-cat-key="${esc(cat.key)}">
+          <span>${cat.label}${badge} <span style="font-size:0.72rem;color:var(--ink3)">(${items.length})</span></span>
+          <span class="${chevronClass}">${isCollapsed ? '&#9658;' : '&#9660;'}</span>
+        </div>
         ${rows}
       </div>`;
   }).join('');
 
   el.innerHTML = progressHtml + actionsHtml + groupsHtml;
+
+  // Toggle category collapse
+  el.querySelectorAll('.shop-cat-header').forEach(header => {
+    header.addEventListener('click', e => {
+      const key = header.dataset.catKey;
+      if (!key) return;
+      if (collapsedShopCats.has(key)) {
+        collapsedShopCats.delete(key);
+      } else {
+        collapsedShopCats.add(key);
+      }
+      renderCourses();
+    });
+  });
 
   // Toggle bought
   el.querySelectorAll('.shop-item-card').forEach(card => {
@@ -6399,6 +6435,59 @@ function updateProfileName() {
   }
 }
 
+function getStockWeather() {
+  const allItems = [...fridge, ...pantry];
+  if (allItems.length === 0) return { icon: '🧊', msg: 'Ton frigo est vide — fais le plein !', color: 'var(--ink3)' };
+
+  const has = key => allItems.some(i => {
+    const cat = resolvedShopCategory(i.name);
+    return cat?.key === key;
+  });
+
+  const proteinKeys  = ['viandes','poissons','oeufs'];
+  const veggieKeys   = ['legumes','fruits'];
+  const dairyKeys    = ['laitages'];
+  const starchKeys   = ['feculents','epicerie'];
+
+  const hasProtein = proteinKeys.some(has);
+  const hasVeggies = veggieKeys.some(has);
+  const hasDairy   = dairyKeys.some(has);
+  const hasStarch  = starchKeys.some(has);
+
+  const urgentCount = allItems.filter(i => i.dlc && dlcStatus(i.dlc)?.cls === 'dlc-urgent').length;
+  const totalItems = allItems.length;
+
+  if (urgentCount >= 3) return { icon: '⚠️', msg: `${urgentCount} articles expirent très bientôt — cuisine-les en priorité !`, color: 'var(--red)' };
+  if (urgentCount > 0)  return { icon: '⏰', msg: `${urgentCount} article${urgentCount > 1 ? 's' : ''} à consommer rapidement.`, color: 'var(--orange)' };
+  if (!hasProtein && !hasVeggies) return { icon: '🛒', msg: 'Frigo léger — pense à refaire les courses !', color: 'var(--orange)' };
+  if (!hasProtein) return { icon: '🥩', msg: 'Tu manques de protéines cette semaine.', color: 'var(--orange)' };
+  if (!hasVeggies) return { icon: '🥦', msg: 'Peu de fruits et légumes en stock.', color: 'var(--orange)' };
+  if (!hasDairy)   return { icon: '🥛', msg: 'Plus de produits laitiers en stock.', color: 'var(--ink3)' };
+  if (totalItems >= 12) return { icon: '✅', msg: 'Frigo bien garni, tout va bien !', color: 'var(--green)' };
+  return { icon: '🌿', msg: 'Stock correct, pense à renouveler bientôt.', color: 'var(--ink3)' };
+}
+
+function getCeSoirRecipe() {
+  if (!recipes.length) return null;
+  const allItems = [...fridge, ...pantry].map(i => i.name.toLowerCase());
+
+  const scored = recipes.map(r => {
+    const ings = r.ingredients || [];
+    if (!ings.length) return { r, score: 0 };
+    const matched = ings.filter(ing => {
+      const ingName = (typeof ing === 'string' ? ing : ing.name || '').toLowerCase();
+      return allItems.some(item => item.includes(ingName.split(' ')[0]) || ingName.includes(item.split(' ')[0]));
+    }).length;
+    return { r, score: matched / ings.length };
+  }).filter(x => x.score >= 0.3);
+
+  if (!scored.length) {
+    return recipes[Math.floor(Math.random() * recipes.length)];
+  }
+  const top = scored.sort((a, b) => b.score - a.score).slice(0, 5);
+  return top[Math.floor(Math.random() * top.length)].r;
+}
+
 function renderDashboard() {
   const body = document.getElementById('dash-body');
   if (!body) return;
@@ -6544,7 +6633,27 @@ function renderDashboard() {
     </div>
   </div>`;
 
-  body.innerHTML = heroHtml + statHtml + (alerts.length ? dlcHtml : '') + coursesHtml + calHtml + quickHtml;
+  const weather = getStockWeather();
+  const weatherHtml = `
+    <div class="dash-card" style="display:flex;align-items:center;gap:12px;padding:14px 16px">
+      <span style="font-size:1.6rem;flex-shrink:0">${weather.icon}</span>
+      <span style="font-size:0.88rem;color:${weather.color};font-weight:500;line-height:1.35">${weather.msg}</span>
+    </div>`;
+
+  const suggestion = getCeSoirRecipe();
+  const ceSoirHtml = suggestion ? `
+    <div class="dash-card" style="cursor:pointer" onclick="window.switchTabPublic('recettes')">
+      <div class="dash-card-title">🍽️ Ce soir ?</div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="flex:1">
+          <div style="font-size:1rem;font-weight:700;color:var(--ink);margin-bottom:3px">${esc(suggestion.name)}</div>
+          <div style="font-size:0.78rem;color:var(--ink3)">${suggestion.time ? esc(String(suggestion.time)) + ' min' : ''}${suggestion.time && suggestion.servings ? ' · ' : ''}${suggestion.servings ? esc(String(suggestion.servings)) + ' pers.' : ''}</div>
+        </div>
+        <div style="font-size:2rem;flex-shrink:0">🎲</div>
+      </div>
+    </div>` : '';
+
+  body.innerHTML = heroHtml + statHtml + weatherHtml + ceSoirHtml + (alerts.length ? dlcHtml : '') + coursesHtml + calHtml + quickHtml;
 }
 
 function renderSante() {
