@@ -831,8 +831,11 @@ body, #app-screen, .tab-page, .card, .food-row, .pantry-row, .courses-card,
   font-size: 0.82rem; padding: 3px 6px; border-radius: 6px;
   transition: opacity 0.15s, color 0.15s; flex-shrink: 0;
 }
-.food-row:hover .f-del { opacity: 1; }
+.food-row:hover .f-del, .pantry-row:hover .f-del { opacity: 1; }
 .f-del:hover { color: var(--red); }
+@media (hover: none) {
+  .f-del { opacity: 1; }
+}
 .fridge-empty {
   text-align: center; padding: 3rem 1.5rem;
   color: var(--ink3); font-size: 0.85rem; line-height: 1.6;
