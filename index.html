@@ -604,8 +604,8 @@ body, #app-screen, .tab-page, .card, .food-row, .pantry-row, .courses-card,
   pointer-events: none; z-index: 0;
 }
 [data-theme="dark"] .tab-pill { background: rgba(44,58,50,0.98); }
-.tab-item-icon { font-size: 1.4rem; line-height: 1; }
-.tab-item-label { font-size: 0.62rem; font-weight: 600; letter-spacing: -0.01em; }
+.tab-item-icon { font-size: 1.6rem; line-height: 1; display: block; margin-bottom: 1px; }
+.tab-item-label { font-size: 0.60rem; font-weight: 600; letter-spacing: 0.01em; }
 
 /* ─── SHARE ICON BTN (in frigo header) ─── */
 .icon-btn {
@@ -715,7 +715,7 @@ body, #app-screen, .tab-page, .card, .food-row, .pantry-row, .courses-card,
 .food-row {
   display: flex; align-items: center; gap: 8px;
   padding: 8px 12px 8px 14px; border-radius: var(--r); margin-bottom: 4px;
-  background: var(--surface);
+  background: color-mix(in srgb, var(--row-accent, transparent) 6%, var(--surface));
   transition: background 0.13s, transform 0.18s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.15s;
   position: relative;
   box-shadow: var(--shadow-sm);
@@ -730,10 +730,12 @@ body, #app-screen, .tab-page, .card, .food-row, .pantry-row, .courses-card,
 .food-row:hover { background: var(--surface2); box-shadow: var(--shadow-md); }
 .food-row:active { transform: scale(0.97); }
 .f-emoji {
-  font-size: 1.25rem; flex-shrink: 0;
+  font-size: 1.2rem; flex-shrink: 0;
   width: 38px; height: 38px;
   display: flex; align-items: center; justify-content: center;
-  background: var(--surface2); border-radius: 50%;
+  background: color-mix(in srgb, var(--row-accent, var(--surface2)) 18%, var(--surface));
+  border-radius: 50%;
+  border: 1.5px solid color-mix(in srgb, var(--row-accent, var(--border)) 25%, var(--border));
 }
 .f-info { flex: 1; min-width: 0; }
 .f-name { font-size: 0.85rem; font-weight: 600; color: var(--ink); }
@@ -827,15 +829,21 @@ body, #app-screen, .tab-page, .card, .food-row, .pantry-row, .courses-card,
 /* ── Card badges row ── */
 .f-badges { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
 .f-del {
-  opacity: 0; background: none; border: none; color: var(--ink3);
-  font-size: 0.82rem; padding: 3px 6px; border-radius: 6px;
-  transition: opacity 0.15s, color 0.15s; flex-shrink: 0;
+  opacity: 0;
+  background: rgba(229,57,53,0.10);
+  border: none;
+  color: var(--red);
+  font-size: 0.75rem;
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  transition: opacity 0.15s, background 0.15s, transform 0.15s;
+  flex-shrink: 0;
+  cursor: pointer;
 }
 .food-row:hover .f-del, .pantry-row:hover .f-del { opacity: 1; }
-.f-del:hover { color: var(--red); }
-@media (hover: none) {
-  .f-del { opacity: 1; }
-}
+.f-del:active { background: rgba(229,57,53,0.22); transform: scale(0.9); }
+@media (hover: none) { .f-del { opacity: 1; } }
 .fridge-empty {
   text-align: center; padding: 3rem 1.5rem;
   color: var(--ink3); font-size: 0.85rem; line-height: 1.6;
@@ -2853,7 +2861,7 @@ textarea.inp { resize: vertical; min-height: 80px; line-height: 1.5; }
 .pantry-row {
   display: flex; align-items: center; gap: 8px;
   padding: 8px 12px 8px 14px; border-radius: var(--r); margin-bottom: 4px;
-  background: var(--surface);
+  background: color-mix(in srgb, var(--row-accent, transparent) 6%, var(--surface));
   transition: background 0.13s, transform 0.18s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.15s;
   position: relative; box-shadow: var(--shadow-sm);
   cursor: pointer; -webkit-tap-highlight-color: transparent;
@@ -4577,6 +4585,22 @@ function cardGradient(name) {
   return `linear-gradient(135deg, ${a} 0%, ${b} 100%)`;
 }
 
+function recipeCardColor(name) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  const palettes = [
+    ['#FF6B6B','#FF8E53'],
+    ['#4ECDC4','#45B7D1'],
+    ['#96CEB4','#FFEAA7'],
+    ['#DDA0DD','#98D8C8'],
+    ['#F7DC6F','#F0A500'],
+    ['#85C1E9','#AED6F1'],
+    ['#F1948A','#FAD7A0'],
+    ['#82E0AA','#A9DFBF'],
+  ];
+  return palettes[Math.abs(hash) % palettes.length];
+}
+
 /* ═══════════════════════════════════════════════════
    RENDER — FRIGO
    ═══════════════════════════════════════════════════ */
@@ -4909,7 +4933,9 @@ function renderRecipes() {
     ].join('');
     const calBadge = r.calories ? `<span class="cal-badge">🔥 ${r.calories} kcal</span>` : '';
     const grad = cardGradient(r.name);
+    const [c1, c2] = recipeCardColor(r.name);
     return `<div class="card${r.isCustom ? ' is-custom' : ''}" data-id="${r.id}">
+      <div style="height:5px;border-radius:8px 8px 0 0;background:linear-gradient(90deg,${c1},${c2});margin:-12px -12px 10px"></div>
       <button class="btn-fav" data-fav-id="${r.id}" title="${isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}">${isFav ? '⭐' : '☆'}</button>
       <div class="card-thumb" style="background:${grad}">
         <span style="filter:drop-shadow(0 2px 6px rgba(0,0,0,0.18))">${r.emoji}</span>
@@ -6779,17 +6805,17 @@ function renderDashboard() {
   const totalItems = fridge.length + pantry.length;
   const statHtml = `<div class="dash-stat-row">
     <div class="dash-stat-card" onclick="window.switchTabPublic('frigo')">
-      <div class="dash-stat-icon">🧊</div>
+      <div style="width:36px;height:36px;border-radius:50%;background:rgba(8,145,178,0.12);display:flex;align-items:center;justify-content:center;font-size:1.2rem;margin:0 auto 6px">🧊</div>
       <div class="dash-stat-val">${totalItems}</div>
-      <div class="dash-stat-label">Articles en stock</div>
+      <div class="dash-stat-label">En stock</div>
     </div>
     <div class="dash-stat-card" onclick="window.switchTabPublic('recettes')">
-      <div class="dash-stat-icon">🍳</div>
+      <div style="width:36px;height:36px;border-radius:50%;background:rgba(234,88,12,0.12);display:flex;align-items:center;justify-content:center;font-size:1.2rem;margin:0 auto 6px">🍳</div>
       <div class="dash-stat-val">${recipes.length}</div>
       <div class="dash-stat-label">Recettes</div>
     </div>
     <div class="dash-stat-card" onclick="window.switchTabPublic('courses')">
-      <div class="dash-stat-icon">🛒</div>
+      <div style="width:36px;height:36px;border-radius:50%;background:rgba(99,102,241,0.12);display:flex;align-items:center;justify-content:center;font-size:1.2rem;margin:0 auto 6px">🛒</div>
       <div class="dash-stat-val">${todo.length}</div>
       <div class="dash-stat-label">À acheter</div>
     </div>
