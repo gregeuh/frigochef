@@ -6536,6 +6536,12 @@ function openAiRecipeSheet() {
     <div style="font-size:1rem;font-weight:800;color:var(--ink);margin-bottom:4px">✨ Recette IA</div>
     <div style="font-size:0.8rem;color:var(--ink3);margin-bottom:18px">Génère une recette avec tes ingrédients disponibles</div>
     <div style="margin-bottom:12px">
+      <label style="font-size:0.75rem;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px">Type de plat</label>
+      <div style="display:flex;gap:8px">
+        ${[['entree','🥗 Entrée'],['plat','🍽️ Plat'],['dessert','🍰 Dessert']].map(([v,l]) => `<button class="ai-type-btn${v==='plat'?' selected':''}" data-type="${v}" style="flex:1;padding:8px;border-radius:10px;border:1.5px solid var(--border2);background:${v==='plat'?'var(--accent)':'var(--surface2)'};color:${v==='plat'?'#fff':'var(--ink)'};font-size:0.78rem;font-weight:600;cursor:pointer">${l}</button>`).join('')}
+      </div>
+    </div>
+    <div style="margin-bottom:12px">
       <label style="font-size:0.75rem;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px">Temps max</label>
       <div style="display:flex;gap:8px">
         ${[15,30,45,60].map(t => `<button class="ai-time-btn${t===30?' selected':''}" data-time="${t}" style="flex:1;padding:8px;border-radius:10px;border:1.5px solid var(--border2);background:${t===30?'var(--accent)':'var(--surface2)'};color:${t===30?'#fff':'var(--ink)'};font-size:0.82rem;font-weight:600;cursor:pointer">${t} min</button>`).join('')}
@@ -6552,37 +6558,33 @@ function openAiRecipeSheet() {
 
   overlay.classList.remove('hidden');
 
-  // Time selector
-  let selectedTime = 30, selectedServ = 2;
-  overlay.querySelectorAll('.ai-time-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      selectedTime = +btn.dataset.time;
-      overlay.querySelectorAll('.ai-time-btn').forEach(b => {
-        b.style.background = b === btn ? 'var(--accent)' : 'var(--surface2)';
-        b.style.color = b === btn ? '#fff' : 'var(--ink)';
+  let selectedTime = 30, selectedServ = 2, selectedType = 'plat';
+
+  function wireSelector(cls, onSelect) {
+    overlay.querySelectorAll(cls).forEach(btn => {
+      btn.addEventListener('click', () => {
+        onSelect(btn);
+        overlay.querySelectorAll(cls).forEach(b => {
+          b.style.background = b === btn ? 'var(--accent)' : 'var(--surface2)';
+          b.style.color = b === btn ? '#fff' : 'var(--ink)';
+        });
       });
     });
-  });
-  overlay.querySelectorAll('.ai-serv-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      selectedServ = +btn.dataset.serv;
-      overlay.querySelectorAll('.ai-serv-btn').forEach(b => {
-        b.style.background = b === btn ? 'var(--accent)' : 'var(--surface2)';
-        b.style.color = b === btn ? '#fff' : 'var(--ink)';
-      });
-    });
-  });
+  }
+  wireSelector('.ai-type-btn', btn => { selectedType = btn.dataset.type; });
+  wireSelector('.ai-time-btn', btn => { selectedTime = +btn.dataset.time; });
+  wireSelector('.ai-serv-btn', btn => { selectedServ = +btn.dataset.serv; });
 
   document.getElementById('btn-ai-cancel').addEventListener('click', closeAiRecipeSheet);
   document.getElementById('btn-generate-recipe').addEventListener('click', () =>
-    generateGroqRecipe(apiKey, ingredientsList, selectedTime, selectedServ, regime));
+    generateGroqRecipe(apiKey, ingredientsList, selectedTime, selectedServ, regime, selectedType));
 }
 
 function closeAiRecipeSheet() {
   document.getElementById('ai-recipe-overlay').classList.add('hidden');
 }
 
-async function generateGroqRecipe(apiKey, ingredientsList, maxTime, servings, regime) {
+async function generateGroqRecipe(apiKey, ingredientsList, maxTime, servings, regime, type = 'plat') {
   const content = document.getElementById('ai-recipe-content');
   content.innerHTML = `
     <div style="text-align:center;padding:40px 20px">
@@ -6601,7 +6603,8 @@ Format JSON strict:
   "tip": "Un conseil optionnel court"
 }`;
 
-  const userPrompt = `Génère une recette originale et savoureuse avec ces ingrédients disponibles: ${ingredientsList}.
+  const typeLabel = { entree: 'une entrée', plat: 'un plat principal', dessert: 'un dessert' }[type] || 'un plat';
+  const userPrompt = `Génère ${typeLabel} original et savoureux avec ces ingrédients disponibles: ${ingredientsList}.
 Contraintes: max ${maxTime} minutes, ${servings} personne(s)${regime ? `, régime: ${regime}` : ''}.
 Utilise principalement les ingrédients listés. Réponds uniquement avec le JSON.`;
 
@@ -6630,7 +6633,7 @@ Utilise principalement les ingrédients listés. Réponds uniquement avec le JSO
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error('Réponse invalide');
     const recipe = JSON.parse(jsonMatch[0]);
-    showGeneratedRecipe(recipe);
+    showGeneratedRecipe(recipe, { apiKey, ingredientsList, maxTime, servings, regime, type });
   } catch (err) {
     content.innerHTML = `
       <div style="text-align:center;padding:30px 20px">
@@ -6641,7 +6644,7 @@ Utilise principalement les ingrédients listés. Réponds uniquement avec le JSO
   }
 }
 
-function showGeneratedRecipe(recipe) {
+function showGeneratedRecipe(recipe, genParams = null) {
   const content = document.getElementById('ai-recipe-content');
   const stepsHtml = (recipe.steps || []).map((s, i) =>
     `<div style="display:flex;gap:10px;margin-bottom:10px">
@@ -6663,13 +6666,16 @@ function showGeneratedRecipe(recipe) {
     <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink3);margin-bottom:10px">Préparation</div>
     <div style="margin-bottom:${recipe.tip ? '12px' : '16px'}">${stepsHtml}</div>
     ${recipe.tip ? `<div style="background:var(--surface2);border-radius:12px;padding:10px 14px;font-size:0.82rem;color:var(--ink2);margin-bottom:16px">💡 ${esc(recipe.tip)}</div>` : ''}
-    <div style="display:flex;gap:10px">
+    <div style="display:flex;gap:8px;margin-bottom:8px">
       <button id="btn-ai-discard" style="flex:1;padding:12px;border-radius:12px;border:1.5px solid var(--border2);background:var(--surface2);color:var(--ink2);font-size:0.88rem;font-weight:600;cursor:pointer">✕ Ignorer</button>
+      ${genParams ? `<button id="btn-ai-regen" style="flex:1;padding:12px;border-radius:12px;border:1.5px solid var(--border2);background:var(--surface2);color:var(--ink);font-size:0.88rem;font-weight:600;cursor:pointer">🔄 Autre</button>` : ''}
       <button id="btn-ai-save" style="flex:2;padding:12px;border-radius:12px;border:none;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-size:0.88rem;font-weight:700;cursor:pointer">💾 Sauvegarder</button>
     </div>`;
 
   document.getElementById('btn-ai-discard').addEventListener('click', closeAiRecipeSheet);
   document.getElementById('btn-ai-save').addEventListener('click', () => saveAiRecipe(recipe));
+  if (genParams) document.getElementById('btn-ai-regen')?.addEventListener('click', () =>
+    generateGroqRecipe(genParams.apiKey, genParams.ingredientsList, genParams.maxTime, genParams.servings, genParams.regime, genParams.type));
 }
 
 async function saveAiRecipe(recipe) {
