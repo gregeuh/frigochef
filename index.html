@@ -54,7 +54,7 @@
 
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js';
-  import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged }
+  import { getAuth, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, signOut, onAuthStateChanged }
     from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js';
   import { getFirestore, doc, setDoc, getDoc, deleteDoc, onSnapshot }
     from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js';
@@ -74,8 +74,15 @@
   const db        = getFirestore(app);
   const provider  = new GoogleAuthProvider();
 
+  // Detect PWA standalone mode (installed on home screen)
+  const isPWA = window.matchMedia('(display-mode: standalone)').matches
+             || window.navigator.standalone === true;
+
+  // Handle redirect result on PWA startup (after signInWithRedirect)
+  getRedirectResult(auth).catch(() => {});
+
   window.__FC = {
-    signIn: () => signInWithPopup(auth, provider),
+    signIn: () => isPWA ? signInWithRedirect(auth, provider) : signInWithPopup(auth, provider),
     signOut: () => signOut(auth),
     onAuth:  (cb) => onAuthStateChanged(auth, cb),
     getUser: () => auth.currentUser,
@@ -8473,8 +8480,9 @@ function _initApp() {
     _loginBtn.disabled = true;
     _loginBtn.style.opacity = '0.6';
     _loginBtn.textContent = 'Connexion…';
-    window.__FC.signIn()
-      .catch(err => {
+    const p = window.__FC.signIn();
+    if (!p || typeof p.catch !== 'function') return; // redirect : page reloads, no promise to handle
+    p.catch(err => {
         const silent = ['auth/cancelled-popup-request','auth/popup-closed-by-user'];
         if (!silent.includes(err.code)) {
           toast('Erreur : ' + (err.message || err.code), 'error');
