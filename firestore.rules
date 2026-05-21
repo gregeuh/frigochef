@@ -68,9 +68,9 @@ service cloud.firestore {
     }
 
     // ── Frigo partagé ──
+    // Read is open to any authenticated user so someone can join with a code
     match /sharedFridges/{code} {
-      allow read: if request.auth != null
-        && request.auth.uid in resource.data.members;
+      allow read: if request.auth != null;
       allow create: if request.auth != null;
       allow update: if request.auth != null
         && request.auth.uid in resource.data.members;
@@ -79,9 +79,9 @@ service cloud.firestore {
     }
 
     // ── Liste de courses partagée ──
+    // Read is open to any authenticated user so someone can join with a code
     match /sharedShoppingList/{code} {
-      allow read: if request.auth != null
-        && request.auth.uid in resource.data.members;
+      allow read: if request.auth != null;
       allow create: if request.auth != null;
       allow update: if request.auth != null
         && request.auth.uid in resource.data.members;
