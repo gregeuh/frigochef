@@ -55,7 +55,8 @@
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js';
   import { getAuth, signInWithPopup, signInWithRedirect, getRedirectResult,
-           GoogleAuthProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+           GoogleAuthProvider, EmailAuthProvider, linkWithCredential,
+           createUserWithEmailAndPassword, signInWithEmailAndPassword,
            sendPasswordResetEmail, signOut, onAuthStateChanged }
     from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js';
   import { getFirestore, doc, setDoc, getDoc, deleteDoc, onSnapshot }
@@ -104,6 +105,11 @@
     signInEmail:   (email, pw) => signInWithEmailAndPassword(auth, email, pw),
     registerEmail: (email, pw) => createUserWithEmailAndPassword(auth, email, pw),
     resetPassword: (email)     => sendPasswordResetEmail(auth, email),
+    linkEmail: (email, pw) => {
+      const cred = EmailAuthProvider.credential(email, pw);
+      return linkWithCredential(auth.currentUser, cred);
+    },
+    hasEmailProvider: () => auth.currentUser?.providerData?.some(p => p.providerId === 'password') ?? false,
     signOut: () => signOut(auth),
     onAuth:  (cb) => onAuthStateChanged(auth, cb),
     getUser: () => auth.currentUser,
@@ -1492,6 +1498,13 @@ body, #app-screen, .tab-page, .card, .food-row, .pantry-row, .courses-card,
 .settings-row:active { background: var(--surface2); }
 .settings-row.danger { color: var(--red); }
 .settings-label { flex: 1; display: flex; align-items: center; gap: 10px; }
+.settings-input {
+  display: block; width: 100%; padding: 9px 12px; margin-bottom: 8px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--r); font-size: 0.88rem; color: var(--ink);
+  outline: none; box-sizing: border-box; transition: border-color 0.15s;
+}
+.settings-input:focus { border-color: var(--accent); }
 .settings-row-icon { font-size: 1.1rem; }
 .settings-chevron { color: var(--ink3); font-size: 1rem; opacity: 0.5; }
 
@@ -3441,6 +3454,25 @@ body.compact .courses-card { padding: 9px 12px; }
           <span class="settings-label"><span class="settings-row-icon">📥</span>Exporter suivi poids (CSV)</span>
           <span class="settings-chevron">›</span>
         </button>
+      </div>
+
+      <!-- Lier email/mot de passe pour connexion en PWA -->
+      <div class="settings-group" id="link-email-group" style="display:none">
+        <div class="profile-section-title">Connexion en mode PWA</div>
+        <div style="font-size:0.78rem;color:var(--ink2);padding:0 4px 10px;line-height:1.5">
+          Associez un email + mot de passe à ce compte pour vous connecter depuis l'app installée (PWA) sur iPhone.
+        </div>
+        <div id="link-email-done" style="display:none;padding:4px 4px 10px;font-size:0.82rem;color:var(--green-dk)">
+          ✅ Email/mot de passe déjà associé à ce compte.
+        </div>
+        <form id="link-email-form" autocomplete="off">
+          <input type="email" id="link-email-input" class="settings-input" placeholder="Adresse email" autocomplete="off">
+          <input type="password" id="link-pw-input" class="settings-input" placeholder="Nouveau mot de passe (6 car. min)" autocomplete="new-password" minlength="6">
+          <button type="submit" class="settings-row" id="btn-link-email" style="color:var(--accent);font-weight:600">
+            <span class="settings-label"><span class="settings-row-icon">🔗</span>Associer cet email</span>
+          </button>
+        </form>
+        <div id="link-email-error" style="display:none;color:#E11D48;font-size:0.78rem;padding:4px;"></div>
       </div>
 
       <div class="settings-group">
@@ -8661,6 +8693,37 @@ function _initApp() {
     return map[code] || ('Erreur : ' + code);
   }
 
+  // ── LIER EMAIL/MOT DE PASSE ──
+  function _refreshLinkEmailUI() {
+    const grp = document.getElementById('link-email-group');
+    if (!grp || !user) return;
+    const googleUser = user.providerData?.some(p => p.providerId === 'google.com');
+    grp.style.display = googleUser ? '' : 'none';
+    const hasEmail = window.__FC.hasEmailProvider();
+    document.getElementById('link-email-done').style.display  = hasEmail ? '' : 'none';
+    document.getElementById('link-email-form').style.display  = hasEmail ? 'none' : '';
+  }
+
+  document.getElementById('link-email-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('link-email-input').value.trim();
+    const pw    = document.getElementById('link-pw-input').value;
+    const errEl = document.getElementById('link-email-error');
+    const btn   = document.getElementById('btn-link-email');
+    errEl.style.display = 'none';
+    btn.disabled = true; btn.style.opacity = '0.6';
+    try {
+      await window.__FC.linkEmail(email, pw);
+      _refreshLinkEmailUI();
+      toast('Email associé ! Vous pouvez maintenant vous connecter avec cet email en PWA.', 'success');
+    } catch(err) {
+      errEl.textContent = _friendlyAuthError(err.code);
+      errEl.style.display = 'block';
+    } finally {
+      btn.disabled = false; btn.style.opacity = '';
+    }
+  });
+
   // Logout
   document.getElementById('btn-logout').addEventListener('click', () => window.__FC.signOut());
   document.getElementById('btn-export-journal').addEventListener('click', exportJournalCSV);
@@ -9428,6 +9491,7 @@ function _initApp() {
     movePill(tabName);
     haptic(6);
     if (tabName === 'accueil') renderDashboard();
+    if (tabName === 'profil') _refreshLinkEmailUI();
   }
   window.switchTabPublic = switchTab;
   document.querySelectorAll('.tab-item').forEach(item => {
