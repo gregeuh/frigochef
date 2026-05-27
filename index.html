@@ -3007,7 +3007,7 @@ body.compact .courses-card { padding: 9px 12px; }
 .gsearch-box {
   background: var(--surface);
   border-radius: 0 0 20px 20px;
-  padding: 16px 16px 20px;
+  padding: calc(env(safe-area-inset-top, 0px) + 16px) 16px 20px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.25);
 }
 .gsearch-input-row {
@@ -6479,11 +6479,17 @@ function renderGlobalSearchResults(q) {
     return;
   }
 
-  const fridgeMatches = fridge.filter(i => i.name.toLowerCase().includes(query));
-  const pantryMatches = pantry.filter(i => i.name.toLowerCase().includes(query));
-  const recipeMatches = recipes.filter(r => r.name.toLowerCase().includes(query));
+  const match = (str) => str?.toLowerCase().includes(query);
 
-  if (!fridgeMatches.length && !pantryMatches.length && !recipeMatches.length) {
+  const fridgeMatches  = fridge.filter(i => match(i.name) || match(i.note) || match(i.qty));
+  const pantryMatches  = pantry.filter(i => match(i.name) || match(i.note) || match(i.qty));
+  const allRecipes     = [...(userRecipes || []), ...(recipes || [])];
+  const recipeMatches  = allRecipes.filter(r =>
+    match(r.name) || (r.ingredients || []).some(ing => match(ing.name || ing))
+  );
+  const shopMatches    = shoppingList.filter(i => match(i.name));
+
+  if (!fridgeMatches.length && !pantryMatches.length && !recipeMatches.length && !shopMatches.length) {
     results.innerHTML = `<div class="gsearch-empty">Aucun résultat pour « ${esc(q)} »</div>`;
     return;
   }
@@ -6491,7 +6497,7 @@ function renderGlobalSearchResults(q) {
   let html = '';
   if (fridgeMatches.length) {
     html += `<div class="gsearch-section-title">🧊 Frigo (${fridgeMatches.length})</div>`;
-    html += fridgeMatches.slice(0, 6).map(i => {
+    html += fridgeMatches.slice(0, 8).map(i => {
       const dlcS = i.dlc ? dlcStatus(i.dlc) : null;
       return `<div class="gsearch-result-item" onclick="closeGlobalSearch();window.switchTabPublic('frigo')">
         <div class="gsearch-result-icon">🧊</div>
@@ -6502,21 +6508,34 @@ function renderGlobalSearchResults(q) {
   }
   if (pantryMatches.length) {
     html += `<div class="gsearch-section-title">🗄 Placard (${pantryMatches.length})</div>`;
-    html += pantryMatches.slice(0, 6).map(i =>
+    html += pantryMatches.slice(0, 8).map(i =>
       `<div class="gsearch-result-item" onclick="closeGlobalSearch();window.switchTabPublic('frigo');document.getElementById('btn-view-placard')?.click()">
         <div class="gsearch-result-icon">🗄</div>
         <div><div class="gsearch-result-name">${esc(i.name)}</div>${i.qty ? `<div class="gsearch-result-sub">${esc(i.qty)}</div>` : ''}</div>
       </div>`
     ).join('');
   }
-  if (recipeMatches.length) {
-    html += `<div class="gsearch-section-title">🍳 Recettes (${recipeMatches.length})</div>`;
-    html += recipeMatches.slice(0, 6).map(r =>
-      `<div class="gsearch-result-item" onclick="closeGlobalSearch();window.switchTabPublic('recettes')">
-        <div class="gsearch-result-icon">🍳</div>
-        <div><div class="gsearch-result-name">${esc(r.name)}</div>${r.time ? `<div class="gsearch-result-sub">${esc(String(r.time))} min</div>` : ''}</div>
+  if (shopMatches.length) {
+    html += `<div class="gsearch-section-title">🛒 Liste de courses (${shopMatches.length})</div>`;
+    html += shopMatches.slice(0, 8).map(i =>
+      `<div class="gsearch-result-item" onclick="closeGlobalSearch();window.switchTabPublic('courses')">
+        <div class="gsearch-result-icon">${i.bought ? '✅' : '🛒'}</div>
+        <div><div class="gsearch-result-name">${esc(i.name)}</div>${i.qty ? `<div class="gsearch-result-sub">${esc(i.qty)}</div>` : ''}</div>
       </div>`
     ).join('');
+  }
+  if (recipeMatches.length) {
+    html += `<div class="gsearch-section-title">🍳 Recettes (${recipeMatches.length})</div>`;
+    html += recipeMatches.slice(0, 8).map(r => {
+      const matchedIng = (r.ingredients || []).find(ing => match(ing.name || ing));
+      const sub = matchedIng
+        ? `Ingrédient : ${esc(matchedIng.name || matchedIng)}`
+        : (r.time ? `${esc(String(r.time))} min` : '');
+      return `<div class="gsearch-result-item" onclick="closeGlobalSearch();window.switchTabPublic('recettes')">
+        <div class="gsearch-result-icon">🍳</div>
+        <div><div class="gsearch-result-name">${esc(r.name)}</div>${sub ? `<div class="gsearch-result-sub">${sub}</div>` : ''}</div>
+      </div>`;
+    }).join('');
   }
   results.innerHTML = html;
 }
