@@ -166,6 +166,12 @@
     loadPantry: (uid, cb) => onSnapshot(doc(db, 'pantry', uid),
       snap => cb(snap.exists() ? snap.data().items || [] : [])
     ),
+    saveFreezer: async (uid, items) => {
+      await setDoc(doc(db, 'freezers', uid), { items, updatedAt: Date.now() });
+    },
+    loadFreezer: (uid, cb) => onSnapshot(doc(db, 'freezers', uid),
+      snap => cb(snap.exists() ? snap.data().items || [] : [])
+    ),
     saveShoppingList: async (uid, items, overrides, history) => {
       await setDoc(doc(db, 'shoppingList', uid), { items, overrides: overrides || {}, history: history || [], updatedAt: Date.now() });
     },
@@ -909,6 +915,21 @@ body, #app-screen, .tab-page, .card, .food-row, .pantry-row, .courses-card,
   color: var(--ink3); font-size: 0.8rem; line-height: 1.6;
 }
 .pantry-empty-icon { font-size: 2.5rem; margin-bottom: 0.5rem; opacity: 0.25; }
+.freezer-empty {
+  text-align: center; padding: 2rem 1rem;
+  color: var(--ink3); font-size: 0.8rem; line-height: 1.6;
+}
+.freezer-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px 8px 14px; border-radius: var(--r);
+  border-left: 3.5px solid var(--row-accent, var(--accent));
+  background: color-mix(in srgb, var(--row-accent, transparent) 6%, var(--surface));
+  transition: background 0.15s; cursor: pointer; position: relative;
+  animation: rowIn 0.22s ease both;
+}
+.freezer-row:hover { background: color-mix(in srgb, var(--row-accent, transparent) 10%, var(--surface2)); }
+.freezer-row:hover .f-del, @media (hover: none) { .f-del { opacity: 1; } }
+.freezer-row:hover .f-del { opacity: 1; }
 
 .page-head { margin-bottom: 1.25rem; }
 .page-title {
@@ -2238,6 +2259,10 @@ body, #app-screen, .tab-page, .card, .food-row, .pantry-row, .courses-card,
   background: rgba(255,140,0,0.10); border-color: #E07800;
   color: #B05E00; box-shadow: 0 2px 8px rgba(224,120,0,0.18);
 }
+.dest-btn--congelo.active {
+  background: rgba(59,130,246,0.10); border-color: #3b82f6;
+  color: #1d4ed8; box-shadow: 0 2px 8px rgba(59,130,246,0.18);
+}
 .dest-btn:not(.active):hover { background: var(--surface2); }
 
 /* ─── MANUAL SHOPPING FORM ─── */
@@ -3174,6 +3199,7 @@ body.compact .courses-card { padding: 9px 12px; }
       <div class="store-toggle">
         <button class="store-btn active" id="btn-view-frigo">🧊 Frigo</button>
         <button class="store-btn" id="btn-view-placard">🗄 Placard</button>
+        <button class="store-btn" id="btn-view-congelo">❄️ Congélo</button>
       </div>
       <div id="frigo-widget" class="frigo-widget hidden"></div>
       <div id="cook-tonight" class="cook-tonight" style="display:none"></div>
@@ -3200,6 +3226,22 @@ body.compact .courses-card { padding: 9px 12px; }
           </svg>
           <div style="font-weight:600;margin-bottom:4px">Placard vide</div>
           <div style="font-size:0.82rem;opacity:0.6">Ajoutez vos basiques !</div>
+        </div>
+      </div>
+      <div id="congelo-list" class="hidden">
+        <div class="freezer-empty">
+          <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom:12px;opacity:0.5">
+            <rect x="18" y="8" width="44" height="64" rx="8" stroke="currentColor" stroke-width="3" fill="none"/>
+            <line x1="18" y1="38" x2="62" y2="38" stroke="currentColor" stroke-width="2.5"/>
+            <line x1="40" y1="20" x2="40" y2="30" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <line x1="35" y1="22" x2="40" y2="26" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <line x1="45" y1="22" x2="40" y2="26" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <line x1="40" y1="50" x2="40" y2="60" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <line x1="35" y1="57" x2="40" y2="54" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <line x1="45" y1="57" x2="40" y2="54" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <div style="font-weight:600;margin-bottom:4px">Congélateur vide</div>
+          <div style="font-size:0.82rem;opacity:0.6">Ajoutez vos surgelés !</div>
         </div>
       </div>
     </div>
@@ -3651,6 +3693,10 @@ body.compact .courses-card { padding: 9px 12px; }
       <div class="fab-action">
         <span class="fab-action-label">Liste de courses</span>
         <button class="fab-action-btn courses" id="fab-courses">🛒</button>
+      </div>
+      <div class="fab-action">
+        <span class="fab-action-label">Ajouter au congélateur</span>
+        <button class="fab-action-btn" id="fab-congelo" style="background:linear-gradient(135deg,#3b82f6,#1d4ed8)">❄️</button>
       </div>
       <div class="fab-action">
         <span class="fab-action-label">Ajouter au placard</span>
@@ -4192,6 +4238,7 @@ body.compact .courses-card { padding: 9px 12px; }
     <div id="food-dest-row" style="display:flex;gap:8px;margin-top:10px">
       <button class="dest-btn dest-btn--frigo active" id="modal-dest-frigo">🧊 Frigo</button>
       <button class="dest-btn dest-btn--placard" id="modal-dest-placard">🗄 Placard</button>
+      <button class="dest-btn dest-btn--congelo" id="modal-dest-congelo">❄️ Congélo</button>
     </div>
   </div>
 </div>
@@ -4496,8 +4543,12 @@ let unsubRecipes = null;
 let editingRecipeId = null;
 let pantry = [];
 let unsubPantry = null;
-let pantryView = false;
+let freezer = [];
+let unsubFreezer = null;
+let currentStorageView = 'frigo'; // 'frigo' | 'placard' | 'congelo'
 let fridgeSearch = '';
+// keep legacy alias for code that still reads pantryView
+Object.defineProperty(window, 'pantryView', { get: () => currentStorageView === 'placard' });
 let recipeSearch = '';
 
 const RESTRICTION_KEYWORDS = {
@@ -4658,6 +4709,68 @@ function renderPantry() {
   setupDragDrop('pantry-list', pantry, savePantry);
 }
 
+function saveFreezer() {
+  if (!user) return;
+  window.__FC.saveFreezer(user.uid, freezer)
+    .catch(err => { console.error('Erreur sauvegarde congélo:', err); toast('Erreur de sauvegarde', 'error'); });
+}
+
+function renderFreezer() {
+  const el = document.getElementById('congelo-list');
+  const label = document.getElementById('fridge-count-label');
+  if (currentStorageView !== 'congelo') return;
+  label.textContent = `❄️ Congélateur · ${freezer.length} article${freezer.length > 1 ? 's' : ''}`;
+  if (freezer.length === 0) {
+    el.innerHTML = `<div class="freezer-empty"><svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom:12px;opacity:0.5"><rect x="18" y="8" width="44" height="64" rx="8" stroke="currentColor" stroke-width="3" fill="none"/><line x1="18" y1="38" x2="62" y2="38" stroke="currentColor" stroke-width="2.5"/><line x1="40" y1="20" x2="40" y2="30" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="35" y1="22" x2="40" y2="26" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="45" y1="22" x2="40" y2="26" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><div style="font-weight:600;margin-bottom:4px">Congélateur vide</div><div style="font-size:0.82rem;opacity:0.6">Ajoutez vos surgelés !</div></div>`;
+    return;
+  }
+  const qf = fridgeSearch.toLowerCase();
+  const visible = qf ? freezer.filter(i => i.name.toLowerCase().includes(qf)) : freezer;
+  if (qf && !visible.length) {
+    el.innerHTML = `<div class="freezer-empty">Aucun résultat pour "<strong>${esc(fridgeSearch)}</strong>"</div>`;
+    return;
+  }
+  const grouped = {};
+  visible.forEach(item => {
+    const cat = foodCategory(item.name);
+    (grouped[cat.label] = grouped[cat.label] || { cat, items: [] }).items.push(item);
+  });
+  el.innerHTML = Object.values(grouped).map(({ cat, items }) => `
+    <div class="cat-head" style="color:${cat.color}">${cat.label}</div>
+    ${items.map(item => {
+      const s = item.dlc ? dlcStatus(item.dlc) : null;
+      const badges = s ? `<div class="f-badges"><span class="dlc-tag ${s.cls}">${s.label}</span></div>` : '';
+      return `
+    <div class="freezer-row" data-item-id="${item.id}" style="--row-accent:#3b82f6">
+      <span class="f-emoji">${esc(item.emoji || '❄️')}</span>
+      <div class="f-info">
+        <div class="f-name">${esc(item.name)}</div>
+        <div class="f-qty">${esc(item.qty || '')}${item.note ? ` · <em>${esc(item.note)}</em>` : ''}</div>
+        ${badges}
+      </div>
+      <button class="f-del" data-freezer-del="${item.id}" title="Supprimer">✕</button>
+    </div>`;
+    }).join('')}
+  `).join('');
+  document.querySelectorAll('#congelo-list .freezer-row').forEach((row, i) => {
+    row.style.animationDelay = (i * 40) + 'ms';
+  });
+  el.querySelectorAll('[data-freezer-del]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      freezer = freezer.filter(f => f.id !== btn.dataset.freezerDel);
+      saveFreezer(); renderFreezer(); renderAlerts();
+    });
+  });
+  el.querySelectorAll('[data-item-id]').forEach(row => {
+    row.addEventListener('click', () => {
+      const item = freezer.find(f => f.id === row.dataset.itemId);
+      if (item) openEditModal(item, 'congelo');
+    });
+  });
+  updateFrigoTabBadge();
+}
+
 function haptic(ms = 8) { if (navigator.vibrate) navigator.vibrate(ms); }
 
 function confirmSheet(message, onConfirm, { confirmLabel = 'Confirmer', danger = true } = {}) {
@@ -4746,7 +4859,7 @@ function recipeCardColor(name) {
 function renderFridge() {
   const el    = document.getElementById('fridge-list');
   const label = document.getElementById('fridge-count-label');
-  if (!pantryView) {
+  if (currentStorageView === 'frigo') {
     const txt = sharedFridgeCode
       ? `👥 Frigo partagé · ${fridge.length} aliment${fridge.length > 1 ? 's' : ''}`
       : `🍽️ Ma Cuisine · ${fridge.length} aliment${fridge.length > 1 ? 's' : ''}`;
@@ -4755,7 +4868,7 @@ function renderFridge() {
 
   // ── Widget résumé ──
   const widget = document.getElementById('frigo-widget');
-  if (!pantryView && fridge.length > 0) {
+  if (currentStorageView === 'frigo' && fridge.length > 0) {
     const expiredAll = fridge.filter(f => f.dlc && dlcStatus(f.dlc)?.days < 0).length;
     const urgentAll  = fridge.filter(f => f.dlc && dlcStatus(f.dlc)?.days >= 0 && dlcStatus(f.dlc)?.days <= 2).length;
     const noDlc      = fridge.filter(f => !f.dlc).length;
@@ -6481,15 +6594,16 @@ function renderGlobalSearchResults(q) {
 
   const match = (str) => str?.toLowerCase().includes(query);
 
-  const fridgeMatches  = fridge.filter(i => match(i.name) || match(i.note) || match(i.qty));
-  const pantryMatches  = pantry.filter(i => match(i.name) || match(i.note) || match(i.qty));
+  const fridgeMatches   = fridge.filter(i => match(i.name) || match(i.note) || match(i.qty));
+  const pantryMatches   = pantry.filter(i => match(i.name) || match(i.note) || match(i.qty));
+  const freezerMatches  = freezer.filter(i => match(i.name) || match(i.note) || match(i.qty));
   const allRecipes     = [...(userRecipes || []), ...(recipes || [])];
   const recipeMatches  = allRecipes.filter(r =>
     match(r.name) || (r.ingredients || []).some(ing => match(ing.name || ing))
   );
   const shopMatches    = shoppingList.filter(i => match(i.name));
 
-  if (!fridgeMatches.length && !pantryMatches.length && !recipeMatches.length && !shopMatches.length) {
+  if (!fridgeMatches.length && !pantryMatches.length && !freezerMatches.length && !recipeMatches.length && !shopMatches.length) {
     results.innerHTML = `<div class="gsearch-empty">Aucun résultat pour « ${esc(q)} »</div>`;
     return;
   }
@@ -6511,6 +6625,15 @@ function renderGlobalSearchResults(q) {
     html += pantryMatches.slice(0, 8).map(i =>
       `<div class="gsearch-result-item" onclick="closeGlobalSearch();window.switchTabPublic('frigo');document.getElementById('btn-view-placard')?.click()">
         <div class="gsearch-result-icon">🗄</div>
+        <div><div class="gsearch-result-name">${esc(i.name)}</div>${i.qty ? `<div class="gsearch-result-sub">${esc(i.qty)}</div>` : ''}</div>
+      </div>`
+    ).join('');
+  }
+  if (freezerMatches.length) {
+    html += `<div class="gsearch-section-title">❄️ Congélateur (${freezerMatches.length})</div>`;
+    html += freezerMatches.slice(0, 8).map(i =>
+      `<div class="gsearch-result-item" onclick="closeGlobalSearch();window.switchTabPublic('frigo');document.getElementById('btn-view-congelo')?.click()">
+        <div class="gsearch-result-icon">❄️</div>
         <div><div class="gsearch-result-name">${esc(i.name)}</div>${i.qty ? `<div class="gsearch-result-sub">${esc(i.qty)}</div>` : ''}</div>
       </div>`
     ).join('');
@@ -6619,16 +6742,20 @@ function addBoughtItemsTo(destination) {
     note: '',
     dlc: null
   }));
+  const n = newItems.length;
+  const s = n > 1 ? 's' : '';
   if (destination === 'frigo') {
     fridge = [...fridge, ...newItems];
-    saveFridge();
-    renderFridge();
-    toast(`🧊 ${newItems.length} article${newItems.length > 1 ? 's' : ''} ajouté${newItems.length > 1 ? 's' : ''} au frigo`, 'success');
+    saveFridge(); renderFridge();
+    toast(`🧊 ${n} article${s} ajouté${s} au frigo`, 'success');
+  } else if (destination === 'congelo') {
+    freezer = [...freezer, ...newItems];
+    saveFreezer(); renderFreezer();
+    toast(`❄️ ${n} article${s} ajouté${s} au congélateur`, 'success');
   } else {
     pantry = [...pantry, ...newItems];
-    savePantry();
-    renderPantry();
-    toast(`🗄 ${newItems.length} article${newItems.length > 1 ? 's' : ''} ajouté${newItems.length > 1 ? 's' : ''} au placard`, 'success');
+    savePantry(); renderPantry();
+    toast(`🗄 ${n} article${s} ajouté${s} au placard`, 'success');
   }
   shoppingList = [];
   saveShoppingListDB();
@@ -8528,6 +8655,11 @@ function _initApp() {
         pantry = items; renderPantry(); renderRecipes();
       });
 
+      if (unsubFreezer) unsubFreezer();
+      unsubFreezer = window.__FC.loadFreezer(fbUser.uid, items => {
+        freezer = items; renderFreezer();
+      });
+
       if (unsubShopping) unsubShopping();
       unsubShopping = window.__FC.loadShoppingList(fbUser.uid, ({ items, overrides, history }) => {
         shoppingList = items; shopCatOverrides = overrides || {}; shopHistory = history || []; renderCourses();
@@ -8605,6 +8737,7 @@ function _initApp() {
       shoppingList = []; shopHistory = []; sharedListCode = null;
       if (unsubSharedList) { unsubSharedList(); unsubSharedList = null; }
       if (unsubShopping) { unsubShopping(); unsubShopping = null; }
+      freezer = []; if (unsubFreezer) { unsubFreezer(); unsubFreezer = null; }
       userCategories = []; invalidateCategoriesCache(); if (unsubCategories) { unsubCategories(); unsubCategories = null; }
       dailyLog = []; if (unsubDailyLog) { unsubDailyLog(); unsubDailyLog = null; }
       weightLog = []; if (unsubWeightLog) { unsubWeightLog(); unsubWeightLog = null; }
@@ -8964,9 +9097,10 @@ function _initApp() {
     setLevelBtn(100);
     document.getElementById('scan-banner').classList.remove('visible');
     document.getElementById('scanner-view').classList.remove('active');
-    const toPlacard = dest === 'placard' || (!dest && pantryView);
-    document.getElementById('modal-dest-frigo').classList.toggle('active', !toPlacard);
-    document.getElementById('modal-dest-placard').classList.toggle('active', toPlacard);
+    const effectiveDest = dest || currentStorageView;
+    ['frigo','placard','congelo'].forEach(d =>
+      document.getElementById(`modal-dest-${d}`).classList.toggle('active', d === effectiveDest)
+    );
     addOverlay.classList.remove('hidden');
     setTimeout(() => document.getElementById('inp-name').focus(), 80);
   }
@@ -9143,6 +9277,10 @@ function _initApp() {
         pantry = pantry.map(i => i.id === updated.id ? updated : i);
         savePantry(); renderPantry(); renderRecipes();
         toast(`${updated.emoji} ${name} modifié`);
+      } else if (editingFoodCtx.store === 'congelo') {
+        freezer = freezer.map(i => i.id === updated.id ? updated : i);
+        saveFreezer(); renderFreezer();
+        toast(`❄️ ${name} modifié`);
       } else {
         fridge = fridge.map(i => i.id === updated.id ? updated : i);
         saveFridge(); renderFridge(); renderAlerts();
@@ -9163,11 +9301,17 @@ function _initApp() {
       level,
       emoji:  emoji(name)
     };
-    const toPantry = document.getElementById('modal-dest-placard').classList.contains('active');
-    if (toPantry) {
+    const addDest = ['placard','congelo'].find(d =>
+      document.getElementById(`modal-dest-${d}`).classList.contains('active')
+    ) || 'frigo';
+    if (addDest === 'placard') {
       pantry.push(item);
       savePantry(); renderPantry(); renderRecipes();
       toast(`${item.emoji} ${name} ajouté au placard`);
+    } else if (addDest === 'congelo') {
+      freezer.push(item);
+      saveFreezer(); renderFreezer();
+      toast(`❄️ ${name} ajouté au congélateur`);
     } else {
       fridge.push(item);
       saveFridge(); renderFridge(); renderAlerts();
@@ -9186,8 +9330,9 @@ function _initApp() {
       fabWrap.classList.contains('open') ? closeFab() : openFab();
     });
     fabBackdrop.addEventListener('click', closeFab);
-    document.getElementById('fab-frigo').addEventListener('click', () => { closeFab(); openAddModal('frigo'); });
+    document.getElementById('fab-frigo').addEventListener('click',   () => { closeFab(); openAddModal('frigo'); });
     document.getElementById('fab-placard').addEventListener('click', () => { closeFab(); openAddModal('placard'); });
+    document.getElementById('fab-congelo').addEventListener('click', () => { closeFab(); openAddModal('congelo'); });
     document.getElementById('fab-repas').addEventListener('click', () => { closeFab(); openAddMealModal(); });
     document.getElementById('fab-poids').addEventListener('click', () => { closeFab(); openWeightModal(); });
     document.getElementById('fab-courses').addEventListener('click', () => {
@@ -9452,32 +9597,29 @@ function _initApp() {
     if (e.key === 'Enter') { e.preventDefault(); addManualShopItem(); }
   });
 
-  // Store toggle (frigo / placard)
-  document.getElementById('btn-view-frigo').addEventListener('click', () => {
-    pantryView = false;
-    document.getElementById('btn-view-frigo').classList.add('active');
-    document.getElementById('btn-view-placard').classList.remove('active');
-    document.getElementById('fridge-list').classList.remove('hidden');
-    document.getElementById('pantry-list').classList.add('hidden');
-    renderFridge();
-  });
-  document.getElementById('btn-view-placard').addEventListener('click', () => {
-    pantryView = true;
-    document.getElementById('btn-view-placard').classList.add('active');
-    document.getElementById('btn-view-frigo').classList.remove('active');
-    document.getElementById('fridge-list').classList.add('hidden');
-    document.getElementById('pantry-list').classList.remove('hidden');
-    renderPantry();
-  });
+  // Store toggle (frigo / placard / congelo)
+  function switchStorageView(view) {
+    currentStorageView = view;
+    ['frigo','placard','congelo'].forEach(v => {
+      document.getElementById(`btn-view-${v}`).classList.toggle('active', v === view);
+      const listId = v === 'frigo' ? 'fridge-list' : v === 'placard' ? 'pantry-list' : 'congelo-list';
+      document.getElementById(listId).classList.toggle('hidden', v !== view);
+    });
+    if (view === 'frigo')   renderFridge();
+    if (view === 'placard') renderPantry();
+    if (view === 'congelo') renderFreezer();
+  }
+  document.getElementById('btn-view-frigo').addEventListener('click',   () => switchStorageView('frigo'));
+  document.getElementById('btn-view-placard').addEventListener('click', () => switchStorageView('placard'));
+  document.getElementById('btn-view-congelo').addEventListener('click', () => switchStorageView('congelo'));
 
   // Destination toggle in add modal
-  document.getElementById('modal-dest-frigo').addEventListener('click', () => {
-    document.getElementById('modal-dest-frigo').classList.add('active');
-    document.getElementById('modal-dest-placard').classList.remove('active');
-  });
-  document.getElementById('modal-dest-placard').addEventListener('click', () => {
-    document.getElementById('modal-dest-placard').classList.add('active');
-    document.getElementById('modal-dest-frigo').classList.remove('active');
+  ['frigo','placard','congelo'].forEach(dest => {
+    document.getElementById(`modal-dest-${dest}`).addEventListener('click', () => {
+      ['frigo','placard','congelo'].forEach(d =>
+        document.getElementById(`modal-dest-${d}`).classList.toggle('active', d === dest)
+      );
+    });
   });
   addOverlay.addEventListener('click', e => { if (e.target === addOverlay) closeAddModal(); });
   document.getElementById('inp-name').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('inp-qty').focus(); });
@@ -9984,8 +10126,9 @@ function _initApp() {
   });
 
   // ── SHOP DONE SHEET ──
-  document.getElementById('shop-done-frigo').addEventListener('click', () => addBoughtItemsTo('frigo'));
+  document.getElementById('shop-done-frigo').addEventListener('click',   () => addBoughtItemsTo('frigo'));
   document.getElementById('shop-done-placard').addEventListener('click', () => addBoughtItemsTo('placard'));
+  document.getElementById('shop-done-congelo').addEventListener('click', () => addBoughtItemsTo('congelo'));
   document.getElementById('shop-done-skip').addEventListener('click', () => {
     shoppingList = [];
     saveShoppingListDB(); renderCourses(); renderDashboard();
@@ -10120,6 +10263,9 @@ if ('serviceWorker' in navigator) {
       </button>
       <button id="shop-done-placard" style="padding:14px;border-radius:14px;border:none;background:linear-gradient(135deg,#E07800,#c26800);color:#fff;font-size:0.95rem;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:12px">
         <span style="font-size:1.4rem">🗄️</span><span>Ajouter au Placard</span>
+      </button>
+      <button id="shop-done-congelo" style="padding:14px;border-radius:14px;border:none;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;font-size:0.95rem;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:12px">
+        <span style="font-size:1.4rem">❄️</span><span>Ajouter au Congélateur</span>
       </button>
       <button id="shop-done-skip" style="padding:12px;border-radius:14px;border:1.5px solid var(--border2);background:var(--surface2);color:var(--ink2);font-size:0.88rem;font-weight:600;cursor:pointer">
         Vider sans ranger

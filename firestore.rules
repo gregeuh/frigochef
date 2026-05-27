@@ -12,6 +12,11 @@ service cloud.firestore {
       allow read, write: if request.auth != null && request.auth.uid == uid;
     }
 
+    // ── Congélateur ──
+    match /freezers/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
     // ── Profil utilisateur ──
     match /profiles/{uid} {
       allow read, write: if request.auth != null && request.auth.uid == uid;
