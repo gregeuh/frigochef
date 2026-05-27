@@ -54,14 +54,14 @@
 
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js';
-  import { getAuth, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, signOut, onAuthStateChanged }
+  import { getAuth, signInWithPopup, getRedirectResult, GoogleAuthProvider, signOut, onAuthStateChanged }
     from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js';
   import { getFirestore, doc, setDoc, getDoc, deleteDoc, onSnapshot }
     from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js';
 
   const firebaseConfig = {
     apiKey:            "AIzaSyDNo9yjOCX1azpve1He6-pHwz6ZsdFTZAg",
-    authDomain:        "frigochef-zeta.vercel.app",
+    authDomain:        "frigochef-95045.firebaseapp.com",
     projectId:         "frigochef-95045",
     storageBucket:     "frigochef-95045.firebasestorage.app",
     messagingSenderId: "939739368710",
@@ -74,15 +74,11 @@
   const db        = getFirestore(app);
   const provider  = new GoogleAuthProvider();
 
-  // Detect PWA standalone mode (installed on home screen)
-  const isPWA = window.matchMedia('(display-mode: standalone)').matches
-             || window.navigator.standalone === true;
-
-  // Handle redirect result on PWA startup (after signInWithRedirect)
+  // Handle redirect result if coming back from a redirect flow
   getRedirectResult(auth).catch(() => {});
 
   window.__FC = {
-    signIn: () => isPWA ? signInWithRedirect(auth, provider) : signInWithPopup(auth, provider),
+    signIn: () => signInWithPopup(auth, provider),
     signOut: () => signOut(auth),
     onAuth:  (cb) => onAuthStateChanged(auth, cb),
     getUser: () => auth.currentUser,
@@ -8511,9 +8507,8 @@ function _initApp() {
     _loginBtn.disabled = true;
     _loginBtn.style.opacity = '0.6';
     _loginBtn.textContent = 'Connexion…';
-    const p = window.__FC.signIn();
-    if (!p || typeof p.catch !== 'function') return; // redirect : page reloads, no promise to handle
-    p.catch(err => {
+    window.__FC.signIn()
+      .catch(err => {
         const silent = ['auth/cancelled-popup-request','auth/popup-closed-by-user'];
         if (!silent.includes(err.code)) {
           toast('Erreur : ' + (err.message || err.code), 'error');
