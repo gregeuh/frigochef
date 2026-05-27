@@ -59,9 +59,16 @@
   import { getFirestore, doc, setDoc, getDoc, deleteDoc, onSnapshot }
     from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js';
 
+  // Use current hostname as authDomain when served from Vercel (same-origin auth
+  // keeps the redirect within the PWA's WebView instead of switching to Safari)
+  const _hostname = window.location.hostname;
+  const _authDomain = (_hostname === 'localhost' || _hostname.endsWith('firebaseapp.com'))
+    ? 'frigochef-95045.firebaseapp.com'
+    : _hostname;
+
   const firebaseConfig = {
     apiKey:            "AIzaSyDNo9yjOCX1azpve1He6-pHwz6ZsdFTZAg",
-    authDomain:        "frigochef-95045.firebaseapp.com",
+    authDomain:        _authDomain,
     projectId:         "frigochef-95045",
     storageBucket:     "frigochef-95045.firebasestorage.app",
     messagingSenderId: "939739368710",
@@ -74,20 +81,22 @@
   const db        = getFirestore(app);
   const provider  = new GoogleAuthProvider();
 
-  // Detect iOS PWA standalone mode — popup doesn't work there
-  const isIosPwa = (() => {
-    const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
-    const standalone = window.navigator.standalone === true
-      || window.matchMedia('(display-mode: standalone)').matches;
-    return ios && standalone;
-  })();
+  // Detect any PWA standalone mode (iOS or Android)
+  const isPwa = window.navigator.standalone === true
+    || window.matchMedia('(display-mode: standalone)').matches;
 
-  // Handle redirect result on app start (used by iOS PWA flow)
-  getRedirectResult(auth).catch(() => {});
+  // On app load after a redirect, process the result and propagate auth state
+  const _redirectResultPromise = getRedirectResult(auth);
+  _redirectResultPromise.catch(err => {
+    if (err?.code && err.code !== 'auth/no-auth-event') {
+      const el = document.getElementById('auth-redirect-error');
+      if (el) { el.textContent = '⚠️ ' + err.code; el.style.display = 'block'; }
+    }
+  });
 
   window.__FC = {
-    isIosPwa,
-    signIn: () => isIosPwa
+    isPwa,
+    signIn: () => isPwa
       ? signInWithRedirect(auth, provider)
       : signInWithPopup(auth, provider),
     signOut: () => signOut(auth),
@@ -3063,6 +3072,7 @@ body.compact .courses-card { padding: 9px 12px; }
       </svg>
       Continuer avec Google
     </button>
+    <div id="auth-redirect-error" style="display:none;color:#E11D48;font-size:0.78rem;margin-top:8px;text-align:center;padding:6px 12px;background:rgba(225,29,72,0.08);border-radius:8px;"></div>
     <div class="auth-perks">
       <div class="perk"><div class="perk-icon">🧊</div><div>Mon frigo</div></div>
       <div class="perk"><div class="perk-icon">📅</div><div>Suivi DLC</div></div>
@@ -8519,8 +8529,8 @@ function _initApp() {
     _loginBtn.style.opacity = '0.6';
     _loginBtn.textContent = 'Connexion…';
     const signInPromise = window.__FC.signIn();
-    // On iOS PWA, signInWithRedirect navigates away — don't reset button
-    if (!window.__FC.isIosPwa) {
+    // On PWA, signInWithRedirect navigates away — don't reset button
+    if (!window.__FC.isPwa) {
       signInPromise
         .catch(err => {
           const silent = ['auth/cancelled-popup-request','auth/popup-closed-by-user'];
