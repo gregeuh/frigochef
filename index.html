@@ -54,7 +54,7 @@
 
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js';
-  import { getAuth, signInWithPopup, getRedirectResult, GoogleAuthProvider, signOut, onAuthStateChanged }
+  import { getAuth, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, signOut, onAuthStateChanged }
     from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js';
   import { getFirestore, doc, setDoc, getDoc, deleteDoc, onSnapshot }
     from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js';
@@ -74,11 +74,22 @@
   const db        = getFirestore(app);
   const provider  = new GoogleAuthProvider();
 
-  // Handle redirect result if coming back from a redirect flow
+  // Detect iOS PWA standalone mode — popup doesn't work there
+  const isIosPwa = (() => {
+    const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const standalone = window.navigator.standalone === true
+      || window.matchMedia('(display-mode: standalone)').matches;
+    return ios && standalone;
+  })();
+
+  // Handle redirect result on app start (used by iOS PWA flow)
   getRedirectResult(auth).catch(() => {});
 
   window.__FC = {
-    signIn: () => signInWithPopup(auth, provider),
+    isIosPwa,
+    signIn: () => isIosPwa
+      ? signInWithRedirect(auth, provider)
+      : signInWithPopup(auth, provider),
     signOut: () => signOut(auth),
     onAuth:  (cb) => onAuthStateChanged(auth, cb),
     getUser: () => auth.currentUser,
@@ -8507,18 +8518,22 @@ function _initApp() {
     _loginBtn.disabled = true;
     _loginBtn.style.opacity = '0.6';
     _loginBtn.textContent = 'Connexion…';
-    window.__FC.signIn()
-      .catch(err => {
-        const silent = ['auth/cancelled-popup-request','auth/popup-closed-by-user'];
-        if (!silent.includes(err.code)) {
-          toast('Erreur : ' + (err.message || err.code), 'error');
-        }
-      })
-      .finally(() => {
-        _loginBtn.disabled = false;
-        _loginBtn.style.opacity = '';
-        _loginBtn.innerHTML = _loginBtnOrigHTML;
-      });
+    const signInPromise = window.__FC.signIn();
+    // On iOS PWA, signInWithRedirect navigates away — don't reset button
+    if (!window.__FC.isIosPwa) {
+      signInPromise
+        .catch(err => {
+          const silent = ['auth/cancelled-popup-request','auth/popup-closed-by-user'];
+          if (!silent.includes(err.code)) {
+            toast('Erreur : ' + (err.message || err.code), 'error');
+          }
+        })
+        .finally(() => {
+          _loginBtn.disabled = false;
+          _loginBtn.style.opacity = '';
+          _loginBtn.innerHTML = _loginBtnOrigHTML;
+        });
+    }
   });
 
   // Logout
