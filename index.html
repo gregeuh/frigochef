@@ -5476,13 +5476,7 @@ function renderCourses() {
       const remaining = shoppingList.filter(i => !i.bought).length;
       if (remaining === 0 && shoppingList.length > 0) {
         launchConfetti();
-        setTimeout(() => {
-          confirmSheet('🎉 Tout acheté ! Vider la liste ?', () => {
-            shoppingList = [];
-            saveShoppingListDB(); renderCourses();
-            toast('Liste vidée, bonne cuisine !', 'success');
-          }, { confirmLabel: 'Vider la liste', danger: false });
-        }, 800);
+        setTimeout(() => openShopDoneSheet(), 800);
       }
       saveShoppingListDB(); renderCourses();
     });
@@ -6491,6 +6485,43 @@ function setupDragDrop(listId, dataArray, saveFn) {
       else renderPantry();
     });
   });
+}
+
+function openShopDoneSheet() {
+  document.getElementById('shop-done-overlay').classList.remove('hidden');
+}
+
+function closeShopDoneSheet() {
+  document.getElementById('shop-done-overlay').classList.add('hidden');
+}
+
+function addBoughtItemsTo(destination) {
+  const bought = shoppingList.filter(i => i.bought);
+  const newItems = bought.map(i => ({
+    id: Date.now().toString() + Math.random().toString(36).slice(2),
+    name: i.name,
+    qty: i.qty || '',
+    emoji: '',
+    category: resolvedShopCategory(i.name)?.key || 'autres',
+    note: '',
+    dlc: null
+  }));
+  if (destination === 'frigo') {
+    fridge = [...fridge, ...newItems];
+    saveFridge();
+    renderFridge();
+    toast(`🧊 ${newItems.length} article${newItems.length > 1 ? 's' : ''} ajouté${newItems.length > 1 ? 's' : ''} au frigo`, 'success');
+  } else {
+    pantry = [...pantry, ...newItems];
+    savePantry();
+    renderPantry();
+    toast(`🗄 ${newItems.length} article${newItems.length > 1 ? 's' : ''} ajouté${newItems.length > 1 ? 's' : ''} au placard`, 'success');
+  }
+  shoppingList = [];
+  saveShoppingListDB();
+  renderCourses();
+  renderDashboard();
+  closeShopDoneSheet();
 }
 
 function launchConfetti() {
@@ -9733,6 +9764,19 @@ function _initApp() {
     document.getElementById('groq-key-status').style.color = 'var(--green)';
     toast('Clé API Groq enregistrée !', 'success');
   });
+
+  // ── SHOP DONE SHEET ──
+  document.getElementById('shop-done-frigo').addEventListener('click', () => addBoughtItemsTo('frigo'));
+  document.getElementById('shop-done-placard').addEventListener('click', () => addBoughtItemsTo('placard'));
+  document.getElementById('shop-done-skip').addEventListener('click', () => {
+    shoppingList = [];
+    saveShoppingListDB(); renderCourses(); renderDashboard();
+    closeShopDoneSheet();
+    toast('Liste vidée, bonne cuisine !', 'success');
+  });
+  document.getElementById('shop-done-overlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('shop-done-overlay')) closeShopDoneSheet();
+  });
 } // fin _initApp
 
 // Lance l'init dès que Firebase est prêt — robuste contre les race conditions
@@ -9842,6 +9886,26 @@ if ('serviceWorker' in navigator) {
     <div style="width:36px;height:4px;border-radius:2px;background:var(--border2);margin:0 auto 18px"></div>
     <div id="ai-recipe-content">
       <!-- filled by JS -->
+    </div>
+  </div>
+</div>
+
+<!-- Shop done sheet -->
+<div id="shop-done-overlay" class="hidden" style="position:fixed;inset:0;z-index:8500;background:rgba(10,14,12,0.65);display:flex;align-items:flex-end;animation:fadeIn 0.15s ease">
+  <div style="width:100%;max-width:430px;margin:0 auto;background:var(--surface);border-radius:24px 24px 0 0;padding:20px 20px calc(32px + env(safe-area-inset-bottom,0px));box-shadow:var(--shadow-lg)">
+    <div style="width:36px;height:4px;border-radius:2px;background:var(--border2);margin:0 auto 18px"></div>
+    <div style="font-size:1rem;font-weight:800;color:var(--ink);margin-bottom:4px">🎉 Courses terminées !</div>
+    <div style="font-size:0.82rem;color:var(--ink3);margin-bottom:20px">Où ranger les articles achetés ?</div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button id="shop-done-frigo" style="padding:14px;border-radius:14px;border:none;background:linear-gradient(135deg,#0891B2,#0e7490);color:#fff;font-size:0.95rem;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:12px">
+        <span style="font-size:1.4rem">🧊</span><span>Ajouter au Frigo</span>
+      </button>
+      <button id="shop-done-placard" style="padding:14px;border-radius:14px;border:none;background:linear-gradient(135deg,#E07800,#c26800);color:#fff;font-size:0.95rem;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:12px">
+        <span style="font-size:1.4rem">🗄️</span><span>Ajouter au Placard</span>
+      </button>
+      <button id="shop-done-skip" style="padding:12px;border-radius:14px;border:1.5px solid var(--border2);background:var(--surface2);color:var(--ink2);font-size:0.88rem;font-weight:600;cursor:pointer">
+        Vider sans ranger
+      </button>
     </div>
   </div>
 </div>
