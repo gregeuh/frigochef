@@ -54,7 +54,9 @@
 
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js';
-  import { getAuth, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, signOut, onAuthStateChanged }
+  import { getAuth, signInWithPopup, signInWithRedirect, getRedirectResult,
+           GoogleAuthProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+           sendPasswordResetEmail, signOut, onAuthStateChanged }
     from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js';
   import { getFirestore, doc, setDoc, getDoc, deleteDoc, onSnapshot }
     from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js';
@@ -99,6 +101,9 @@
     signIn: () => isPwa
       ? signInWithRedirect(auth, provider)
       : signInWithPopup(auth, provider),
+    signInEmail:   (email, pw) => signInWithEmailAndPassword(auth, email, pw),
+    registerEmail: (email, pw) => createUserWithEmailAndPassword(auth, email, pw),
+    resetPassword: (email)     => sendPasswordResetEmail(auth, email),
     signOut: () => signOut(auth),
     onAuth:  (cb) => onAuthStateChanged(auth, cb),
     getUser: () => auth.currentUser,
@@ -398,6 +403,33 @@ body {
 }
 .btn-google:hover { background: #fff; box-shadow: 0 4px 20px rgba(0,0,0,0.4); transform: translateY(-1px); }
 .google-logo { width: 18px; height: 18px; }
+.auth-sep {
+  display: flex; align-items: center; gap: 10px;
+  margin: 14px 0; color: rgba(255,255,255,0.3); font-size: 0.78rem;
+}
+.auth-sep::before, .auth-sep::after { content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.12); }
+.auth-input {
+  display: block; width: 100%; padding: 11px 14px; margin-bottom: 10px;
+  background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+  border-radius: var(--r); font-size: 0.9rem; color: #fff;
+  outline: none; transition: border-color 0.15s; box-sizing: border-box;
+}
+.auth-input:focus { border-color: var(--accent); }
+.auth-input::placeholder { color: rgba(255,255,255,0.35); }
+.btn-email-auth {
+  width: 100%; padding: 11px; border: none; border-radius: var(--r);
+  background: var(--accent); color: #fff; font-size: 0.9rem; font-weight: 600;
+  cursor: pointer; transition: filter 0.15s, transform 0.15s;
+}
+.btn-email-auth:hover { filter: brightness(1.1); transform: translateY(-1px); }
+.auth-email-links {
+  display: flex; justify-content: space-between; margin-top: 10px;
+}
+.auth-link-btn {
+  background: none; border: none; color: rgba(255,255,255,0.45);
+  font-size: 0.75rem; cursor: pointer; padding: 2px 0; transition: color 0.15s;
+}
+.auth-link-btn:hover { color: rgba(255,255,255,0.8); }
 .auth-perks {
   display: grid; grid-template-columns: 1fr 1fr 1fr;
   gap: 1rem; margin-top: 2rem; padding-top: 1.5rem;
@@ -3072,7 +3104,20 @@ body.compact .courses-card { padding: 9px 12px; }
       </svg>
       Continuer avec Google
     </button>
-    <div id="auth-redirect-error" style="display:none;color:#E11D48;font-size:0.78rem;margin-top:8px;text-align:center;padding:6px 12px;background:rgba(225,29,72,0.08);border-radius:8px;"></div>
+
+    <div class="auth-sep"><span>ou</span></div>
+
+    <form id="email-auth-form" autocomplete="on">
+      <input type="email" id="auth-email" class="auth-input" placeholder="Adresse email" autocomplete="email" required>
+      <input type="password" id="auth-password" class="auth-input" placeholder="Mot de passe" autocomplete="current-password" required minlength="6">
+      <button type="submit" class="btn-email-auth" id="btn-email-login">Connexion par email</button>
+      <div class="auth-email-links">
+        <button type="button" id="btn-switch-register" class="auth-link-btn">Créer un compte</button>
+        <button type="button" id="btn-forgot-pw" class="auth-link-btn">Mot de passe oublié ?</button>
+      </div>
+    </form>
+
+    <div id="auth-email-error" style="display:none;color:#E11D48;font-size:0.78rem;margin-top:8px;text-align:center;padding:6px 12px;background:rgba(225,29,72,0.08);border-radius:8px;"></div>
     <div class="auth-perks">
       <div class="perk"><div class="perk-icon">🧊</div><div>Mon frigo</div></div>
       <div class="perk"><div class="perk-icon">📅</div><div>Suivi DLC</div></div>
@@ -8545,6 +8590,76 @@ function _initApp() {
         });
     }
   });
+
+  // ── EMAIL AUTH ──
+  let _emailMode = 'login'; // 'login' | 'register'
+  const _emailForm   = document.getElementById('email-auth-form');
+  const _emailInput  = document.getElementById('auth-email');
+  const _pwInput     = document.getElementById('auth-password');
+  const _emailBtn    = document.getElementById('btn-email-login');
+  const _emailErr    = document.getElementById('auth-email-error');
+  const _switchBtn   = document.getElementById('btn-switch-register');
+  const _forgotBtn   = document.getElementById('btn-forgot-pw');
+
+  function _showEmailErr(msg) {
+    _emailErr.textContent = msg;
+    _emailErr.style.display = 'block';
+  }
+  function _hideEmailErr() { _emailErr.style.display = 'none'; }
+
+  _switchBtn.addEventListener('click', () => {
+    _emailMode = _emailMode === 'login' ? 'register' : 'login';
+    _emailBtn.textContent  = _emailMode === 'login' ? 'Connexion par email' : 'Créer le compte';
+    _switchBtn.textContent = _emailMode === 'login' ? 'Créer un compte' : 'Déjà un compte ?';
+    _hideEmailErr();
+  });
+
+  _forgotBtn.addEventListener('click', async () => {
+    const email = _emailInput.value.trim();
+    if (!email) { _showEmailErr('Saisissez votre adresse email d\'abord.'); return; }
+    try {
+      await window.__FC.resetPassword(email);
+      _showEmailErr('📧 Email de réinitialisation envoyé !');
+      _emailErr.style.color = 'rgba(255,255,255,0.7)';
+    } catch(e) {
+      _showEmailErr('Erreur : ' + _friendlyAuthError(e.code));
+    }
+  });
+
+  _emailForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    _hideEmailErr();
+    const email = _emailInput.value.trim();
+    const pw    = _pwInput.value;
+    _emailBtn.disabled = true;
+    _emailBtn.textContent = '…';
+    try {
+      if (_emailMode === 'login') {
+        await window.__FC.signInEmail(email, pw);
+      } else {
+        await window.__FC.registerEmail(email, pw);
+      }
+    } catch(e) {
+      _showEmailErr(_friendlyAuthError(e.code));
+    } finally {
+      _emailBtn.disabled = false;
+      _emailBtn.textContent = _emailMode === 'login' ? 'Connexion par email' : 'Créer le compte';
+    }
+  });
+
+  function _friendlyAuthError(code) {
+    const map = {
+      'auth/user-not-found':       'Aucun compte avec cet email.',
+      'auth/wrong-password':       'Mot de passe incorrect.',
+      'auth/email-already-in-use': 'Cet email est déjà utilisé.',
+      'auth/invalid-email':        'Adresse email invalide.',
+      'auth/weak-password':        'Mot de passe trop court (6 caractères min).',
+      'auth/too-many-requests':    'Trop de tentatives. Réessayez plus tard.',
+      'auth/invalid-credential':   'Email ou mot de passe incorrect.',
+      'auth/network-request-failed': 'Erreur réseau. Vérifiez votre connexion.',
+    };
+    return map[code] || ('Erreur : ' + code);
+  }
 
   // Logout
   document.getElementById('btn-logout').addEventListener('click', () => window.__FC.signOut());
