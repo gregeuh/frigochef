@@ -3400,24 +3400,6 @@ body.compact .courses-card { padding: 9px 12px; }
           </div>
           <button class="profile-edit-btn" id="btn-profile-edit" title="Modifier le profil">✏️</button>
         </div>
-        <div class="profile-stats-row" id="profile-stats-row" style="display:none">
-          <div class="profile-stat-box">
-            <div class="profile-stat-val highlight" id="pstat-kcal">—</div>
-            <div class="profile-stat-lbl">kcal/j</div>
-          </div>
-          <div class="profile-stat-box">
-            <div class="profile-stat-val" id="pstat-meal">—</div>
-            <div class="profile-stat-lbl">kcal/rep</div>
-          </div>
-          <div class="profile-stat-box">
-            <div class="profile-stat-val" id="pstat-weight">—</div>
-            <div class="profile-stat-lbl">kg</div>
-          </div>
-          <div class="profile-stat-box">
-            <div class="profile-stat-val" id="pstat-imc">—</div>
-            <div class="profile-stat-lbl">IMC</div>
-          </div>
-        </div>
         <div class="profile-diet-row hidden" id="profile-diet-row"></div>
       </div>
       <!-- hidden legacy element for compat -->
@@ -3487,17 +3469,6 @@ body.compact .courses-card { padding: 9px 12px; }
       <div class="profile-section-title">Catégories alimentaires</div>
       <div class="cat-grid" id="profile-cat-grid"></div>
 
-      <div class="settings-group">
-        <button class="settings-row" id="btn-export-journal">
-          <span class="settings-label"><span class="settings-row-icon">📥</span>Exporter journal alimentaire (CSV)</span>
-          <span class="settings-chevron">›</span>
-        </button>
-        <button class="settings-row" id="btn-export-weight">
-          <span class="settings-label"><span class="settings-row-icon">📥</span>Exporter suivi poids (CSV)</span>
-          <span class="settings-chevron">›</span>
-        </button>
-      </div>
-
       <!-- Lier email/mot de passe pour connexion en PWA -->
       <div class="settings-group" id="link-email-group" style="display:none">
         <div class="profile-section-title">Connexion en mode PWA</div>
@@ -3525,171 +3496,11 @@ body.compact .courses-card { padding: 9px 12px; }
     </div>
   </div>
 
-<!-- ── TAB: SANTÉ ── -->
-<div class="tab-page" id="tab-sante">
-  <div class="tab-header">
-    <div class="tab-header-row">
-      <div class="tab-large-title">📊 Santé</div>
-      <button class="icon-btn" id="btn-add-meal" title="Ajouter un repas">＋</button>
-    </div>
-    <div class="tab-sub" id="sante-sub">Suivez vos calories et votre progression.</div>
-    <div class="cal-header-progress" id="cal-header-progress" style="display:none">
-      <div class="cal-hp-bar"><div class="cal-hp-fill" id="cal-hp-fill" style="width:0%"></div></div>
-      <div class="cal-hp-text"><span id="cal-hp-eaten">0 kcal mangés</span><span id="cal-hp-remain">— restants</span></div>
-    </div>
-    <div id="nutri-score-wrap" style="display:none;margin-top:6px">
-      <span class="nutri-score-badge" id="nutri-score-badge">A</span>
-      <span class="nutri-score-label" id="nutri-score-label">Score nutritionnel du jour</span>
-    </div>
-  </div>
-  <div class="tab-body" id="sante-body">
-    <!-- Calories ring -->
-    <div class="cal-ring-card" id="cal-ring-card">
-      <div class="cal-ring-wrap">
-        <svg class="cal-ring-svg" viewBox="0 0 120 120">
-          <circle class="cal-ring-bg" cx="60" cy="60" r="50"/>
-          <circle class="cal-ring-fill" id="cal-ring-fill" cx="60" cy="60" r="50" stroke-dasharray="314" stroke-dashoffset="314"/>
-        </svg>
-        <div class="cal-ring-center">
-          <div class="cal-ring-val" id="cal-ring-val">0</div>
-          <div class="cal-ring-lbl">kcal</div>
-        </div>
-      </div>
-      <div class="cal-ring-info">
-        <div class="cal-ring-goal" id="cal-ring-goal">— kcal objectif</div>
-        <div class="cal-ring-remain" id="cal-ring-remain">— kcal restants</div>
-        <div class="cal-ring-meals" id="cal-ring-meals">0 repas aujourd'hui</div>
-      </div>
-    </div>
-
-    <!-- Macros -->
-    <div class="macro-card" id="macro-card" style="display:none">
-      <div class="macro-title">Macronutriments</div>
-      <div class="macro-bars">
-        <div class="macro-row">
-          <div class="macro-label">🥩 Protéines</div>
-          <div class="macro-bar-wrap"><div class="macro-bar-fill protein" id="macro-prot-fill"></div></div>
-          <div class="macro-nums"><span id="macro-prot-val">0</span>/<span id="macro-prot-goal">—</span>g</div>
-        </div>
-        <div class="macro-row">
-          <div class="macro-label">🌾 Glucides</div>
-          <div class="macro-bar-wrap"><div class="macro-bar-fill carbs" id="macro-carb-fill"></div></div>
-          <div class="macro-nums"><span id="macro-carb-val">0</span>/<span id="macro-carb-goal">—</span>g</div>
-        </div>
-        <div class="macro-row">
-          <div class="macro-label">🫒 Lipides</div>
-          <div class="macro-bar-wrap"><div class="macro-bar-fill fat" id="macro-fat-fill"></div></div>
-          <div class="macro-nums"><span id="macro-fat-val">0</span>/<span id="macro-fat-goal">—</span>g</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Daily vitals -->
-    <div class="vitals-card" id="vitals-card">
-      <div class="vitals-card-header">
-        <div class="vitals-card-title">📊 Bilan du jour</div>
-        <button class="vitals-edit-btn" id="btn-open-vitals" style="display:none">✏️ Modifier</button>
-      </div>
-      <div id="vitals-display"></div>
-    </div>
-
-    <!-- Calories 7 jours -->
-    <div class="line-chart-card" id="cal-history-card" style="display:none">
-      <div class="line-chart-title">📈 Calories — 7 derniers jours</div>
-      <div class="line-chart-wrap" id="cal-history-chart"></div>
-    </div>
-
-    <!-- Weight tracking -->
-    <div class="weight-card" id="weight-card">
-      <div class="weight-card-header">
-        <div class="weight-card-title">⚖️ Suivi du poids</div>
-        <div style="display:flex;gap:6px;align-items:center">
-          <button class="weight-log-btn" id="btn-import-withings" title="Importer CSV Withings" onclick="document.getElementById('withings-file-input').click()">📲 CSV</button>
-          <input type="file" id="withings-file-input" accept=".csv" multiple style="display:none">
-          <button class="weight-log-btn withings-connect-btn" id="btn-connect-withings" title="Synchronisation automatique Withings" onclick="(function(){var u=window.__FC&&window.__FC.getUser&&window.__FC.getUser();if(!u)return;window.location.href='https://us-central1-frigochef-95045.cloudfunctions.net/withingsAuth?uid='+u.uid;})()">🔗 Withings auto</button>
-          <button class="weight-log-btn" id="btn-log-weight" onclick="openWeightModal()">+ Peser</button>
-        </div>
-      </div>
-      <div id="withings-status-bar" style="display:none;align-items:center;gap:6px;margin-bottom:10px;font-size:0.72rem;color:var(--green-dk)">
-        <span style="font-size:0.85rem">🔄</span>
-        <span id="withings-status-text">Synchro Withings active</span>
-      </div>
-      <div class="weight-progress-wrap" id="weight-progress-wrap" style="display:none">
-        <div class="weight-progress-labels">
-          <span id="weight-start-lbl">— kg</span>
-          <span id="weight-target-lbl" style="color:var(--green-dk);font-weight:700">→ — kg</span>
-        </div>
-        <div class="weight-progress-bar-bg">
-          <div class="weight-progress-bar-fill" id="weight-progress-fill"></div>
-        </div>
-        <div class="weight-progress-sub" id="weight-progress-sub"></div>
-      </div>
-      <div class="weight-chart" id="weight-chart" style="display:none"></div>
-      <div class="w-metrics-grid" id="weight-metrics" style="display:none"></div>
-      <div class="weight-empty" id="weight-empty">Pesez-vous pour commencer le suivi</div>
-    </div>
-
-    <!-- TDEE widget -->
-    <div class="withings-tdee-card" id="tdee-card" style="display:none">
-      <div class="withings-card-title">⚡ Dépense énergétique — Withings</div>
-      <div class="tdee-grid">
-        <div class="tdee-stat">
-          <div class="tdee-val" id="tdee-passive-val">—</div>
-          <div class="tdee-lbl">Métabolisme de base</div>
-        </div>
-        <div class="tdee-stat">
-          <div class="tdee-val" id="tdee-earned-val">—</div>
-          <div class="tdee-lbl">Activité physique</div>
-        </div>
-        <div class="tdee-stat tdee-highlight">
-          <div class="tdee-val" id="tdee-total-val">—</div>
-          <div class="tdee-lbl">TDEE total</div>
-        </div>
-        <div class="tdee-stat" id="tdee-net-stat">
-          <div class="tdee-val" id="tdee-net-val">—</div>
-          <div class="tdee-lbl">Balance calorique</div>
-        </div>
-      </div>
-      <div class="tdee-date" id="tdee-date"></div>
-    </div>
-
-    <!-- Sleep widget -->
-    <div class="withings-sleep-card" id="sleep-card" style="display:none">
-      <div class="withings-card-title">🌙 Sommeil — Withings</div>
-      <div class="sleep-summary" id="sleep-summary">
-        <div class="sleep-duration" id="sleep-duration">—</div>
-        <div class="sleep-stages" id="sleep-stages"></div>
-      </div>
-      <div class="sleep-bars" id="sleep-bars"></div>
-      <div class="tdee-date" id="sleep-date"></div>
-    </div>
-
-    <!-- Today's journal -->
-    <div class="journal-section">
-      <div class="journal-header">
-        <div class="journal-title">🍽️ Journal du jour</div>
-        <button class="journal-add-btn" id="btn-add-meal-2">＋ Ajouter</button>
-      </div>
-      <div id="journal-list"></div>
-    </div>
-
-    <!-- Tips -->
-    <div class="tips-card" id="tips-card" style="display:none"></div>
-  </div>
-</div>
 
   <!-- FAB Speed Dial -->
   <div class="fab-backdrop" id="fab-backdrop"></div>
   <div class="fab-wrap" id="fab-wrap">
     <div class="fab-actions">
-      <div class="fab-action">
-        <span class="fab-action-label">Ajouter un repas</span>
-        <button class="fab-action-btn repas" id="fab-repas">🍽️</button>
-      </div>
-      <div class="fab-action">
-        <span class="fab-action-label">Saisir mon poids</span>
-        <button class="fab-action-btn poids" id="fab-poids">⚖️</button>
-      </div>
       <div class="fab-action">
         <span class="fab-action-label">Liste de courses</span>
         <button class="fab-action-btn courses" id="fab-courses">🛒</button>
@@ -3732,10 +3543,6 @@ body.compact .courses-card { padding: 9px 12px; }
       <span class="tab-item-icon">🛒</span>
       <span class="tab-item-label">Courses</span>
     </button>
-    <button class="tab-item" data-tab="sante">
-      <span class="tab-item-icon">📊</span>
-      <span class="tab-item-label">Santé</span>
-    </button>
     <button class="tab-item" data-tab="profil">
       <span class="tab-item-icon">👤</span>
       <span class="tab-item-label">Profil</span>
@@ -3771,283 +3578,6 @@ body.compact .courses-card { padding: 9px 12px; }
       </div>
       <button class="cat-modal-save" id="cat-modal-save">Enregistrer la catégorie</button>
       <button class="cat-modal-cancel" id="cat-modal-cancel">Annuler</button>
-    </div>
-  </div>
-</div>
-
-<!-- ═══════════════ VITALS MODAL ═══════════════ -->
-<div id="vitals-modal-overlay" class="vitals-modal-overlay hidden">
-  <div class="vitals-modal-card">
-    <div class="vitals-modal-title">📊 Bilan du jour</div>
-
-    <!-- Énergie -->
-    <div class="vitals-section">
-      <span class="vitals-section-label">⚡ Comment vous sentez-vous ?</span>
-      <div class="energy-row" id="energy-row">
-        <button class="energy-btn" data-level="1" title="Épuisé">😴</button>
-        <button class="energy-btn" data-level="2" title="Fatigué">😕</button>
-        <button class="energy-btn" data-level="3" title="Normal">😐</button>
-        <button class="energy-btn" data-level="4" title="Bien">🙂</button>
-        <button class="energy-btn" data-level="5" title="Excellent">⚡</button>
-      </div>
-    </div>
-
-    <!-- Pas -->
-    <div class="vitals-section">
-      <span class="vitals-section-label">👣 Pas aujourd'hui</span>
-      <input id="vitals-inp-steps" class="vitals-inp" type="number" placeholder="8 000" min="0" max="100000">
-      <div class="steps-presets">
-        <button class="steps-preset-btn" data-steps="5000">5 000</button>
-        <button class="steps-preset-btn" data-steps="8000">8 000</button>
-        <button class="steps-preset-btn" data-steps="10000">10 000</button>
-        <button class="steps-preset-btn" data-steps="12000">12 000 +</button>
-      </div>
-    </div>
-
-    <!-- Fréquence cardiaque -->
-    <div class="vitals-section">
-      <span class="vitals-section-label">🫀 Fréquence cardiaque au repos</span>
-      <div style="display:flex;align-items:center;gap:10px">
-        <input id="vitals-inp-hr" class="vitals-inp" type="number" placeholder="60" min="30" max="200" style="width:100px;flex:none">
-        <span style="font-size:0.78rem;color:var(--ink3)">bpm</span>
-      </div>
-    </div>
-
-    <!-- Tension -->
-    <div class="vitals-section">
-      <span class="vitals-section-label">🩺 Tension artérielle</span>
-      <div class="bp-row">
-        <input id="vitals-inp-sys" class="vitals-inp bp" type="number" placeholder="120" min="60" max="220">
-        <span class="bp-sep">/</span>
-        <input id="vitals-inp-dia" class="vitals-inp bp" type="number" placeholder="80" min="40" max="140">
-        <span style="font-size:0.78rem;color:var(--ink3)">mmHg</span>
-      </div>
-    </div>
-
-    <!-- Entraînement -->
-    <div class="vitals-section">
-      <span class="vitals-section-label">🏃 Entraînement</span>
-      <div class="workout-chips" id="workout-chips">
-        <button class="workout-chip" data-type="Marche">🚶 Marche</button>
-        <button class="workout-chip" data-type="Course">🏃 Course</button>
-        <button class="workout-chip" data-type="Vélo">🚴 Vélo</button>
-        <button class="workout-chip" data-type="Natation">🏊 Natation</button>
-        <button class="workout-chip" data-type="Muscu">🏋️ Muscu</button>
-        <button class="workout-chip" data-type="Yoga">🧘 Yoga</button>
-        <button class="workout-chip" data-type="HIIT">💪 HIIT</button>
-        <button class="workout-chip" data-type="Autre">➕ Autre</button>
-      </div>
-      <div style="display:flex;align-items:center;gap:10px">
-        <input id="vitals-inp-duration" class="vitals-inp" type="number" placeholder="30" min="1" max="600" style="width:80px;flex:none">
-        <span style="font-size:0.78rem;color:var(--ink3)">minutes</span>
-      </div>
-    </div>
-
-    <button class="vitals-save-btn" id="vitals-save-btn">Enregistrer</button>
-    <button class="vitals-cancel-btn" id="vitals-cancel-btn">Annuler</button>
-  </div>
-</div>
-
-<!-- ═══════════════ ADD MEAL MODAL ═══════════════ -->
-<div id="meal-modal-overlay" class="meal-modal-overlay hidden">
-  <div class="meal-modal-card" style="max-height:95vh;overflow-y:auto">
-    <div class="meal-modal-title">Ajouter un repas</div>
-    <div class="meal-modal-body">
-
-      <!-- Type de repas -->
-      <div class="rf-field">
-        <label class="rf-label">Type de repas</label>
-        <div class="meal-type-pills" id="meal-type-pills">
-          <button class="meal-type-pill" data-val="petit-déjeuner">🌅 Matin</button>
-          <button class="meal-type-pill active" data-val="déjeuner">☀️ Midi</button>
-          <button class="meal-type-pill" data-val="collation">🍎 Collation</button>
-          <button class="meal-type-pill" data-val="dîner">🌙 Soir</button>
-          <button class="meal-type-pill" data-val="autre">➕ Autre</button>
-        </div>
-        <!-- Hidden select kept for saveAddMealModal compatibility -->
-        <select id="meal-inp-type" style="display:none">
-          <option value="petit-déjeuner">Petit-déj</option>
-          <option value="déjeuner" selected>Déjeuner</option>
-          <option value="collation">Collation</option>
-          <option value="dîner">Dîner</option>
-          <option value="autre">Autre</option>
-        </select>
-      </div>
-
-      <!-- Ingredient list (multi-ingredient builder) -->
-      <div id="meal-ingredients-wrap" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:10px;margin-bottom:10px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-          <span style="font-size:0.73rem;font-weight:700;color:var(--ink2)">🧱 Composition du repas</span>
-          <span id="meal-ingredients-total" style="font-size:0.75rem;font-weight:700;color:var(--green-dk)"></span>
-        </div>
-        <div id="meal-ingredients-items" style="display:flex;flex-direction:column;gap:4px"></div>
-      </div>
-
-      <!-- Repas récents -->
-      <div class="rf-field" id="meal-recent-section" style="display:none">
-        <label class="rf-label">Récents</label>
-        <div class="meal-recent-chips" id="meal-recent-chips"></div>
-      </div>
-
-      <!-- Nom du repas -->
-      <div class="rf-field">
-        <label class="rf-label" style="display:flex;align-items:center;justify-content:space-between">
-          Nom du repas *
-          <button class="meal-scanner-btn" id="meal-btn-scan">📷 Scanner</button>
-        </label>
-        <input id="meal-inp-name" class="inp" type="text" placeholder="Ex: Pâtes carbonara" autocomplete="off">
-        <div id="meal-kcal-suggestions" class="meal-suggestions hidden"></div>
-      </div>
-
-      <!-- Scanner view -->
-      <div id="meal-scanner-view">
-        <div id="meal-scanner-reader"></div>
-        <button class="meal-scanner-stop" id="meal-scanner-stop">⏹ Arrêter le scanner</button>
-      </div>
-
-      <!-- Portion adjuster (shown after barcode scan) -->
-      <div id="meal-portion-section" style="display:none">
-        <div class="meal-portion-row">
-          <label id="meal-portion-label" style="font-size:0.73rem;color:var(--ink3);flex:1">Portion (g)</label>
-          <input id="meal-inp-portion" class="inp" type="number" value="100" min="1" max="2000" style="width:90px;flex:none">
-        </div>
-        <!-- Household unit quick-pick buttons (shown when category detected from Open Food Facts) -->
-        <span id="meal-household-label" class="meal-household-section-label" style="display:none">Choisir une portion :</span>
-        <div id="meal-household-units" class="meal-household-units" style="display:none"></div>
-        <!-- Serving count buttons (shown when serving_quantity known from OFF) -->
-        <div id="meal-serving-count" style="display:none;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap">
-          <span style="font-size:0.73rem;color:var(--ink3)">Nb de portions indiquées :</span>
-          <div style="display:flex;gap:4px;flex-wrap:wrap">
-            <button class="meal-serving-btn" data-n="0.5" style="padding:3px 8px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface2);font-size:0.72rem;font-weight:600;cursor:pointer">½</button>
-            <button class="meal-serving-btn" data-n="1"   style="padding:3px 8px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface2);font-size:0.72rem;font-weight:600;cursor:pointer">1</button>
-            <button class="meal-serving-btn" data-n="2"   style="padding:3px 8px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface2);font-size:0.72rem;font-weight:600;cursor:pointer">2</button>
-            <button class="meal-serving-btn" data-n="3"   style="padding:3px 8px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface2);font-size:0.72rem;font-weight:600;cursor:pointer">3</button>
-            <button class="meal-serving-btn" data-n="4"   style="padding:3px 8px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface2);font-size:0.72rem;font-weight:600;cursor:pointer">4</button>
-          </div>
-          <span id="meal-serving-info" style="font-size:0.68rem;color:var(--ink3)"></span>
-        </div>
-      </div>
-
-      <!-- Add ingredient to list button (shown after barcode scan or suggestion) -->
-      <button id="btn-add-ingredient">➕ Ajouter cet ingrédient à ce repas</button>
-
-      <!-- Calories -->
-      <div class="rf-field">
-        <label class="rf-label" style="display:flex;align-items:center;gap:4px">
-          Calories (kcal) *
-          <span id="meal-kcal-source" class="meal-kcal-source hidden"></span>
-        </label>
-        <input id="meal-inp-kcal" class="inp" type="number" placeholder="650" min="0" max="5000">
-        <div class="meal-kcal-hint" id="meal-kcal-hint">Cherchez sur le packaging, Yuka ou MyFitnessPal</div>
-        <!-- Quick estimate buttons -->
-        <div class="meal-kcal-quick" style="margin-top:8px" id="meal-kcal-quick">
-          <button class="meal-kcal-quick-btn" data-kcal="350">🥗 Léger<br><small>350</small></button>
-          <button class="meal-kcal-quick-btn" data-kcal="600">🍽️ Normal<br><small>600</small></button>
-          <button class="meal-kcal-quick-btn" data-kcal="850">🍔 Copieux<br><small>850</small></button>
-          <button class="meal-kcal-quick-btn" data-kcal="1100">🎉 Festif<br><small>1100</small></button>
-        </div>
-      </div>
-
-      <!-- Macros -->
-      <div class="meal-macro-toggle" id="meal-macro-toggle">
-        <button class="meal-macro-toggle-btn" id="btn-toggle-macros">+ Ajouter les macros</button>
-      </div>
-      <div id="meal-macros-section" style="display:none">
-        <div style="display:flex;gap:10px">
-          <div class="rf-field" style="flex:1">
-            <label class="rf-label">Protéines (g)</label>
-            <input id="meal-inp-prot" class="inp" type="number" placeholder="30" min="0">
-          </div>
-          <div class="rf-field" style="flex:1">
-            <label class="rf-label">Glucides (g)</label>
-            <input id="meal-inp-carb" class="inp" type="number" placeholder="80" min="0">
-          </div>
-          <div class="rf-field" style="flex:1">
-            <label class="rf-label">Lipides (g)</label>
-            <input id="meal-inp-fat" class="inp" type="number" placeholder="20" min="0">
-          </div>
-        </div>
-      </div>
-      <button class="cat-modal-save" id="meal-modal-save">Ajouter au journal</button>
-      <button class="cat-modal-cancel" id="meal-modal-cancel">Annuler</button>
-    </div>
-  </div>
-</div>
-
-<!-- ═══════════════ WEIGHT LOG MODAL ═══════════════ -->
-<div id="weight-modal-overlay" class="meal-modal-overlay hidden">
-  <div class="meal-modal-card" style="max-height:90vh;overflow-y:auto">
-    <div class="meal-modal-title">⚖️ Enregistrer mon poids</div>
-    <div class="meal-modal-body">
-      <!-- Poids + cible -->
-      <div style="display:flex;gap:10px">
-        <div class="rf-field" style="flex:1">
-          <label class="rf-label">Poids actuel (kg) *</label>
-          <input id="weight-inp" class="inp" type="number" placeholder="70.5" min="30" max="300" step="0.1">
-        </div>
-        <div class="rf-field" style="flex:1">
-          <label class="rf-label">Poids cible (kg)</label>
-          <input id="target-weight-inp" class="inp" type="number" placeholder="65" min="30" max="300" step="0.1">
-        </div>
-      </div>
-
-      <!-- Withings toggle -->
-      <div class="weight-withings-toggle">
-        <button class="meal-macro-toggle-btn" id="btn-toggle-withings">
-          <span style="font-size:1rem">⚡</span> Données Withings / balance connectée
-        </button>
-      </div>
-
-      <div id="weight-withings-section" style="display:none;display:flex;flex-direction:column;gap:10px">
-        <!-- Composition corporelle -->
-        <div class="withings-section-label">🏋️ Composition corporelle</div>
-        <div style="display:flex;gap:10px">
-          <div class="rf-field" style="flex:1">
-            <label class="rf-label">Masse grasse (%)</label>
-            <input id="w-fat-pct" class="inp" type="number" placeholder="22.5" min="1" max="70" step="0.1">
-          </div>
-          <div class="rf-field" style="flex:1">
-            <label class="rf-label">Masse grasse (kg)</label>
-            <input id="w-fat-kg" class="inp" type="number" placeholder="15.8" min="0" max="200" step="0.1">
-          </div>
-        </div>
-        <div style="display:flex;gap:10px">
-          <div class="rf-field" style="flex:1">
-            <label class="rf-label">Masse musculaire (%)</label>
-            <input id="w-muscle-pct" class="inp" type="number" placeholder="45.0" min="1" max="80" step="0.1">
-          </div>
-          <div class="rf-field" style="flex:1">
-            <label class="rf-label">Masse musculaire (kg)</label>
-            <input id="w-muscle-kg" class="inp" type="number" placeholder="31.5" min="0" max="150" step="0.1">
-          </div>
-        </div>
-        <div style="display:flex;gap:10px">
-          <div class="rf-field" style="flex:1">
-            <label class="rf-label">Masse osseuse (kg)</label>
-            <input id="w-bone-kg" class="inp" type="number" placeholder="3.2" min="0" max="30" step="0.1">
-          </div>
-          <div class="rf-field" style="flex:1">
-            <label class="rf-label">Eau corporelle (%)</label>
-            <input id="w-water-pct" class="inp" type="number" placeholder="58.0" min="10" max="90" step="0.1">
-          </div>
-        </div>
-
-        <!-- Métabolisme -->
-        <div class="withings-section-label">⚡ Métabolisme</div>
-        <div style="display:flex;gap:10px">
-          <div class="rf-field" style="flex:1">
-            <label class="rf-label">Graisse viscérale (index)</label>
-            <input id="w-visceral" class="inp" type="number" placeholder="5" min="1" max="60" step="1">
-          </div>
-          <div class="rf-field" style="flex:1">
-            <label class="rf-label">Métabolisme de base (kcal)</label>
-            <input id="w-bmr" class="inp" type="number" placeholder="1650" min="800" max="5000" step="1">
-          </div>
-        </div>
-      </div>
-
-      <button class="cat-modal-save" id="weight-modal-save">Enregistrer</button>
-      <button class="cat-modal-cancel" id="weight-modal-cancel">Annuler</button>
     </div>
   </div>
 </div>
@@ -5846,7 +5376,6 @@ function openModal(r) {
       <div class="modal-actions">
         <button class="btn-modal-action btn-fav-modal" id="modal-fav">${isFav ? '⭐ Favori' : '☆ Favori'}</button>
         <button class="btn-modal-action btn-pdf" id="modal-pdf">⬇ PDF</button>
-        <button class="btn-modal-action" id="modal-add-journal" style="background:var(--green-l);color:var(--green-dk)">📊 Journal</button>
         ${customActions}
       </div>
       <button class="btn-close" id="modal-close" style="margin-top:8px">Fermer</button>
@@ -5863,11 +5392,6 @@ function openModal(r) {
     if (btn) btn.textContent = favorites.includes(String(r.id)) ? '⭐ Favori' : '☆ Favori';
   });
   document.getElementById('modal-pdf').addEventListener('click', () => exportPDF(r));
-  document.getElementById('modal-add-journal').addEventListener('click', () => {
-    closeModal();
-    openAddMealModal({ name: r.name, kcal: r.calories, protein: r.protein, carbs: r.carbs, fat: r.fat });
-    if (window.switchTabPublic) window.switchTabPublic('sante');
-  });
   if (r.isCustom) {
     document.getElementById('modal-edit').addEventListener('click', () => { closeModal(); openRecipeForm(r); });
     document.getElementById('modal-del').addEventListener('click', () => {
@@ -6189,7 +5713,6 @@ function applyProfileToUI() {
   if (!profile) return;
   updateShareBtn();
   renderProfileShareCard();
-  renderSante();
   updateNotifStatus();
 
   const GOAL_LABELS = {
@@ -7055,26 +6578,6 @@ function renderDashboard() {
   const greetEl = document.getElementById('dash-greeting');
   if (greetEl) greetEl.textContent = '🏠 Accueil';
 
-  // ── Calories card ──
-  const totalKcal = dailyLog.reduce((s, e) => s + (e.kcal || 0), 0);
-  const goal = profile?.dailyCalories || 0;
-  const calPct = goal ? Math.min(totalKcal / goal * 100, 100) : 0;
-  const calRemain = goal ? goal - totalKcal : null;
-  const calOver = goal && totalKcal > goal;
-
-  const calHtml = `
-    <div class="dash-card">
-      <div class="dash-card-title">🔥 Calories aujourd'hui</div>
-      <div class="dash-cal-row">
-        <div class="dash-cal-info">
-          <div class="dash-cal-val">${totalKcal}</div>
-          <div class="dash-cal-unit">${goal ? `kcal · objectif ${goal}` : 'kcal consommées'}</div>
-          ${goal ? `<div class="dash-cal-bar-wrap"><div class="dash-cal-bar${calOver ? ' over' : ''}" style="width:${calPct}%"></div></div>` : ''}
-          ${goal ? `<div style="font-size:0.75rem;color:${calOver ? 'var(--red)' : 'var(--ink3)'};margin-top:6px">${calOver ? `+${Math.abs(calRemain)} kcal de trop` : `${calRemain} kcal restantes`}</div>` : ''}
-        </div>
-      </div>
-    </div>`;
-
   // ── DLC alerts ──
   const allItems = [...fridge, ...pantry];
   const urgent = allItems.filter(i => i.dlc && dlcStatus(i.dlc)?.cls === 'dlc-urgent');
@@ -7149,10 +6652,6 @@ function renderDashboard() {
         <span class="dash-quick-btn-icon">🛍️</span>
         <span class="dash-quick-btn-label">Ajouter une course</span>
       </button>
-      <button class="dash-quick-btn" onclick="window.switchTabPublic('sante')">
-        <span class="dash-quick-btn-icon">📊</span>
-        <span class="dash-quick-btn-label">Voir ma santé</span>
-      </button>
       <button class="dash-quick-btn" onclick="window.switchTabPublic('recettes')">
         <span class="dash-quick-btn-icon">🍳</span>
         <span class="dash-quick-btn-label">Parcourir les recettes</span>
@@ -7174,10 +6673,6 @@ function renderDashboard() {
     <div style="font-size:1.3rem;font-weight:800;color:#fff;margin-bottom:4px">${greet}${nameStr ? `, ${nameStr}` : ''} 👋</div>
     <div style="font-size:0.82rem;color:rgba(255,255,255,0.75);margin-bottom:16px">${new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})}</div>
     <div style="display:flex;gap:10px">
-      <div style="flex:1;background:rgba(255,255,255,0.18);border-radius:14px;padding:10px 12px;text-align:center">
-        <div style="font-size:1.4rem;font-weight:800;color:#fff">${totalKcal}</div>
-        <div style="font-size:0.68rem;color:rgba(255,255,255,0.75);margin-top:2px">kcal aujourd'hui</div>
-      </div>
       <div style="flex:1;background:rgba(255,255,255,0.18);border-radius:14px;padding:10px 12px;text-align:center">
         <div style="font-size:1.4rem;font-weight:800;color:#fff">${todo.length}</div>
         <div style="font-size:0.68rem;color:rgba(255,255,255,0.75);margin-top:2px">courses à faire</div>
@@ -7209,315 +6704,9 @@ function renderDashboard() {
       </div>
     </div>` : '';
 
-  body.innerHTML = heroHtml + statHtml + weatherHtml + ceSoirHtml + (alerts.length ? dlcHtml : '') + coursesHtml + calHtml + quickHtml;
+  body.innerHTML = heroHtml + statHtml + weatherHtml + ceSoirHtml + (alerts.length ? dlcHtml : '') + coursesHtml + quickHtml;
 }
 
-function renderSante() {
-  if (!document.getElementById('tab-sante')) return;
-
-  // ── Daily vitals card ──
-  const vitalsDisplay = document.getElementById('vitals-display');
-  const vitalsEditBtn = document.getElementById('btn-open-vitals');
-  if (vitalsDisplay) {
-    const ENERGY_EMOJI = ['','😴','😕','😐','🙂','⚡'];
-    const ENERGY_LABEL = ['','Épuisé','Fatigué','Normal','Bien','Excellent'];
-    const hasData = dailyVitals && (dailyVitals.energy || dailyVitals.steps || dailyVitals.hr || dailyVitals.bpSys || dailyVitals.workoutType);
-    if (vitalsEditBtn) vitalsEditBtn.style.display = hasData ? '' : 'none';
-    if (!hasData) {
-      vitalsDisplay.innerHTML = `
-        <div class="vitals-empty-state">
-          <div class="vitals-empty-icon">🌿</div>
-          <div class="vitals-empty-text">Aucune donnée saisie aujourd'hui</div>
-          <button class="vitals-cta-btn" id="btn-vitals-cta">➕ Saisir mon bilan</button>
-        </div>`;
-      const cta = document.getElementById('btn-vitals-cta');
-      if (cta) cta.addEventListener('click', openVitalsModal);
-    } else {
-      const v = dailyVitals;
-      const energyHtml = v.energy ? `<div class="vitals-tile"><div class="vitals-tile-label">Énergie</div><div class="vitals-tile-value">${ENERGY_EMOJI[v.energy]} <span style="font-size:0.78rem;font-weight:500;color:var(--ink2)">${ENERGY_LABEL[v.energy]}</span></div></div>` : '';
-      const stepsHtml  = v.steps  ? `<div class="vitals-tile"><div class="vitals-tile-label">Pas</div><div class="vitals-tile-value">${v.steps.toLocaleString('fr-FR')}<span class="vitals-tile-unit">pas</span></div></div>` : '';
-      const hrHtml     = v.hr     ? `<div class="vitals-tile"><div class="vitals-tile-label">FC repos</div><div class="vitals-tile-value">${v.hr}<span class="vitals-tile-unit">bpm</span></div></div>` : '';
-      const bpHtml     = v.bpSys  ? `<div class="vitals-tile"><div class="vitals-tile-label">Tension</div><div class="vitals-tile-value">${v.bpSys}/${v.bpDia}<span class="vitals-tile-unit">mmHg</span></div></div>` : '';
-      const wrkHtml    = v.workoutType ? `<div class="vitals-tile vitals-workout-tile"><div class="vitals-tile-label">Entraînement</div><div class="vitals-tile-value">${v.workoutType}${v.workoutDuration ? ` · ${v.workoutDuration} min` : ''}</div></div>` : '';
-      vitalsDisplay.innerHTML = `<div class="vitals-grid">${energyHtml}${stepsHtml}${hrHtml}${bpHtml}${wrkHtml}</div>`;
-    }
-  }
-
-  // ── Calories ring ──
-  const totalKcal = dailyLog.reduce((s, e) => s + (e.kcal || 0), 0);
-  const goal = profile?.dailyCalories || 0;
-  document.getElementById('cal-ring-val').textContent = totalKcal;
-
-  // ── Header calorie progress bar ──
-  const hpWrap = document.getElementById('cal-header-progress');
-  const hpFill = document.getElementById('cal-hp-fill');
-  const hpEaten = document.getElementById('cal-hp-eaten');
-  const hpRemain = document.getElementById('cal-hp-remain');
-  if (goal && hpWrap) {
-    hpWrap.style.display = 'block';
-    const pctBar = Math.min(totalKcal / goal * 100, 100);
-    hpFill.style.width = pctBar + '%';
-    hpFill.classList.toggle('over', totalKcal > goal);
-    hpEaten.textContent = `${totalKcal} kcal`;
-    const rem = goal - totalKcal;
-    hpRemain.textContent = rem >= 0 ? `${rem} restants / ${goal}` : `+${Math.abs(rem)} kcal de trop`;
-  } else if (hpWrap) {
-    hpWrap.style.display = 'none';
-  }
-  if (goal) {
-    const pct = Math.min(totalKcal / goal, 1);
-    const circumference = 2 * Math.PI * 50; // r=50
-    const offset = circumference - pct * circumference;
-    const fill = document.getElementById('cal-ring-fill');
-    fill.style.strokeDashoffset = offset;
-    fill.classList.toggle('over', totalKcal > goal);
-    document.getElementById('cal-ring-goal').textContent = `${goal} kcal objectif`;
-    const remain = goal - totalKcal;
-    const remEl = document.getElementById('cal-ring-remain');
-    remEl.textContent = remain >= 0 ? `${remain} kcal restants` : `${Math.abs(remain)} kcal de trop`;
-    remEl.classList.toggle('over', remain < 0);
-  } else {
-    document.getElementById('cal-ring-goal').textContent = 'Configurez votre profil';
-    document.getElementById('cal-ring-remain').textContent = 'pour voir l\'objectif';
-  }
-  document.getElementById('cal-ring-meals').textContent = `${dailyLog.length} repas aujourd'hui`;
-
-  // ── Nutri Score ──
-  const scoreWrap = document.getElementById('nutri-score-wrap');
-  const ns = calcNutriScore();
-  if (ns) {
-    scoreWrap.style.display = 'flex';
-    scoreWrap.style.alignItems = 'center';
-    const badge = document.getElementById('nutri-score-badge');
-    badge.textContent = ns.grade;
-    badge.style.background = ns.color;
-    document.getElementById('nutri-score-label').textContent =
-      `Score du jour : ${ns.score}/100`;
-  } else {
-    scoreWrap.style.display = 'none';
-  }
-
-  // ── Macros ──
-  const macroTargets = getMacroTargets();
-  const macroCard = document.getElementById('macro-card');
-  if (macroTargets) {
-    macroCard.style.display = 'block';
-    const totProt = dailyLog.reduce((s, e) => s + (e.protein || 0), 0);
-    const totCarb = dailyLog.reduce((s, e) => s + (e.carbs  || 0), 0);
-    const totFat  = dailyLog.reduce((s, e) => s + (e.fat    || 0), 0);
-    document.getElementById('macro-prot-val').textContent  = totProt;
-    document.getElementById('macro-prot-goal').textContent = macroTargets.protein;
-    document.getElementById('macro-carb-val').textContent  = totCarb;
-    document.getElementById('macro-carb-goal').textContent = macroTargets.carbs;
-    document.getElementById('macro-fat-val').textContent   = totFat;
-    document.getElementById('macro-fat-goal').textContent  = macroTargets.fat;
-    document.getElementById('macro-prot-fill').style.width = Math.min(totProt / macroTargets.protein * 100, 100) + '%';
-    document.getElementById('macro-carb-fill').style.width = Math.min(totCarb / macroTargets.carbs  * 100, 100) + '%';
-    document.getElementById('macro-fat-fill').style.width  = Math.min(totFat  / macroTargets.fat    * 100, 100) + '%';
-  } else {
-    macroCard.style.display = 'none';
-  }
-
-  // ── Weight tracking ──
-  const wChart = document.getElementById('weight-chart');
-  const wEmpty = document.getElementById('weight-empty');
-  const wProgress = document.getElementById('weight-progress-wrap');
-  if (weightLog.length > 0) {
-    wEmpty.style.display = 'none';
-    const sorted = [...weightLog].sort((a, b) => a.date.localeCompare(b.date));
-    const latest = sorted[sorted.length - 1];
-    const targetW = profile?.targetWeight;
-    const startW  = profile?.weight || sorted[0].weight;
-    if (targetW && startW) {
-      wProgress.style.display = 'block';
-      document.getElementById('weight-start-lbl').textContent = `${startW} kg`;
-      document.getElementById('weight-target-lbl').textContent = `→ ${targetW} kg`;
-      const total = Math.abs(targetW - startW);
-      const done  = Math.abs(latest.weight - startW);
-      const pct   = total > 0 ? Math.min(done / total * 100, 100) : 100;
-      document.getElementById('weight-progress-fill').style.width = pct + '%';
-      const diff = (latest.weight - startW).toFixed(1);
-      const sign = diff > 0 ? '+' : '';
-      document.getElementById('weight-progress-sub').textContent =
-        `${latest.weight} kg actuellement · ${sign}${diff} kg depuis le début`;
-    } else {
-      wProgress.style.display = 'none';
-    }
-    // SVG line chart for weight
-    const last10 = sorted.slice(-10);
-    const minW = Math.min(...last10.map(e => e.weight));
-    const maxW = Math.max(...last10.map(e => e.weight));
-    const range = maxW - minW || 1;
-    const W = 280, H = 65, PAD = 10;
-    const pts = last10.map((e, i) => {
-      const x = PAD + (i / Math.max(last10.length - 1, 1)) * (W - PAD*2);
-      const y = H - PAD - ((e.weight - minW) / range) * (H - PAD*2);
-      return { x, y, e };
-    });
-    const polyline = pts.map(p => `${p.x},${p.y}`).join(' ');
-    const area = `${pts[0].x},${H} ${polyline} ${pts[pts.length-1].x},${H}`;
-    wChart.style.display = 'block';
-    wChart.style.height = 'auto';
-    wChart.innerHTML = `<svg class="weight-line-svg" viewBox="0 0 ${W} ${H}">
-      <defs>
-        <linearGradient id="wGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#00875A" stop-opacity="0.3"/>
-          <stop offset="100%" stop-color="#00875A" stop-opacity="0"/>
-        </linearGradient>
-      </defs>
-      <polygon points="${area}" fill="url(#wGrad)"/>
-      <polyline points="${polyline}" fill="none" stroke="#00875A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      ${pts.map((p,i) => `
-        <circle cx="${p.x}" cy="${p.y}" r="3" fill="#00875A"/>
-        <text x="${p.x}" y="${p.y - 6}" text-anchor="middle" font-size="8" fill="#64748B">${p.e.weight}</text>
-        ${i % 2 === 0 ? `<text x="${p.x}" y="${H - 1}" text-anchor="middle" font-size="7" fill="#64748B">${p.e.date.slice(5)}</text>` : ''}
-      `).join('')}
-    </svg>`;
-
-    // Withings metrics from latest entry
-    const wMetrics = document.getElementById('weight-metrics');
-    const chips = [
-      latest.fatPct    != null ? { icon:'🟡', label:'Graisse',  val:`${latest.fatPct}%`,    color:'#FFD43B' } : null,
-      latest.musclePct != null ? { icon:'🔴', label:'Muscle',   val:`${latest.musclePct}%`, color:'#FF8C42' } : null,
-      latest.waterPct  != null ? { icon:'🔵', label:'Eau',      val:`${latest.waterPct}%`,  color:'#74C0FC' } : null,
-      latest.fatKg     != null ? { icon:'',   label:'M. grasse',val:`${latest.fatKg} kg`,   color:'#FFA94D' } : null,
-      latest.muscleKg  != null ? { icon:'',   label:'M. musc.', val:`${latest.muscleKg} kg`,color:'#FF8C42' } : null,
-      latest.boneKg    != null ? { icon:'',   label:'Os',       val:`${latest.boneKg} kg`,  color:'#868E96' } : null,
-      latest.visceral  != null ? { icon:'',   label:'Visc.',    val:`idx ${latest.visceral}`,color:'#E64980'} : null,
-      latest.bmr       != null ? { icon:'',   label:'BMR',      val:`${latest.bmr} kcal`,   color:'#9775FA' } : null,
-    ].filter(Boolean);
-    if (chips.length) {
-      wMetrics.style.display = 'flex';
-      wMetrics.innerHTML = chips.map(c =>
-        `<div class="w-metric-chip" style="border-color:${c.color}22;color:${c.color}">
-          <span class="w-metric-val">${c.val}</span>
-          <span class="w-metric-lbl">${c.label}</span>
-        </div>`
-      ).join('');
-    } else {
-      wMetrics.style.display = 'none';
-    }
-  } else {
-    wEmpty.style.display = 'block';
-    wChart.style.display = 'none';
-    wProgress.style.display = 'none';
-    document.getElementById('weight-metrics').style.display = 'none';
-  }
-
-  updateWithingsBtn?.();
-
-  // ── Withings status bar ──
-  const statusBar  = document.getElementById('withings-status-bar');
-  const statusText = document.getElementById('withings-status-text');
-  if (statusBar && statusText) {
-    if (withingsIsConnected) {
-      statusBar.style.display = 'flex';
-      if (withingsSyncedAt) {
-        const mins = Math.round((Date.now() - withingsSyncedAt) / 60000);
-        const ago  = mins < 2 ? 'à l\'instant' : mins < 60 ? `il y a ${mins} min` :
-                     mins < 1440 ? `il y a ${Math.round(mins/60)}h` : `il y a ${Math.round(mins/1440)}j`;
-        statusText.textContent = `Synchro active · dernière mise à jour ${ago}`;
-      } else {
-        statusText.textContent = 'Withings connecté · synchro active';
-      }
-    } else {
-      statusBar.style.display = 'none';
-    }
-  }
-
-  // ── TDEE (Withings activity) ──
-  const tdeeCard = document.getElementById('tdee-card');
-  if (withingsActivity && withingsActivity.length) {
-    tdeeCard.style.display = 'block';
-    const today = todayDate();
-    let act = withingsActivity.find(e => e.date === today);
-    if (!act) act = withingsActivity[withingsActivity.length - 1];
-    document.getElementById('tdee-passive-val').textContent = act.passive ? `${Math.round(act.passive)} kcal` : '—';
-    document.getElementById('tdee-earned-val').textContent  = act.earned  ? `${Math.round(act.earned)} kcal`  : '—';
-    document.getElementById('tdee-total-val').textContent   = act.tdee    ? `${Math.round(act.tdee)} kcal`    : '—';
-    const netStat = document.getElementById('tdee-net-stat');
-    if (act.tdee && totalKcal > 0) {
-      const net = totalKcal - act.tdee;
-      const netEl = document.getElementById('tdee-net-val');
-      netEl.textContent = (net >= 0 ? '+' : '') + Math.round(net) + ' kcal';
-      netEl.style.color = net > 0 ? 'var(--red)' : 'var(--green-dk)';
-      netStat.style.display = 'block';
-    } else {
-      netStat.style.display = 'none';
-    }
-    document.getElementById('tdee-date').textContent = act.date !== today ? `Dernière donnée : ${act.date}` : "Aujourd'hui";
-  } else {
-    tdeeCard.style.display = 'none';
-  }
-
-  // ── Sleep (Withings) ──
-  const sleepCard = document.getElementById('sleep-card');
-  if (withingsSleep && withingsSleep.length) {
-    sleepCard.style.display = 'block';
-    const today = todayDate();
-    let sl = withingsSleep.find(e => e.date === today);
-    if (!sl) sl = withingsSleep[withingsSleep.length - 1];
-    const h = Math.floor(sl.totalMin / 60);
-    const m = sl.totalMin % 60;
-    document.getElementById('sleep-duration').textContent = `${h}h${m.toString().padStart(2,'0')}`;
-    const stages = [];
-    if (sl.deepMin)  stages.push(`<span class="sleep-stage-pill deep">🔵 Profond ${sl.deepPct}%</span>`);
-    if (sl.remMin)   stages.push(`<span class="sleep-stage-pill rem">🟢 REM ${sl.remPct}%</span>`);
-    if (sl.awakeMin) stages.push(`<span class="sleep-stage-pill wake">Éveillé ${sl.awakeMin} min</span>`);
-    if (sl.hrAvg)    stages.push(`<span class="sleep-stage-pill">❤️ ${sl.hrAvg} bpm</span>`);
-    document.getElementById('sleep-stages').innerHTML = stages.join('');
-    const totalBar = sl.lightMin + sl.deepMin + sl.remMin + sl.awakeMin || 1;
-    document.getElementById('sleep-bars').innerHTML = [
-      { cls: 'light', w: sl.lightMin / totalBar * 100 },
-      { cls: 'deep',  w: sl.deepMin  / totalBar * 100 },
-      { cls: 'rem',   w: sl.remMin   / totalBar * 100 },
-      { cls: 'wake',  w: sl.awakeMin / totalBar * 100 },
-    ].filter(s => s.w > 0)
-     .map(s => `<div class="sleep-bar-seg ${s.cls}" style="width:${s.w.toFixed(1)}%"></div>`).join('');
-    document.getElementById('sleep-date').textContent = sl.date !== today ? `Dernière nuit : ${sl.date}` : "Cette nuit";
-  } else {
-    sleepCard.style.display = 'none';
-  }
-
-  // ── Journal ──
-  const jList = document.getElementById('journal-list');
-  if (dailyLog.length === 0) {
-    jList.innerHTML = `<div class="journal-empty">Aucun repas enregistré — appuyez sur ＋ pour commencer</div>`;
-  } else {
-    jList.innerHTML = dailyLog.map((entry, i) => {
-      const icon = MEAL_ICONS[entry.type] || '🍽️';
-      const macroStr = (entry.protein || entry.carbs || entry.fat)
-        ? `P:${entry.protein||0}g G:${entry.carbs||0}g L:${entry.fat||0}g`
-        : '';
-      const typeLabelMap = { 'petit-déjeuner':'Petit-déj', 'déjeuner':'Déjeuner', 'collation':'Collation', 'dîner':'Dîner', 'autre':'Autre' };
-      const typeLabel = entry.type ? typeLabelMap[entry.type] || entry.type : '';
-      return `<div class="journal-entry">
-        <div class="journal-entry-icon">${icon}</div>
-        <div class="journal-entry-info">
-          <div class="journal-entry-name">${esc(entry.name)}${typeLabel ? `<span class="journal-type-badge">${esc(typeLabel)}</span>` : ''}</div>
-          <div class="journal-entry-meta">${esc(macroStr)}</div>
-        </div>
-        <div class="journal-entry-kcal">${entry.kcal} kcal</div>
-        <button class="journal-entry-del" data-idx="${i}" title="Supprimer">🗑</button>
-      </div>`;
-    }).join('');
-    jList.querySelectorAll('.journal-entry-del').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const idx = parseInt(btn.dataset.idx);
-        dailyLog = dailyLog.filter((_, i) => i !== idx);
-        await window.__FC.saveDailyLog(user.uid, todayDate(), dailyLog);
-        renderSante();
-      });
-    });
-  }
-
-  // ── Tips ──
-  const tipsCard = document.getElementById('tips-card');
-  const tips = GOAL_TIPS[profile?.goal] || GOAL_TIPS.maintain;
-  tipsCard.style.display = 'flex';
-  tipsCard.innerHTML = `<div class="profile-section-title" style="margin:0 0 6px">💡 Conseils</div>` +
-    tips.map(t => `<div class="tip-item"><div class="tip-icon">${t.icon}</div><div class="tip-text">${t.text}</div></div>`).join('');
-}
 
 /* ── Add meal modal — calorie suggestions ── */
 let mealSuggestTimer = null;
@@ -8092,7 +7281,6 @@ async function saveAddMealModal() {
   const entry = { id: Date.now().toString(), name, kcal, type, protein, carbs, fat, addedAt: Date.now() };
   dailyLog = [...dailyLog, entry];
   await window.__FC.saveDailyLog(user.uid, todayDate(), dailyLog);
-  renderSante();
   loadCalHistory();
   closeAddMealModal();
   toast(`✓ ${name} ajouté au journal`, 'success');
@@ -8152,17 +7340,11 @@ async function saveWeightModal() {
   }
   await window.__FC.saveProfile(user.uid, profile);
   applyProfileToUI();
-  renderSante();
   closeWeightModal();
   toast(`⚖️ ${w} kg enregistré`, 'success');
   haptic(15);
 }
 
-/* Public function to add a recipe to the journal from anywhere */
-function addRecipeToJournal(name, kcal, protein, carbs, fat) {
-  openAddMealModal({ name, kcal, protein, carbs, fat, fromRecipe: true });
-  if (window.switchTabPublic) window.switchTabPublic('sante');
-}
 
 /* ═══════════════════════════════════════════════════
    MEAL PLANNER
@@ -8582,8 +7764,6 @@ async function importWithingsFiles(files) {
     await window.__FC.saveWithingsData(user.uid, withingsData);
   }
 
-  renderSante();
-
   const parts = [];
   if (weightCount) parts.push(`${weightCount} mesures de poids`);
   if (heightResult) parts.push(`taille ${(heightResult.height * 100).toFixed(0)} cm`);
@@ -8670,37 +7850,6 @@ function _initApp() {
         userCategories = cats; invalidateCategoriesCache(); renderProfileCats();
       });
 
-      loadCalHistory();
-
-      if (unsubDailyLog) unsubDailyLog();
-      unsubDailyLog = window.__FC.loadDailyLog(fbUser.uid, todayDate(), entries => {
-        dailyLog = entries; renderSante(); renderDashboard();
-      });
-
-      if (unsubWeightLog) unsubWeightLog();
-      unsubWeightLog = window.__FC.loadWeightLog(fbUser.uid, entries => {
-        weightLog = entries; renderSante();
-      });
-
-      if (unsubWithingsData) unsubWithingsData();
-      unsubWithingsData = window.__FC.loadWithingsData(fbUser.uid, data => {
-        withingsActivity = data?.activity || [];
-        withingsSleep    = data?.sleep    || [];
-        withingsSyncedAt = data?.updatedAt || null;
-        renderSante();
-      });
-
-      if (unsubWithingsConnected) unsubWithingsConnected();
-      unsubWithingsConnected = window.__FC.loadWithingsConnected(fbUser.uid, connected => {
-        withingsIsConnected = connected;
-        renderSante();
-      });
-
-      if (unsubVitals) { unsubVitals(); unsubVitals = null; }
-      unsubVitals = window.__FC.loadDailyVitals(fbUser.uid, todayDate(), v => {
-        dailyVitals = v; renderSante();
-      });
-
       // Apply compact mode preference
       const compactToggle = document.getElementById('toggle-compact');
       if (compactToggle) {
@@ -8739,13 +7888,6 @@ function _initApp() {
       if (unsubShopping) { unsubShopping(); unsubShopping = null; }
       freezer = []; if (unsubFreezer) { unsubFreezer(); unsubFreezer = null; }
       userCategories = []; invalidateCategoriesCache(); if (unsubCategories) { unsubCategories(); unsubCategories = null; }
-      dailyLog = []; if (unsubDailyLog) { unsubDailyLog(); unsubDailyLog = null; }
-      weightLog = []; if (unsubWeightLog) { unsubWeightLog(); unsubWeightLog = null; }
-      withingsActivity = []; withingsSleep = []; withingsIsConnected = false; withingsSyncedAt = null;
-      if (unsubWithingsData) { unsubWithingsData(); unsubWithingsData = null; }
-      if (unsubWithingsConnected) { unsubWithingsConnected(); unsubWithingsConnected = null; }
-      dailyVitals = null;
-      if (unsubVitals) { unsubVitals(); unsubVitals = null; }
     }
   });
 
@@ -8878,8 +8020,6 @@ function _initApp() {
 
   // Logout
   document.getElementById('btn-logout').addEventListener('click', () => window.__FC.signOut());
-  document.getElementById('btn-export-journal').addEventListener('click', exportJournalCSV);
-  document.getElementById('btn-export-weight').addEventListener('click', exportWeightCSV);
 
   // Bouton profil
   document.getElementById('btn-profile').addEventListener('click', showOnboarding);
@@ -9333,8 +8473,6 @@ function _initApp() {
     document.getElementById('fab-frigo').addEventListener('click',   () => { closeFab(); openAddModal('frigo'); });
     document.getElementById('fab-placard').addEventListener('click', () => { closeFab(); openAddModal('placard'); });
     document.getElementById('fab-congelo').addEventListener('click', () => { closeFab(); openAddModal('congelo'); });
-    document.getElementById('fab-repas').addEventListener('click', () => { closeFab(); openAddMealModal(); });
-    document.getElementById('fab-poids').addEventListener('click', () => { closeFab(); openWeightModal(); });
     document.getElementById('fab-courses').addEventListener('click', () => {
       closeFab();
       if (window.switchTabPublic) window.switchTabPublic('courses');
@@ -9630,7 +8768,7 @@ function _initApp() {
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAddModal(); });
 
   // Bottom nav tabs
-  const TAB_ORDER = ['frigo', 'recettes', 'courses', 'sante', 'profil'];
+  const TAB_ORDER = ['frigo', 'recettes', 'courses', 'profil'];
   function movePill(tabName) {
     const pill = document.getElementById('tab-pill');
     const item = document.querySelector(`.tab-item[data-tab="${tabName}"]`);
@@ -9709,199 +8847,6 @@ function _initApp() {
     const allRecipes = [...(userRecipes || []), ...(recipes || [])];
     renderRecipePickerList(allRecipes, e.target.value);
   });
-
-  // ── SANTÉ / MEAL JOURNAL ──
-  document.getElementById('btn-add-meal').addEventListener('click', () => openAddMealModal());
-  document.getElementById('btn-add-meal-2').addEventListener('click', () => openAddMealModal());
-  // ── Vitals modal ──
-  document.getElementById('btn-open-vitals').addEventListener('click', openVitalsModal);
-  document.getElementById('vitals-cancel-btn').addEventListener('click', closeVitalsModal);
-  document.getElementById('vitals-save-btn').addEventListener('click', saveVitalsModal);
-  document.getElementById('vitals-modal-overlay').addEventListener('click', e => {
-    if (e.target === document.getElementById('vitals-modal-overlay')) closeVitalsModal();
-  });
-  document.getElementById('energy-row').addEventListener('click', e => {
-    const btn = e.target.closest('.energy-btn');
-    if (!btn) return;
-    document.querySelectorAll('#energy-row .energy-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-  });
-  document.getElementById('workout-chips').addEventListener('click', e => {
-    const chip = e.target.closest('.workout-chip');
-    if (!chip) return;
-    const isActive = chip.classList.contains('active');
-    document.querySelectorAll('#workout-chips .workout-chip').forEach(b => b.classList.remove('active'));
-    if (!isActive) { chip.classList.add('active'); _vitalsWorkoutType = chip.dataset.type; }
-    else _vitalsWorkoutType = null;
-  });
-  document.querySelectorAll('.steps-preset-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.steps-preset-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      document.getElementById('vitals-inp-steps').value = btn.dataset.steps;
-    });
-  });
-  document.getElementById('vitals-inp-steps').addEventListener('input', () => {
-    document.querySelectorAll('.steps-preset-btn').forEach(b => b.classList.remove('active'));
-  });
-
-  document.getElementById('meal-modal-overlay').addEventListener('click', e => {
-    if (e.target === document.getElementById('meal-modal-overlay')) closeAddMealModal();
-  });
-  document.getElementById('meal-modal-cancel').addEventListener('click', closeAddMealModal);
-  document.getElementById('meal-modal-save').addEventListener('click', saveAddMealModal);
-  document.getElementById('meal-inp-name').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('meal-inp-kcal').focus(); });
-  document.getElementById('meal-inp-name').addEventListener('input', e => {
-    clearTimeout(mealSuggestTimer);
-    const q = e.target.value.trim();
-    if (!q || q.length < 2) { hideMealSuggestions(); return; }
-    mealSuggestTimer = setTimeout(() => fetchMealSuggestions(q), 350);
-  });
-  document.getElementById('meal-inp-kcal').addEventListener('focus', hideMealSuggestions);
-  document.getElementById('btn-toggle-macros').addEventListener('click', () => {
-    const sec = document.getElementById('meal-macros-section');
-    const btn = document.getElementById('btn-toggle-macros');
-    const visible = sec.style.display !== 'none';
-    sec.style.display = visible ? 'none' : 'block';
-    btn.textContent = visible ? '+ Ajouter les macros' : '− Masquer les macros';
-  });
-
-  // ── Meal type pills ──
-  document.querySelectorAll('#meal-type-pills .meal-type-pill').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('#meal-type-pills .meal-type-pill').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      document.getElementById('meal-inp-type').value = btn.dataset.val;
-    });
-  });
-
-  // ── Quick kcal buttons ──
-  document.querySelectorAll('#meal-kcal-quick .meal-kcal-quick-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('#meal-kcal-quick .meal-kcal-quick-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      document.getElementById('meal-inp-kcal').value = btn.dataset.kcal;
-      hideMealSuggestions();
-    });
-  });
-
-  // ── Meal barcode scanner ──
-  document.getElementById('meal-btn-scan').addEventListener('click', () => {
-    const view = document.getElementById('meal-scanner-view');
-    if (view.classList.contains('active')) {
-      stopMealScanner();
-    } else {
-      startMealScanner();
-    }
-  });
-  document.getElementById('meal-scanner-stop').addEventListener('click', stopMealScanner);
-
-  // ── Portion adjuster (recalculates kcal after barcode scan) ──
-  function applyPortion(grams) {
-    const n = window._mealScannerNutrients;
-    if (!n) return;
-    document.getElementById('meal-inp-portion').value = grams;
-    document.getElementById('meal-inp-kcal').value = Math.round(n.kcalPer100 * grams / 100);
-    document.getElementById('meal-inp-prot').value = Math.round(n.protPer100 * grams / 100) || '';
-    document.getElementById('meal-inp-carb').value = Math.round(n.carbPer100 * grams / 100) || '';
-    document.getElementById('meal-inp-fat').value  = Math.round(n.fatPer100  * grams / 100) || '';
-  }
-  document.getElementById('meal-inp-portion').addEventListener('input', e => {
-    applyPortion(parseFloat(e.target.value) || 100);
-    // Clear household/serving active state when manually editing
-    document.querySelectorAll('.meal-household-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.meal-serving-btn').forEach(b => b.style.borderColor = '');
-  });
-  // Household unit buttons (delegated — buttons are dynamically created)
-  document.getElementById('meal-household-units').addEventListener('click', e => {
-    const btn = e.target.closest('.meal-household-btn');
-    if (!btn) return;
-    document.querySelectorAll('.meal-household-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.meal-serving-btn').forEach(b => b.style.borderColor = '');
-    btn.classList.add('active');
-    applyPortion(parseFloat(btn.dataset.grams));
-  });
-  document.getElementById('meal-serving-count').addEventListener('click', e => {
-    const btn = e.target.closest('.meal-serving-btn');
-    if (!btn) return;
-    const n = window._mealScannerNutrients;
-    if (!n?.servingQty) return;
-    document.querySelectorAll('.meal-household-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.meal-serving-btn').forEach(b => b.style.borderColor = '');
-    btn.style.borderColor = 'var(--green)';
-    applyPortion(Math.round(parseFloat(btn.dataset.n) * n.servingQty));
-  });
-
-  // ── Multi-ingredient builder ──
-  document.getElementById('btn-add-ingredient').addEventListener('click', e => {
-    const btn = e.currentTarget;
-    if (btn.disabled) return;
-    const name = document.getElementById('meal-inp-name').value.trim();
-    const kcal = parseInt(document.getElementById('meal-inp-kcal').value) || 0;
-    if (!name || !kcal) { toast('Scannez ou saisissez un ingrédient d\'abord', 'error'); return; }
-    btn.disabled = true;
-    _mealIngredients.push({
-      name,
-      grams: parseFloat(document.getElementById('meal-inp-portion').value) || 100,
-      kcal,
-      prot: parseInt(document.getElementById('meal-inp-prot').value) || 0,
-      carb: parseInt(document.getElementById('meal-inp-carb').value) || 0,
-      fat:  parseInt(document.getElementById('meal-inp-fat').value)  || 0,
-    });
-    renderIngredientsList();
-    clearIngredientForm();
-    // Update name field to show auto-composed name
-    const autoName = _mealIngredients.map(i => i.name).join(' + ');
-    document.getElementById('meal-inp-name').value = autoName;
-    document.getElementById('meal-inp-name').dataset.autoName = autoName;
-    toast(`✓ ${name} ajouté · scannez le prochain`, 'success');
-    haptic(10);
-  });
-
-  // ── WEIGHT LOG ──
-  document.getElementById('btn-log-weight').addEventListener('click', openWeightModal);
-  document.getElementById('btn-import-withings').addEventListener('click', () => {
-    document.getElementById('withings-file-input').click();
-  });
-  document.getElementById('withings-file-input').addEventListener('change', e => {
-    importWithingsFiles(e.target.files);
-    e.target.value = '';
-  });
-
-  // ── WITHINGS AUTO-SYNC ──
-  const withingsConnectBtn = document.getElementById('btn-connect-withings');
-  document.addEventListener('click', e => {
-    if (!e.target.closest('#btn-connect-withings')) return;
-    const currentUser = user || window.__FC.getUser();
-    if (!currentUser) { toast("Connectez-vous d'abord", 'error'); return; }
-    window.location.href = `https://us-central1-frigochef-95045.cloudfunctions.net/withingsAuth?uid=${currentUser.uid}`;
-  });
-
-  // Afficher le bouton Withings auto quand connecté
-  window.updateWithingsBtn = function updateWithingsBtn() {
-    if (!withingsConnectBtn || !user) return;
-    withingsConnectBtn.style.display = 'inline-flex';
-    const isConnected = withingsIsConnected;
-    withingsConnectBtn.textContent = isConnected ? '✅ Withings' : '🔗 Withings auto';
-    withingsConnectBtn.title = isConnected
-      ? 'Withings connecté — cliquez pour reconnecter'
-      : 'Connecter Withings pour la synchronisation automatique';
-  }
-  document.getElementById('btn-toggle-withings').addEventListener('click', () => {
-    const sec = document.getElementById('weight-withings-section');
-    const btn = document.getElementById('btn-toggle-withings');
-    const visible = sec.style.display !== 'none';
-    sec.style.display = visible ? 'none' : 'flex';
-    sec.style.flexDirection = 'column';
-    sec.style.gap = '10px';
-    btn.style.color = visible ? '' : 'var(--green-dk)';
-    btn.style.borderColor = visible ? '' : 'var(--green)';
-  });
-  document.getElementById('weight-modal-overlay').addEventListener('click', e => {
-    if (e.target === document.getElementById('weight-modal-overlay')) closeWeightModal();
-  });
-  document.getElementById('weight-modal-cancel').addEventListener('click', closeWeightModal);
-  document.getElementById('weight-modal-save').addEventListener('click', saveWeightModal);
 
   // ── PROFILE SHARE CARD ──
   document.getElementById('profile-share-copy').addEventListener('click', () => {
