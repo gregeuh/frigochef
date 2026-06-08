@@ -5734,17 +5734,6 @@ function applyProfileToUI() {
   const badge = document.getElementById('profile-goal-badge');
   if (badge && profile.goal) badge.textContent = GOAL_LABELS[profile.goal] || 'NutriHome';
 
-  // Stats block
-  if (profile.dailyCalories || profile.weight) {
-    document.getElementById('profile-stats-row').style.display = 'grid';
-    document.getElementById('pstat-kcal').textContent   = profile.dailyCalories || '—';
-    document.getElementById('pstat-meal').textContent   = profile.caloriesPerMeal || '—';
-    document.getElementById('pstat-weight').textContent = profile.weight ? `${profile.weight}` : '—';
-    const imc = (profile.weight && profile.height)
-      ? (profile.weight / ((profile.height / 100) ** 2)).toFixed(1) : '—';
-    document.getElementById('pstat-imc').textContent = imc;
-  }
-
   // Diet chips
   if (profile.diet?.length) {
     const dietRow = document.getElementById('profile-diet-row');
